@@ -64,12 +64,15 @@ void Run() {
 
     ImGui::TableHeadersRow();
 
-    for (const auto& layer: layers) {
+    for (auto& layer: layers) {
       ImGui::TableNextRow();
       // Enabled?
       ImGui::TableNextColumn();
-      ImGui::Text(
-        layer.mIsEnabled ? Config::GLYPH_ENABLED : Config::GLYPH_DISABLED);
+      if (ImGui::Checkbox(
+            std::format("##Enabled/{}", layer.mPath.string()).c_str(),
+            &layer.mIsEnabled)) {
+        SetAPILayers(layers);
+      }
       // Errors/Warning
       ImGui::TableNextColumn();
       ImGui::Text(Config::GLYPH_STATE_OK);
