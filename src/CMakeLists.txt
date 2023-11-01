@@ -10,10 +10,18 @@ else()
   set(USE_EMOJI_BOOL "false")
 endif()
 
-set(CODEGEN_PATH "${CMAKE_CURRENT_BINARY_DIR}/${BUILD_TARGET_ID}")
+if(WIN32)
+  if(USE_HKCU)
+    set(APILAYER_HKEY_ROOT "HKEY_CURRENT_USER")
+  else()
+    set(APILAYER_HKEY_ROOT "HKEY_LOCAL_MACHINE")
+  endif()
+endif()
+
+set(CODEGEN_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/${BUILD_TARGET_ID}")
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/Config.in.hpp"
-  "${CODEGEN_PATH}/Config.hpp"
+  "${CODEGEN_BUILD_DIR}/Config.hpp"
   @ONLY
 )
 
@@ -26,7 +34,7 @@ add_executable(
 target_include_directories(
   openxr-layers-gui
   PRIVATE
-  "${CODEGEN_PATH}"
+  "${CODEGEN_BUILD_DIR}"
 )
 
 target_link_libraries(
@@ -46,7 +54,7 @@ set(PLATFORM_MAIN_CPP "main.cpp")
 set(PLATFORM_GUI_CPP "GUI_stub.cpp")
 
 if(WIN32)
-  #set(PLATFORM_APILAYERS_CPP "APILayers_windows.cpp")
+  set(PLATFORM_APILAYERS_CPP "APILayers_windows.cpp")
   set(PLATFORM_GUI_CPP "GUI_windows.cpp")
   set(PLATFORM_MAIN_CPP "wWinMain.cpp")
 
@@ -64,6 +72,12 @@ if(WIN32)
     "/EHsc"
     "/diagnostics:caret" 
     "/utf-8"
+  )
+
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/Config_windows.in.hpp"
+    "${CODEGEN_BUILD_DIR}/Config_windows.hpp"
+    @ONLY
   )
 endif()
 

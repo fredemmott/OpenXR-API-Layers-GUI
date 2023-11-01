@@ -8,6 +8,7 @@
 namespace FredEmmott::OpenXRLayers::Config {
 
 constexpr std::string_view BUILD_TARGET_ID {"@BUILD_TARGET_ID@"};
+
 // clang-format off
 constexpr bool USE_EMOJI { @USE_EMOJI_BOOL@ };
 // clang-format on
