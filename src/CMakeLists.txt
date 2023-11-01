@@ -4,9 +4,6 @@
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 
-set(MAIN_CPP main.cpp)
-set(APILAYERS_CPP APILayers_stub.cpp)
-
 if(USE_EMOJI)
   set(USE_EMOJI_BOOL "true")
 else()
@@ -22,9 +19,8 @@ configure_file(
 
 add_executable(
   openxr-layers-gui
+  WIN32
   GUI.cpp
-  ${MAIN_CPP}
-  ${APILAYERS_CPP}
 )
 
 target_include_directories(
@@ -45,12 +41,14 @@ set_target_properties(
   OUTPUT_NAME "OpenXR-Layers-${BUILD_TARGET_ID}"
 )
 
+set(PLATFORM_APILAYERS_CPP "APILayers_stub.cpp")
+set(PLATFORM_MAIN_CPP "main.cpp")
+set(PLATFORM_GUI_CPP "GUI_stub.cpp")
+
 if(WIN32)
-  target_sources(
-    openxr-layers-gui
-    PRIVATE
-    GUI_windows.cpp
-  )
+  #set(PLATFORM_APILAYERS_CPP "APILayers_windows.cpp")
+  set(PLATFORM_GUI_CPP "GUI_windows.cpp")
+  set(PLATFORM_MAIN_CPP "wWinMain.cpp")
 
   target_compile_definitions(
     openxr-layers-gui
@@ -68,3 +66,11 @@ if(WIN32)
     "/utf-8"
   )
 endif()
+
+target_sources(
+  openxr-layers-gui
+  PRIVATE
+  "${PLATFORM_APILAYERS_CPP}"
+  "${PLATFORM_GUI_CPP}"
+  "${PLATFORM_MAIN_CPP}"
+)

@@ -1,7 +1,7 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
-#include "gui.hpp"
+#include "GUI.hpp"
 
 // Entrypoint for Linux and MacOS
 //
