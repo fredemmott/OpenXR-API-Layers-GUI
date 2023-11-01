@@ -51,7 +51,15 @@ void Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::BeginTable("Installed Layers", 3);
+    ImGui::BeginTable(
+      "Installed Layers", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg);
+
+    ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Path");
+
+    ImGui::TableHeadersRow();
+
     for (const auto& layer: layers) {
       ImGui::TableNextRow();
       // Enabled?

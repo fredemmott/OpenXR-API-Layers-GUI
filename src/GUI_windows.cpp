@@ -35,7 +35,7 @@ void SetupFonts(ImGuiIO* io) {
   config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
   io->Fonts->AddFontFromFileTTF(
-    (fontsPath / "seguiemj.ttf").string().c_str(), 16.0f, &config, ranges);
+    (fontsPath / "seguiemj.ttf").string().c_str(), 13.0f, &config, ranges);
 
   ImGui::SFML::UpdateFontTexture();
 }
