@@ -97,14 +97,14 @@ static void BackupAPILayers() {
   haveBackup = true;
 }
 
-void SetAPILayers(const std::vector<APILayer>& newLayers) {
+bool SetAPILayers(const std::vector<APILayer>& newLayers) {
   BackupAPILayers();
 
   const auto oldLayers = GetAPILayers();
 
   HKEY key {NULL};
   if (RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &key) != ERROR_SUCCESS) {
-    return;
+    return false;
   }
 
   for (const auto& layer: oldLayers) {
@@ -122,6 +122,8 @@ void SetAPILayers(const std::vector<APILayer>& newLayers) {
       sizeof(disabled));
   }
   RegCloseKey(key);
+
+  return true;
 }
 
 }// namespace FredEmmott::OpenXRLayers

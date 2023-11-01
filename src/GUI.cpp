@@ -35,7 +35,13 @@ void Run() {
   SetupFonts(&io);
 
   sf::Clock deltaClock {};
+  bool layersChanged {false};
   while (window.isOpen()) {
+    if (layersChanged) {
+      layers = GetAPILayers();
+      layersChanged = false;
+      selectedLayer = nullptr;
+    }
     sf::Event event {};
     while (window.pollEvent(event)) {
       ImGui::SFML::ProcessEvent(window, event);
@@ -77,8 +83,36 @@ void Run() {
         }
 
         ImGui::SameLine();
-        if (ImGui::Selectable(label.c_str(), layer != *selectedLayer)) {
+
+        if (ImGui::Selectable(label.c_str(), selectedLayer == &layer)) {
           selectedLayer = &layer;
+        }
+
+        if (ImGui::BeginDragDropSource()) {
+          ImGui::SetDragDropPayload("APILayer*", &layer, sizeof(layer));
+          ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+          if (const auto payload = ImGui::AcceptDragDropPayload("APILayer*")) {
+            const auto& dropped = *reinterpret_cast<APILayer*>(payload->Data);
+            std::vector<APILayer> newLayers;
+            for (const auto& it: layers) {
+              if (it == dropped) {
+                continue;
+              }
+              if (it == layer) {
+                newLayers.push_back(dropped);
+              }
+
+              newLayers.push_back(it);
+            }
+            assert(layers.size() == newLayers.size());
+            if (SetAPILayers(newLayers)) {
+              layersChanged = true;
+            }
+          }
+          ImGui::EndDragDropTarget();
         }
 
         ImGui::PopID();

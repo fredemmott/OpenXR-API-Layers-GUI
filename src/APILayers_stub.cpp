@@ -14,7 +14,8 @@ std::vector<APILayer> GetAPILayers() {
   };
 }
 
-void SetAPILayers(const std::vector<APILayer>&) {
+bool SetAPILayers(const std::vector<APILayer>&) {
+  return false;
 }
 
 }// namespace FredEmmott::OpenXRLayers

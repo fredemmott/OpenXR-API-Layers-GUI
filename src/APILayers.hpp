@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: ISC
 
 #pragma once
-#include "APILayer.hpp"
-
 #include <vector>
+
+#include "APILayer.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
 std::vector<APILayer> GetAPILayers();
-void SetAPILayers(const std::vector<APILayer>&);
+bool SetAPILayers(const std::vector<APILayer>&);
 
 }// namespace FredEmmott::OpenXRLayers
