@@ -21,9 +21,10 @@ namespace FredEmmott::OpenXRLayers::GUI {
 
 void Run() {
   auto layers = GetAPILayers();
+  std::filesystem::path selectedLayer;
 
   sf::RenderWindow window {
-    sf::VideoMode(640, 480),
+    sf::VideoMode(1024, 768),
     std::format("OpenXR Layers [{}]", Config::BUILD_TARGET_ID)};
   window.setFramerateLimit(60);
   if (!ImGui::SFML::Init(window)) {
@@ -72,8 +73,14 @@ void Run() {
       // Errors/Warning
       ImGui::TableNextColumn();
       ImGui::Text(Config::GLYPH_STATE_OK);
+      // Path
       ImGui::TableNextColumn();
-      ImGui::Text("%s", layer.mPath.string().c_str());
+      if (ImGui::Selectable(
+            layer.mPath.string().c_str(),
+            layer.mPath == selectedLayer,
+            ImGuiSelectableFlags_SpanAllColumns)) {
+        selectedLayer = layer.mPath;
+      }
     }
     ImGui::EndTable();
     ImGui::End();
