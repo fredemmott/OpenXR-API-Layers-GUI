@@ -26,7 +26,7 @@ void Run() {
 
   sf::RenderWindow window {
     sf::VideoMode(1024, 768),
-    std::format("OpenXR Layers [{}]", Config::BUILD_TARGET_ID)};
+    std::format("OpenXR API Layers [{}]", Config::BUILD_TARGET_ID)};
   window.setFramerateLimit(60);
   if (!ImGui::SFML::Init(window)) {
     return;
