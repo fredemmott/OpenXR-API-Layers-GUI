@@ -135,7 +135,6 @@ void Run() {
       layersChanged = true;
     }
     ImGui::Button("Add Layer...", {-FLT_MIN, 0});
-    ImGui::Separator();
     ImGui::BeginDisabled(selectedLayer == nullptr);
 
     if (ImGui::Button("Remove Layer...", {-FLT_MIN, 0})) {
@@ -173,6 +172,23 @@ void Run() {
 
       ImGui::EndPopup();
     }
+
+    ImGui::Separator();
+
+    ImGui::BeginDisabled(!(selectedLayer && !selectedLayer->mIsEnabled));
+    if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
+      selectedLayer->mIsEnabled = true;
+      SetAPILayers(layers);
+    }
+    ImGui::EndDisabled();
+    ImGui::BeginDisabled(!(selectedLayer && selectedLayer->mIsEnabled));
+    if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
+      selectedLayer->mIsEnabled = false;
+      SetAPILayers(layers);
+    }
+    ImGui::EndDisabled();
+
+    ImGui::Separator();
 
     ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.front()));
     if (ImGui::Button("Move Up", {-FLT_MIN, 0})) {
