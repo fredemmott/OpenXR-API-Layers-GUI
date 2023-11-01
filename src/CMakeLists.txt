@@ -79,6 +79,14 @@ if(WIN32)
     "${CODEGEN_BUILD_DIR}/Config_windows.hpp"
     @ONLY
   )
+
+  if(NOT USE_HKCU)
+    target_link_options(
+      openxr-layers-gui
+      PRIVATE
+      "/MANIFESTUAC:level='requireAdministrator'"
+    )
+  endif()
 endif()
 
 target_sources(

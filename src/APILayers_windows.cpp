@@ -3,20 +3,23 @@
 
 #include <Windows.h>
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+
+#include <ShlObj.h>
+
 #include "APILayers.hpp"
 #include "Config.hpp"
 #include "Config_windows.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
+constexpr auto SUBKEY {L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit"};
+
 std::vector<APILayer> GetAPILayers() {
   HKEY key {NULL};
-  if (
-    RegOpenKeyW(
-      Config::APILAYER_HKEY_ROOT,
-      L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit",
-      &key)
-    != ERROR_SUCCESS) {
+  if (RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &key) != ERROR_SUCCESS) {
     return {};
   }
 
@@ -56,7 +59,69 @@ std::vector<APILayer> GetAPILayers() {
   return layers;
 }
 
-void SetAPILayers(const std::vector<APILayer>&) {
+static void BackupAPILayers() {
+  static bool haveBackup {false};
+  if (haveBackup) {
+    return;
+  }
+
+  wchar_t* folderPath {nullptr};
+  if (
+    SHGetKnownFolderPath(
+      FOLDERID_LocalAppData, KF_FLAG_DEFAULT, NULL, &folderPath)
+    != S_OK) {
+    return;
+  }
+
+  if (!folderPath) {
+    return;
+  }
+
+  const auto backupFolder
+    = std::filesystem::path(folderPath) / "OpenXR Layers GUI" / "Backups";
+  if (!std::filesystem::is_directory(backupFolder)) {
+    std::filesystem::create_directories(backupFolder);
+  }
+
+  const auto path = backupFolder
+    / std::format("{:%F-%H-%M-%S}-{}.tsv",
+                  std::chrono::time_point_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now()),
+                  Config::BUILD_TARGET_ID);
+
+  std::ofstream f(path);
+  for (const auto& layer: GetAPILayers()) {
+    f << (layer.mIsEnabled ? "0" : "1") << "\t" << layer.mPath.string() << "\n";
+  }
+
+  haveBackup = true;
+}
+
+void SetAPILayers(const std::vector<APILayer>& newLayers) {
+  BackupAPILayers();
+
+  const auto oldLayers = GetAPILayers();
+
+  HKEY key {NULL};
+  if (RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &key) != ERROR_SUCCESS) {
+    return;
+  }
+
+  for (const auto& layer: oldLayers) {
+    RegDeleteValueW(key, layer.mPath.wstring().c_str());
+  }
+
+  for (const auto& layer: newLayers) {
+    DWORD disabled = layer.mIsEnabled ? 0 : 1;
+    RegSetValueExW(
+      key,
+      layer.mPath.wstring().c_str(),
+      NULL,
+      REG_DWORD,
+      reinterpret_cast<BYTE*>(&disabled),
+      sizeof(disabled));
+  }
+  RegCloseKey(key);
 }
 
 }// namespace FredEmmott::OpenXRLayers
