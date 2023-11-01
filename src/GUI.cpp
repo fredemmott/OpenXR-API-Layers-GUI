@@ -63,7 +63,7 @@ void Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::BeginListBox("##Layers", {-FLT_MIN, 0});
+    ImGui::BeginListBox("##Layers", {768, 384});
     ImGuiListClipper clipper {};
     clipper.Begin(static_cast<int>(layers.size()));
 
@@ -119,6 +119,59 @@ void Run() {
       }
     }
     ImGui::EndListBox();
+
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    if (ImGui::Button("Reload List", {-FLT_MIN, 0})) {
+      layersChanged = true;
+    }
+    ImGui::Button("Add Layer...", {-FLT_MIN, 0});
+    ImGui::Separator();
+    ImGui::BeginDisabled(selectedLayer == nullptr);
+
+    if (ImGui::Button("Remove Layer...", {-FLT_MIN, 0})) {
+      ImGui::OpenPopup("Remove Layer");
+    }
+
+    ImGui::EndDisabled();
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize({512, 0}, ImGuiCond_Appearing);
+    if (ImGui::BeginPopupModal(
+          "Remove Layer", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::TextWrapped(
+        "Are you sure you want to completely remove '%s'?\n\nThis can not be "
+        "undone.",
+        selectedLayer->mPath.string().c_str());
+      ImGui::Separator();
+      ImGui::SetCursorPosX(256 + 128);
+      if (ImGui::Button("Remove", {64, 0}) && selectedLayer) {
+        auto nextLayers = layers;
+        auto it = std::ranges::find(nextLayers, *selectedLayer);
+        if (it != nextLayers.end()) {
+          nextLayers.erase(it);
+          SetAPILayers(nextLayers);
+          layersChanged = true;
+        }
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Cancel", {64, 0})) {
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::SetItemDefaultFocus();
+
+      ImGui::EndPopup();
+    }
+
+    ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.front()));
+    ImGui::Button("Move Up", {-FLT_MIN, 0});
+    ImGui::EndDisabled();
+    ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.back()));
+    ImGui::Button("Move Down", {-FLT_MIN, 0});
+    ImGui::EndDisabled();
+    ImGui::EndGroup();
 
     ImGui::End();
 
