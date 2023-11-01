@@ -7,6 +7,7 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
+#include <algorithm>
 #include <format>
 #include <iostream>
 
@@ -38,9 +39,17 @@ void Run() {
   bool layersChanged {false};
   while (window.isOpen()) {
     if (layersChanged) {
-      layers = GetAPILayers();
+      auto newLayers = GetAPILayers();
+      if (selectedLayer) {
+        auto it = std::ranges::find(newLayers, *selectedLayer);
+        if (it != newLayers.end()) {
+          selectedLayer = &*it;
+        } else {
+          selectedLayer = nullptr;
+        }
+      }
+      layers = std::move(newLayers);
       layersChanged = false;
-      selectedLayer = nullptr;
     }
     sf::Event event {};
     while (window.pollEvent(event)) {
@@ -166,10 +175,26 @@ void Run() {
     }
 
     ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.front()));
-    ImGui::Button("Move Up", {-FLT_MIN, 0});
+    if (ImGui::Button("Move Up", {-FLT_MIN, 0})) {
+      auto newLayers = layers;
+      auto it = std::ranges::find(newLayers, *selectedLayer);
+      if (it != newLayers.begin() && it != newLayers.end()) {
+        std::iter_swap((it - 1), it);
+        SetAPILayers(newLayers);
+        layersChanged = true;
+      }
+    }
     ImGui::EndDisabled();
     ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.back()));
-    ImGui::Button("Move Down", {-FLT_MIN, 0});
+    if (ImGui::Button("Move Down", {-FLT_MIN, 0})) {
+      auto newLayers = layers;
+      auto it = std::ranges::find(newLayers, *selectedLayer);
+      if (it != newLayers.end() && (it + 1) != newLayers.end()) {
+        std::iter_swap(it, it + 1);
+        SetAPILayers(newLayers);
+        layersChanged = true;
+      }
+    }
     ImGui::EndDisabled();
     ImGui::EndGroup();
 
