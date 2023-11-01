@@ -21,7 +21,7 @@ namespace FredEmmott::OpenXRLayers::GUI {
 
 void Run() {
   auto layers = GetAPILayers();
-  std::filesystem::path selectedLayer;
+  APILayer* selectedLayer {nullptr};
 
   sf::RenderWindow window {
     sf::VideoMode(1024, 768),
@@ -77,8 +77,8 @@ void Run() {
         }
 
         ImGui::SameLine();
-        if (ImGui::Selectable(label.c_str(), layer.mPath == selectedLayer)) {
-          selectedLayer = layer.mPath;
+        if (ImGui::Selectable(label.c_str(), layer != *selectedLayer)) {
+          selectedLayer = &layer;
         }
 
         ImGui::PopID();

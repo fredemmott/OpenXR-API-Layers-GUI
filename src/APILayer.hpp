@@ -10,6 +10,8 @@ namespace FredEmmott::OpenXRLayers {
 struct APILayer {
   std::filesystem::path mPath {};
   bool mIsEnabled {};
+
+  auto operator<=>(const APILayer&) const noexcept = default;
 };
 
 }// namespace FredEmmott::OpenXRLayers
