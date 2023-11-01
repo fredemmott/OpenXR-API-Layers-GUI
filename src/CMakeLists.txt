@@ -3,6 +3,7 @@
 
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 if(USE_EMOJI)
   set(USE_EMOJI_BOOL "true")
@@ -35,6 +36,7 @@ macro(add_gui)
   add_executable(
     ${TARGET}
     WIN32
+    APILayerDetails.cpp
     GUI.cpp
   )
 
@@ -48,6 +50,7 @@ macro(add_gui)
     ${TARGET}
     PRIVATE
     ImGui-SFML::ImGui-SFML
+    nlohmann_json::nlohmann_json
   )
 
   set_target_properties(

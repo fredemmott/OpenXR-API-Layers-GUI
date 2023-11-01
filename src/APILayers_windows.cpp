@@ -46,7 +46,7 @@ std::vector<APILayer> GetAPILayers() {
          == ERROR_SUCCESS) {
     if (dataType == REG_DWORD) {
       layers.push_back({
-        .mPath = {std::wstring_view {nameBuffer, nameSize}},
+        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
         .mIsEnabled = !disabled,
       });
     }
@@ -91,7 +91,8 @@ static void BackupAPILayers() {
 
   std::ofstream f(path);
   for (const auto& layer: GetAPILayers()) {
-    f << (layer.mIsEnabled ? "0" : "1") << "\t" << layer.mPath.string() << "\n";
+    f << (layer.mIsEnabled ? "0" : "1") << "\t" << layer.mJSONPath.string()
+      << "\n";
   }
 
   haveBackup = true;
@@ -108,14 +109,14 @@ bool SetAPILayers(const std::vector<APILayer>& newLayers) {
   }
 
   for (const auto& layer: oldLayers) {
-    RegDeleteValueW(key, layer.mPath.wstring().c_str());
+    RegDeleteValueW(key, layer.mJSONPath.wstring().c_str());
   }
 
   for (const auto& layer: newLayers) {
     DWORD disabled = layer.mIsEnabled ? 0 : 1;
     RegSetValueExW(
       key,
-      layer.mPath.wstring().c_str(),
+      layer.mJSONPath.wstring().c_str(),
       NULL,
       REG_DWORD,
       reinterpret_cast<BYTE*>(&disabled),

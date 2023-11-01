@@ -1,8 +1,14 @@
 {
     "files.associations": {
         "ios": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "stdexcept": "cpp",
+        "format": "cpp",
+        "istream": "cpp",
+        "memory": "cpp",
+        "type_traits": "cpp"
     },
     "editor.formatOnSave": true,
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "editor.tabSize": 2
 }

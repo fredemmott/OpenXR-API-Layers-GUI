@@ -8,7 +8,7 @@ namespace FredEmmott::OpenXRLayers {
 std::vector<APILayer> GetAPILayers() {
   return {
     APILayer {
-      .mPath = {"/var/not_a_real_layer.json"},
+      .mJSONPath = {"/var/not_a_real_layer.json"},
       .mIsEnabled = true,
     },
   };
