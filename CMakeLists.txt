@@ -30,11 +30,23 @@ set(
 
 project(OpenXR-Layers-GUI VERSION 0.0.1.${VERSION_BUILD} LANGUAGES CXX C)
 
-if (APPLE)
+if(APPLE)
 	set(BUILD_TARGET_ID "MacOS-${CMAKE_SYSTEM_PROCESSOR}")
-else ()
+elseif(WIN32)
+  option(USE_HKCU "Use HKCU instead of HKLM" OFF)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(BUILD_TARGET_ID "Win64")
+  else()
+    set(BUILD_TARGET_ID "Win32")
+  endif() 
+  if(USE_HKCU)
+    set(BUILD_TARGET_ID "${BUILD_TARGET_ID}-HKCU")
+  else()
+    set(BUILD_TARGET_ID "${BUILD_TARGET_ID}-HKLM")
+  endif()
+else()
 	set(BUILD_TARGET_ID "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-stub")
-endif ()
+endif()
 
 message(STATUS "Building OpenXR-Layers-GUI ${BUILD_TARGET_ID} v${CMAKE_PROJECT_VERSION}")
 
