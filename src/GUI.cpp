@@ -21,8 +21,9 @@
 namespace FredEmmott::OpenXRLayers::GUI {
 
 void Run() {
-  auto layers = GetAPILayers();
+  std::vector<APILayer> layers {};
   APILayer* selectedLayer {nullptr};
+  bool reloadLayers {true};
 
   sf::RenderWindow window {
     sf::VideoMode(1024, 768),
@@ -36,9 +37,8 @@ void Run() {
   SetupFonts(&io);
 
   sf::Clock deltaClock {};
-  bool layersChanged {false};
   while (window.isOpen()) {
-    if (layersChanged) {
+    if (reloadLayers) {
       auto newLayers = GetAPILayers();
       if (selectedLayer) {
         auto it = std::ranges::find(newLayers, *selectedLayer);
@@ -49,7 +49,7 @@ void Run() {
         }
       }
       layers = std::move(newLayers);
-      layersChanged = false;
+      reloadLayers = false;
     }
     sf::Event event {};
     while (window.pollEvent(event)) {
@@ -118,7 +118,7 @@ void Run() {
             }
             assert(layers.size() == newLayers.size());
             if (SetAPILayers(newLayers)) {
-              layersChanged = true;
+              reloadLayers = true;
             }
           }
           ImGui::EndDragDropTarget();
@@ -132,7 +132,7 @@ void Run() {
     ImGui::SameLine();
     ImGui::BeginGroup();
     if (ImGui::Button("Reload List", {-FLT_MIN, 0})) {
-      layersChanged = true;
+      reloadLayers = true;
     }
     ImGui::Button("Add Layer...", {-FLT_MIN, 0});
     ImGui::BeginDisabled(selectedLayer == nullptr);
@@ -160,7 +160,7 @@ void Run() {
         if (it != nextLayers.end()) {
           nextLayers.erase(it);
           SetAPILayers(nextLayers);
-          layersChanged = true;
+          reloadLayers = true;
         }
         ImGui::CloseCurrentPopup();
       }
@@ -197,7 +197,7 @@ void Run() {
       if (it != newLayers.begin() && it != newLayers.end()) {
         std::iter_swap((it - 1), it);
         SetAPILayers(newLayers);
-        layersChanged = true;
+        reloadLayers = true;
       }
     }
     ImGui::EndDisabled();
@@ -208,7 +208,7 @@ void Run() {
       if (it != newLayers.end() && (it + 1) != newLayers.end()) {
         std::iter_swap(it, it + 1);
         SetAPILayers(newLayers);
-        layersChanged = true;
+        reloadLayers = true;
       }
     }
     ImGui::EndDisabled();
