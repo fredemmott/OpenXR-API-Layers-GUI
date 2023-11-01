@@ -7,6 +7,7 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
+#include <format>
 #include <iostream>
 
 #include <imgui.h>
@@ -21,7 +22,9 @@ namespace FredEmmott::OpenXRLayers::GUI {
 void Run() {
   auto layers = GetAPILayers();
 
-  sf::RenderWindow window {sf::VideoMode(640, 480), "OpenXR Layers GUI"};
+  sf::RenderWindow window {
+    sf::VideoMode(640, 480),
+    std::format("OpenXR Layers [{}]", Config::BUILD_TARGET_ID)};
   window.setFramerateLimit(60);
   if (!ImGui::SFML::Init(window)) {
     return;
