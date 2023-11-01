@@ -44,3 +44,27 @@ set_target_properties(
   PROPERTIES
   OUTPUT_NAME "OpenXR-Layers-${BUILD_TARGET_ID}"
 )
+
+if(WIN32)
+  target_sources(
+    openxr-layers-gui
+    PRIVATE
+    GUI_windows.cpp
+  )
+
+  target_compile_definitions(
+    openxr-layers-gui
+    PRIVATE
+    "WIN32_LEAN_AND_MEAN"
+    "NOMINMAX"
+  )
+
+  target_compile_options(
+    openxr-layers-gui
+    PRIVATE
+    "/await:strict"
+    "/EHsc"
+    "/diagnostics:caret" 
+    "/utf-8"
+  )
+endif()

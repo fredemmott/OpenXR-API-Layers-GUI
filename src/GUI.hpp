@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <imgui.h>
+
 namespace FredEmmott::OpenXRLayers::GUI {
 
+void SetupFonts(ImGuiIO*);
 void Run();
 
 }// namespace FredEmmott::OpenXRLayers::GUI

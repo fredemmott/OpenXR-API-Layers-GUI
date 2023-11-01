@@ -1,6 +1,12 @@
 {
   "dependencies": [
-    "imgui-sfml",
-    "imgui"
+    {
+      "name": "imgui",
+      "features": [
+        "freetype",
+        "wchar32"
+      ]
+    },
+    "imgui-sfml"
   ]
 }

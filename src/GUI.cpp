@@ -27,6 +27,9 @@ void Run() {
     return;
   }
 
+  auto& io = ImGui::GetIO();
+  SetupFonts(&io);
+
   sf::Clock deltaClock {};
   while (window.isOpen()) {
     sf::Event event {};
