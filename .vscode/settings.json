@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "ios": "cpp",
+        "string": "cpp"
+    },
+    "editor.formatOnSave": true,
+    "cmake.configureOnOpen": true
+}

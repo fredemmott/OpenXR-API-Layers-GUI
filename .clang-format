@@ -1,0 +1,68 @@
+BasedOnStyle: Google
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveDeclarations: 'false'
+AlignEscapedNewlinesLeft: DontAlign
+AlignOperands: 'false'
+AlignTrailingComments: 'false'
+AllowAllParametersOfDeclarationOnNextLine: 'false'
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: 'false'
+AllowShortLoopsOnASingleLine: 'false'
+BinPackArguments: 'false'
+BinPackParameters: 'false'
+BreakBeforeBinaryOperators: 'true'
+ColumnLimit: '80'
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+ConstructorInitializerIndentWidth: '2'
+ContinuationIndentWidth: '2'
+DeriveLineEnding: false
+DerivePointerAlignment: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".+'
+    Priority: 1
+  - Regex: '^<OpenKneeboard/[A-Z].+.+'
+    CaseSensitive: true
+    Priority: 10
+  - Regex: '^<OpenKneeboard/[a-z0-9_]+\.h>$'
+    CaseSensitive: true
+    Priority: 11
+  - Regex: '^<shims/.+'
+    Priority: 20
+  - Regex: '^<Windows\.h>$'
+    Priority: 30
+  - Regex: '^<Unknwn\.h>'
+    Priority: 31
+  - Regex: '^<ppl[a-z]+\.h>'
+    Priority: 33
+  - Regex: '^<shims/winrt/.+'
+    Priority: 1
+    SortPriority: 34
+  - Regex: '^<winrt/.+'
+    Priority: 35
+  - Regex: '^<wil/.+'
+    Priority: 36
+  - Regex: '^<(windows|microsoft)\..+\.h>$' # Usually interop headers, e.g. windows.data.pdf.interop
+    Priority: 37
+  - Regex: '^<[a-z_]+/.+\.h(pp)?>$'
+    Priority: 999
+    SortPriority: 41
+  - Regex: '^<[a-z_/]+>$'
+    Priority: 42
+    CaseSensitive: true
+  - Regex: '^<[a-z0-9_]+\.h>$'
+    Priority: 43
+IndentRequires: true
+IndentWidth: '2'
+LineEnding: 'LF'
+MaxEmptyLinesToKeep: '1'
+PointerAlignment: Left
+ReflowComments: true
+SpaceBeforeCpp11BracedList: 'true'
+SpaceBeforeAssignmentOperators: 'true'
+SpaceBeforeRangeBasedForLoopColon: 'false'
+SpacesBeforeTrailingComments: '0'
+Standard: c++20
+TabWidth: '2'
+UseTab: Never
