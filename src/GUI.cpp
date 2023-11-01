@@ -3,16 +3,18 @@
 
 #include "GUI.hpp"
 
-#include "APILayer.hpp"
-#include "APILayers.hpp"
-#include "imgui-SFML.h"
-#include "imgui.h"
-
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
 #include <iostream>
+
+#include <imgui.h>
+
+#include "APILayer.hpp"
+#include "APILayers.hpp"
+#include "Config.hpp"
+#include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers::GUI {
 
@@ -51,10 +53,11 @@ void Run() {
       ImGui::TableNextRow();
       // Enabled?
       ImGui::TableNextColumn();
-      ImGui::Text("Y");
+      ImGui::Text(
+        layer.mIsEnabled ? Config::GLYPH_ENABLED : Config::GLYPH_DISABLED);
       // Errors/Warning
       ImGui::TableNextColumn();
-      ImGui::Text("?");
+      ImGui::Text(Config::GLYPH_STATE_OK);
       ImGui::TableNextColumn();
       ImGui::Text("%s", layer.mPath.string().c_str());
     }

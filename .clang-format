@@ -20,16 +20,6 @@ DeriveLineEnding: false
 DerivePointerAlignment: false
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^".+'
-    Priority: 1
-  - Regex: '^<OpenKneeboard/[A-Z].+.+'
-    CaseSensitive: true
-    Priority: 10
-  - Regex: '^<OpenKneeboard/[a-z0-9_]+\.h>$'
-    CaseSensitive: true
-    Priority: 11
-  - Regex: '^<shims/.+'
-    Priority: 20
   - Regex: '^<Windows\.h>$'
     Priority: 30
   - Regex: '^<Unknwn\.h>'

@@ -30,6 +30,8 @@ set(
 
 project(OpenXR-Layers-GUI VERSION 0.0.1.${VERSION_BUILD} LANGUAGES CXX C)
 
+option(USE_EMOJI "Use emoji for status symbols" ON)
+
 if(APPLE)
 	set(BUILD_TARGET_ID "MacOS-${CMAKE_SYSTEM_PROCESSOR}")
 elseif(WIN32)

@@ -7,9 +7,16 @@ find_package(ImGui-SFML CONFIG REQUIRED)
 set(MAIN_CPP main.cpp)
 set(APILAYERS_CPP APILayers_stub.cpp)
 
+if(USE_EMOJI)
+  set(USE_EMOJI_BOOL "true")
+else()
+  set(USE_EMOJI_BOOL "false")
+endif()
+
+set(CODEGEN_PATH "${CMAKE_CURRENT_BINARY_DIR}/${BUILD_TARGET_ID}")
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/Config.in.hpp"
-  "${CMAKE_CURRENT_BINARY_DIR}/Config.hpp"
+  "${CODEGEN_PATH}/Config.hpp"
   @ONLY
 )
 
@@ -18,6 +25,12 @@ add_executable(
   GUI.cpp
   ${MAIN_CPP}
   ${APILAYERS_CPP}
+)
+
+target_include_directories(
+  openxr-layers-gui
+  PRIVATE
+  "${CODEGEN_PATH}"
 )
 
 target_link_libraries(
