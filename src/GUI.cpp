@@ -46,7 +46,9 @@ void Run() {
 
     ImGui::SFML::Update(window, deltaClock.restart());
 
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    auto viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::Begin(
       "MainWindow",
       0,
@@ -55,37 +57,35 @@ void Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::BeginTable(
-      "Installed Layers", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg);
+    ImGui::BeginListBox("##Layers", {-FLT_MIN, 0});
+    ImGuiListClipper clipper {};
+    clipper.Begin(static_cast<int>(layers.size()));
 
-    ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("Path");
+    while (clipper.Step()) {
+      for (auto i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+        auto& layer = layers.at(i);
+        ImGui::PushID(i);
 
-    ImGui::TableHeadersRow();
+        if (ImGui::Checkbox("##Enabled", &layer.mIsEnabled)) {
+          SetAPILayers(layers);
+        }
 
-    for (auto& layer: layers) {
-      ImGui::TableNextRow();
-      // Enabled?
-      ImGui::TableNextColumn();
-      if (ImGui::Checkbox(
-            std::format("##Enabled/{}", layer.mPath.string()).c_str(),
-            &layer.mIsEnabled)) {
-        SetAPILayers(layers);
-      }
-      // Errors/Warning
-      ImGui::TableNextColumn();
-      ImGui::Text(Config::GLYPH_STATE_OK);
-      // Path
-      ImGui::TableNextColumn();
-      if (ImGui::Selectable(
-            layer.mPath.string().c_str(),
-            layer.mPath == selectedLayer,
-            ImGuiSelectableFlags_SpanAllColumns)) {
-        selectedLayer = layer.mPath;
+        auto label = layer.mPath.string();
+
+        /* if (error) */ {
+          label = std::format("{} {}", Config::GLYPH_ERROR, label);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Selectable(label.c_str(), layer.mPath == selectedLayer)) {
+          selectedLayer = layer.mPath;
+        }
+
+        ImGui::PopID();
       }
     }
-    ImGui::EndTable();
+    ImGui::EndListBox();
+
     ImGui::End();
 
     ImGui::SFML::Render(window);

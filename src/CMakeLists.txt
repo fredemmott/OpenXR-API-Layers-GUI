@@ -58,6 +58,12 @@ if(WIN32)
   set(PLATFORM_GUI_CPP "GUI_windows.cpp")
   set(PLATFORM_MAIN_CPP "wWinMain.cpp")
 
+  target_sources(
+    openxr-layers-gui
+    PRIVATE
+    manifest.xml
+  )
+
   target_compile_definitions(
     openxr-layers-gui
     PRIVATE

@@ -13,8 +13,6 @@ constexpr std::string_view BUILD_TARGET_ID {"@BUILD_TARGET_ID@"};
 constexpr bool USE_EMOJI { @USE_EMOJI_BOOL@ };
 // clang-format on
 
-constexpr auto GLYPH_STATE_OK = USE_EMOJI ? "👍" : "OK";
-constexpr auto GLYPH_STATE_INVALID_LAYER = USE_EMOJI ? "🛑" : "L";
-constexpr auto GLYPH_STATE_CONFLICT = USE_EMOJI ? "⚠️" : "C";
+constexpr auto GLYPH_ERROR {USE_EMOJI ? "\u26a0" : "!"};
 
 }// namespace FredEmmott::OpenXRLayers::Config
