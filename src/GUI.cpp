@@ -23,6 +23,34 @@
 
 namespace FredEmmott::OpenXRLayers::GUI {
 
+namespace {
+constexpr ImVec2 MINIMUM_WINDOW_SIZE {1024, 768};
+
+class MyWindow final : public sf::RenderWindow {
+ public:
+  using sf::RenderWindow::RenderWindow;
+  virtual ~MyWindow() = default;
+
+ protected:
+  virtual void onResize() override {
+    auto size = this->getSize();
+    auto newSize = size;
+    if (size.x < MINIMUM_WINDOW_SIZE.x) {
+      newSize.x = MINIMUM_WINDOW_SIZE.x;
+    }
+    if (size.y < MINIMUM_WINDOW_SIZE.y) {
+      newSize.y = MINIMUM_WINDOW_SIZE.y;
+    }
+
+    if (size == newSize) {
+      return;
+    }
+
+    this->setSize(newSize);
+  }
+};
+}// namespace
+
 void Run() {
   using LintErrors = std::vector<std::shared_ptr<LintError>>;
 
@@ -32,8 +60,8 @@ void Run() {
   std::unordered_map<APILayer*, LintErrors> lintErrorsByLayer;
   bool reloadLayers {true};
 
-  sf::RenderWindow window {
-    sf::VideoMode(1024, 768),
+  MyWindow window {
+    sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
     std::format(
       "OpenXR API Layers [{}] - v{}",
       Config::BUILD_TARGET_ID,
