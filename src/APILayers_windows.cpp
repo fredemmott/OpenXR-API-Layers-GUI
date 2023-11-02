@@ -102,6 +102,9 @@ bool SetAPILayers(const std::vector<APILayer>& newLayers) {
   BackupAPILayers();
 
   const auto oldLayers = GetAPILayers();
+  if (oldLayers == newLayers) {
+    return;
+  }
 
   HKEY key {NULL};
   if (RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &key) != ERROR_SUCCESS) {

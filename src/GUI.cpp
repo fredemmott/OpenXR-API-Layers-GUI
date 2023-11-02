@@ -60,6 +60,7 @@ void Run() {
   std::unordered_map<APILayer*, LintErrors> lintErrorsByLayer;
   bool reloadLayers {true};
 
+  PlatformInit();
   MyWindow window {
     sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
     std::format(
@@ -198,7 +199,56 @@ void Run() {
     if (ImGui::Button("Reload List", {-FLT_MIN, 0})) {
       reloadLayers = true;
     }
-    ImGui::Button("Add Layer...", {-FLT_MIN, 0});
+    if (ImGui::Button("Add Layers...", {-FLT_MIN, 0})) {
+      auto paths = GetNewAPILayerJSONPaths(window.getSystemHandle());
+      for (auto it = paths.begin(); it != paths.end();) {
+        auto existingLayer = std::ranges::find_if(
+          layers, [it](const auto& layer) { return layer.mJSONPath == *it; });
+        if (existingLayer != layers.end()) {
+          it = paths.erase(it);
+          continue;
+        }
+        it++;
+      }
+
+      if (!paths.empty()) {
+        auto nextLayers = layers;
+        for (const auto& path: paths) {
+          nextLayers.push_back(APILayer {
+            .mJSONPath = path,
+            .mIsEnabled = true,
+          });
+        }
+
+        bool changed = false;
+        do {
+          changed = false;
+          auto errors = RunAllLinters(nextLayers);
+          for (const auto& error: errors) {
+            auto fixable = std::dynamic_pointer_cast<FixableLintError>(error);
+            if (!fixable) {
+              continue;
+            }
+
+            if (!std::ranges::any_of(
+                  fixable->GetAffectedLayers(), [&paths](const auto& it) {
+                    return std::ranges::find(paths, it) != paths.end();
+                  })) {
+              continue;
+            }
+
+            const auto fixed = fixable->Fix(nextLayers);
+            if (fixed != nextLayers) {
+              nextLayers = fixed;
+              changed = true;
+            }
+          }
+        } while (changed);
+
+        SetAPILayers(nextLayers);
+        reloadLayers = true;
+      }
+    }
     ImGui::BeginDisabled(selectedLayer == nullptr);
 
     if (ImGui::Button("Remove Layer...", {-FLT_MIN, 0})) {
@@ -213,7 +263,8 @@ void Run() {
     if (ImGui::BeginPopupModal(
           "Remove Layer", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::TextWrapped(
-        "Are you sure you want to completely remove '%s'?\n\nThis can not be "
+        "Are you sure you want to completely remove '%s'?\n\nThis can not "
+        "be "
         "undone.",
         selectedLayer->mJSONPath.string().c_str());
       ImGui::Separator();
