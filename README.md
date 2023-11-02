@@ -8,14 +8,20 @@ This is a tool for:
 
 ## Getting Started
 
-This project is not yet ready for public use.
+1. Download [the latest version](https://github.com/fredemmott/OpenXR-API-Layers-GUI/releases/latest)
+2. Extract it somewhere handy
+3. Read the `README-Windows.txt` you just extracted :)
+
+While this project is designed to be easily portable, it currently only supports Windows - [contributions are very welcome :)](CONTRIBUTING.md).
 
 ## Getting Help
 
-This project is not yet ready for public use; do not ask for help using it.
-
 If you have a problem with a specific layer, or aren't sure which order things
 should be in, contact the developers of the relevant layers.
+
+If you have a problem with *the tool*, not games or specific API layers, help
+may be available from the community in [my
+Discord](https://go.fredemmott.com/discord).
 
 ## Screenshots
 
