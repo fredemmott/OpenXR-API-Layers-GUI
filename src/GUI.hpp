@@ -38,6 +38,14 @@ class GUI final : public PlatformGUI {
   LintErrors mLintErrors;
   std::unordered_map<APILayer*, LintErrors> mLintErrorsByLayer;
   bool mLayerDataIsStale {true};
+
+  sf::WindowHandle mWindowHandle {};
+
+  void GUILayersList();
+  void GUIButtons();
+  void GUITabs();
+  void GUIErrorsTab();
+  void GUIDetailsTab();
 };
 
 }// namespace FredEmmott::OpenXRLayers
