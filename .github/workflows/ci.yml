@@ -6,6 +6,8 @@ jobs:
     runs-on: ${{matrix.runs-on}}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: true
       - name: Make build directory
         run: cmake -E make_directory build
       - name: Configure
@@ -36,7 +38,10 @@ jobs:
         include:
           - os: windows
             runs-on: windows-latest
-            arch: [Win32, Win64]
+            arch: Win32
+          - os: windows
+            runs-on: windows-latest
+            arch: Win64
   combined-zip:
     name: Make combined zip file
     runs-on: windows-latest
