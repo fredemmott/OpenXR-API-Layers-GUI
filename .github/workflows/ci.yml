@@ -2,7 +2,7 @@ name: Continuous Integration
 on: [push, pull_request]
 jobs:
   build:
-    name: ${{matrix.os}}/${{matrix.build-type}}
+    name: ${{matrix.os}}/${{matrix.arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.runs-on}}
     steps:
       - uses: actions/checkout@v3
