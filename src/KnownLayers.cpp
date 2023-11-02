@@ -6,7 +6,7 @@
 namespace FredEmmott::OpenXRLayers {
 
 namespace Features {
-const std::string Overlay = "!overlay";
+const std::string Overlay = "an overlay";
 }
 
 std::unordered_map<std::string, KnownLayer> GetKnownLayers() {

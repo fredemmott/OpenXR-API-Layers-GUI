@@ -17,6 +17,8 @@ struct APILayer {
 struct Extension {
   std::string mName;
   std::string mVersion;
+
+  auto operator<=>(const Extension&) const noexcept = default;
 };
 
 struct APILayerDetails {
@@ -36,6 +38,8 @@ struct APILayerDetails {
   std::filesystem::path mLibraryPath;
   std::string mDescription;
   std::vector<Extension> mExtensions;
+
+  auto operator<=>(const APILayerDetails&) const noexcept = default;
 };
 
 }// namespace FredEmmott::OpenXRLayers

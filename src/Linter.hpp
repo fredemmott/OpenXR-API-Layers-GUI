@@ -29,10 +29,37 @@ class LintError {
   PathSet mAffectedLayers;
 };
 
+// A lint error that can be automatically fixed
 class FixableLintError : public LintError {
  public:
   using LintError::LintError;
+  virtual ~FixableLintError() = default;
+
   virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) = 0;
+};
+
+// A lint error that can be fixed by reordering layers
+class OrderingLintError final : public FixableLintError {
+ public:
+  enum class Position {
+    Above,
+    Below,
+  };
+
+  OrderingLintError(
+    const std::string& description,
+    const std::filesystem::path& layerToMove,
+    Position position,
+    const std::filesystem::path& relativeTo,
+    const PathSet& allAffectedLayers = {});
+  virtual ~OrderingLintError() = default;
+
+  virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
+
+ private:
+  std::filesystem::path mLayerToMove;
+  Position mPosition;
+  std::filesystem::path mRelativeTo;
 };
 
 // A lint error that is fixed by removing the error
@@ -41,6 +68,7 @@ class InvalidLayerLintError final : public FixableLintError {
   InvalidLayerLintError(
     const std::string& description,
     const std::filesystem::path& layer);
+  virtual ~InvalidLayerLintError() = default;
 
   virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
 };

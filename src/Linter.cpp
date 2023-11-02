@@ -56,6 +56,53 @@ std::vector<std::shared_ptr<LintError>> RunAllLinters(
   return errors;
 }
 
+OrderingLintError::OrderingLintError(
+  const std::string& description,
+  const std::filesystem::path& layerToMove,
+  Position position,
+  const std::filesystem::path& relativeTo,
+  const PathSet& allAffectedLayers)
+  : FixableLintError(
+    description,
+    allAffectedLayers.empty() ? PathSet {layerToMove, relativeTo}
+                              : allAffectedLayers),
+    mLayerToMove(layerToMove),
+    mPosition(position),
+    mRelativeTo(relativeTo) {
+}
+
+std::vector<APILayer> OrderingLintError::Fix(
+  const std::vector<APILayer>& oldLayers) {
+  auto newLayers = oldLayers;
+
+  auto moveIt = std::ranges::find_if(
+    newLayers, [this](const auto& it) { return it.mJSONPath == mLayerToMove; });
+
+  if (moveIt == newLayers.end()) {
+    return oldLayers;
+  }
+  const auto movedLayer = *moveIt;
+  newLayers.erase(moveIt);
+
+  auto anchorIt = std::ranges::find_if(
+    newLayers, [this](const auto& it) { return it.mJSONPath == mRelativeTo; });
+
+  if (anchorIt == newLayers.end()) {
+    return oldLayers;
+  }
+
+  switch (mPosition) {
+    case Position::Above:
+      newLayers.insert(anchorIt, movedLayer);
+      break;
+    case Position::Below:
+      newLayers.insert(anchorIt + 1, movedLayer);
+      break;
+  }
+
+  return newLayers;
+}
+
 InvalidLayerLintError::InvalidLayerLintError(
   const std::string& description,
   const std::filesystem::path& layer)
