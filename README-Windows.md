@@ -15,14 +15,14 @@ Contents
 
 There are four versions of this program for Windows:
 
-- `Win32\OpenXR-Layers-Win32-HKCU.exe`: works with 32-bit API layers that are
+- `OpenXR-API-Layers-Win32-HKCU.exe`: works with 32-bit API layers that are
   installed just for your user, rather than system-wide (`HKEY_CURRENT_USER` in
   the Windows registry)
-- `Win32\OpenXR-Layers-Win32-HKLM.exe`: works with 32-bit API layers that are
+- `OpenXR-API-Layers-Win32-HKLM.exe`: works with 32-bit API layers that are
   installed system-wide (`HKEY_LOCAL_MACHINE` in the Windows registry)
-- `Win64\OpenXR-Layers-Win64-HKCU.exe`: works with 64-bit API layers that are
+- `OpenXR-API-Layers-Win64-HKCU.exe`: works with 64-bit API layers that are
   installed just for your user
-- `Win64\OpenXR-Layers-Win64-HKLM.exe`: works with 64-bit API layers that are
+- `OpenXR-API-Layers-Win64-HKLM.exe`: works with 64-bit API layers that are
   installed system-wide
 
 The HKLM versions will automatically run as administrator.
@@ -30,7 +30,7 @@ The HKLM versions will automatically run as administrator.
 Which To Use
 ------------
 
-You usually want `Win64\OpenXR-Layers-Win64-HKLM.exe`, as the vast majority of
+You usually want `OpenXR-API-Layers-Win64-HKLM.exe`, as the vast majority of
 OpenXR games and API layers are 64-bit, and should be installed system-wide.
 
 If you are currently encountering problems with OpenXR, you should check all

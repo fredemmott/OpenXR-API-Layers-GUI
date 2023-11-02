@@ -63,7 +63,7 @@ macro(add_gui)
   set_target_properties(
     ${TARGET}
     PROPERTIES
-    OUTPUT_NAME "OpenXR-Layers-${BUILD_TARGET_ID}"
+    OUTPUT_NAME "OpenXR-API-Layers-${BUILD_TARGET_ID}"
   )
 
   set(PLATFORM_APILAYERS_CPP "APILayers_stub.cpp")
