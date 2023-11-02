@@ -21,6 +21,18 @@ jobs:
           submodules: true
       - name: Make build directory
         run: cmake -E make_directory build
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      - name: "Initialize vcpkg"
+        working-directory: build
+        run:
+          ../third-party/vcpkg/bootstrap-vcpkg.bat
+          ../third-party/vcpkg/vcpkg.exe install `
+            --binarysource="clear;x-gha,readwrite" `
+            --x-install-root=$(Get-Location)/vcpkg_installed
       - name: Configure
         working-directory: build
         run: |
