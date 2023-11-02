@@ -31,7 +31,7 @@ jobs:
         run:
           ../third-party/vcpkg/bootstrap-vcpkg.bat
           ../third-party/vcpkg/vcpkg.exe install `
-            --binarysource="clear;x-gha,readwrite" `
+            --binarysource=\\"clear;x-gha,readwrite\\" `
             --x-install-root=$(Get-Location)/vcpkg_installed
       - name: Configure
         working-directory: build
