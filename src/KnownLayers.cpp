@@ -40,6 +40,7 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
       .mName = "XR_APILAYER_MBUCCHIA_toolkit",
       .mAbove = {
         "XR_EXT_hand_tracking",
+        "XR_EXT_eye_gaze_interaction",
       },
       .mProvides = {
         Features::Overlay,
