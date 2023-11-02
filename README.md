@@ -29,7 +29,7 @@ Errors can be automatically fixed; the 'Fix Them!' button in the screenshot prod
 
 Detailed information about OpenXR API layers is also shown:
 
-![Name, description, exposed extensions](docs/errors.png)
+![Name, description, exposed extensions](docs/details.png)
 
 ## Contributing
 
