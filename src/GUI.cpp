@@ -231,7 +231,7 @@ void Run() {
           ImGui::SetClipboardText(selectedLayer->mJSONPath.string().c_str());
         }
         ImGui::SameLine();
-        ImGui::Text(selectedLayer->mJSONPath.string().c_str());
+        ImGui::Text("%s", selectedLayer->mJSONPath.string().c_str());
 
         const APILayerDetails details {selectedLayer->mJSONPath};
         if (details.mState != APILayerDetails::State::Loaded) {
