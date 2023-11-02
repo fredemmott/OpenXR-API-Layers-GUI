@@ -117,6 +117,8 @@ macro(add_gui)
     TARGETS "${TARGET}"
     DESTINATION "${ARG_INSTALL_DESTINATION}"
   )
+
+  sign_target("${TARGET}")
 endmacro()
 
 if(APPLE)

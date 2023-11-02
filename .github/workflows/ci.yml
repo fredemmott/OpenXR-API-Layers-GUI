@@ -5,6 +5,17 @@ jobs:
     name: ${{matrix.os-arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.runs-on}}
     steps:
+      - name: Fetch code-signing key
+        env:
+          CODE_SIGNING_PFX_BASE64: ${{ secrets.CODE_SIGNING_KEY_PFX_BASE64 }}
+        id: fetch-key
+        if: ${{ (github.repository == 'fredemmott/OpenXR-API-Layers-GUI') && (github.event_name == 'push') && (github.actor == 'fredemmott') }}
+        shell: pwsh
+        run: |
+          $pfxPath="${{runner.temp}}/MyCert.pfx"
+          [System.Convert]::FromBase64String($Env:CODE_SIGNING_PFX_BASE64) | Set-Content "$pfxPath" -AsByteStream
+          Add-Content $Env:GITHUB_OUTPUT "HAVE_KEY=true"
+          Add-Content $Env:GITHUB_OUTPUT "PATH=$pfxPath"
       - uses: actions/checkout@v3
         with:
           submodules: true
@@ -13,9 +24,17 @@ jobs:
       - name: Configure
         working-directory: build
         run: |
+          @args = @()
+          if ( "${{steps.fetch-key.outputs.HAVE_KEY}}" -eq "true" ) {
+            echo "::notice::Signing build targets"
+            $args += "-DSIGNTOOL_KEY_ARGS=/f;${{steps.fetch-key.outputs.PATH}}" `
+          } else {
+            echo "::warning::Not signing targets"
+          }
           cmake .. `
             -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
-            -A ${{matrix.cmake-arch}}
+            -A ${{matrix.cmake-arch}} `
+            @args
         shell: pwsh
       - name: Compile
         working-directory: build
@@ -67,5 +86,5 @@ jobs:
       - name: Upload combined zip
         uses: actions/upload-artifact@v3
         with:
-          name: "OpenXR-Layers-GUI-v${{steps.install.outputs.version}}"
+          name: "OpenXR-API-Layers-GUI-v${{steps.install.outputs.version}}"
           path: ${{runner.temp}}/install
