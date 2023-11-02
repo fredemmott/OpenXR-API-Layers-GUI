@@ -4,6 +4,7 @@
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(cppwinrt CONFIG REQUIRED)
 
 if(USE_EMOJI)
   set(USE_EMOJI_BOOL "true")
@@ -56,6 +57,7 @@ macro(add_gui)
     PRIVATE
     ImGui-SFML::ImGui-SFML
     nlohmann_json::nlohmann_json
+    Microsoft::CppWinRT
   )
 
   set_target_properties(
@@ -94,6 +96,7 @@ macro(add_gui)
       "/EHsc"
       "/diagnostics:caret" 
       "/utf-8"
+      "/await:strict"
     )
 
     configure_file(

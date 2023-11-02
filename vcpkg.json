@@ -8,6 +8,7 @@
       ]
     },
     "imgui-sfml",
-    "nlohmann-json"
+    "nlohmann-json",
+    "cppwinrt"
   ]
 }
