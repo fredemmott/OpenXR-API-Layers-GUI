@@ -91,7 +91,6 @@ macro(add_gui)
     target_compile_options(
       ${TARGET}
       PRIVATE
-      "/await:strict"
       "/EHsc"
       "/diagnostics:caret" 
       "/utf-8"
