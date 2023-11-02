@@ -29,6 +29,22 @@ class LintError {
   PathSet mAffectedLayers;
 };
 
+class FixableLintError : public LintError {
+ public:
+  using LintError::LintError;
+  virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) = 0;
+};
+
+// A lint error that is fixed by removing the error
+class InvalidLayerLintError final : public FixableLintError {
+ public:
+  InvalidLayerLintError(
+    const std::string& description,
+    const std::filesystem::path& layer);
+
+  virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
+};
+
 class Linter {
  protected:
   Linter();

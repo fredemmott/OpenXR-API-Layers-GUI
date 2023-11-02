@@ -3,6 +3,9 @@
 
 #include "Linter.hpp"
 
+#include <cassert>
+#include <ranges>
+
 namespace FredEmmott::OpenXRLayers {
 
 static std::set<Linter*> gLinters;
@@ -51,6 +54,28 @@ std::vector<std::shared_ptr<LintError>> RunAllLinters(
   }
 
   return errors;
+}
+
+InvalidLayerLintError::InvalidLayerLintError(
+  const std::string& description,
+  const std::filesystem::path& layer)
+  : FixableLintError(description, {layer}) {
+}
+
+std::vector<APILayer> InvalidLayerLintError::Fix(
+  const std::vector<APILayer>& allLayers) {
+  const auto affected = this->GetAffectedLayers();
+  assert(affected.size() == 1);
+  const auto& path = *affected.begin();
+
+  auto newLayers = allLayers;
+  auto it = std::ranges::find_if(
+    newLayers, [&path](const auto& layer) { return layer.mJSONPath == path; });
+
+  if (it != newLayers.end()) {
+    newLayers.erase(it);
+  }
+  return newLayers;
 }
 
 }// namespace FredEmmott::OpenXRLayers

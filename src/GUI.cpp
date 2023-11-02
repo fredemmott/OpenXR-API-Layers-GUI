@@ -278,6 +278,16 @@ void Run() {
             ImGui::TableNextColumn();
             ImGui::TextWrapped("%s", desc.c_str());
             ImGui::TableNextColumn();
+            {
+              auto fixer = std::dynamic_pointer_cast<FixableLintError>(error);
+              ImGui::BeginDisabled(!fixer);
+              if (ImGui::Button("Fix It!")) {
+                SetAPILayers(fixer->Fix(layers));
+                reloadLayers = true;
+              }
+              ImGui::EndDisabled();
+            }
+            ImGui::SameLine();
             if (ImGui::Button("Copy")) {
               ImGui::SetClipboardText(desc.c_str());
             }
