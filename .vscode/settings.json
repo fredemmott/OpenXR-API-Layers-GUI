@@ -96,7 +96,8 @@
         "queue": "cpp",
         "stack": "cpp",
         "string_view": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "__std_stream": "cpp"
     },
     "editor.formatOnSave": true,
     "cmake.configureOnOpen": true,

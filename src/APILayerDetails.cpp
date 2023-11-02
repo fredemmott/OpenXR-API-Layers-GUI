@@ -1,6 +1,7 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
+#include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
 #include <fstream>
@@ -64,7 +65,7 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
           if (it.is_string()) {
             version = it;
           } else if (it.is_number_integer()) {
-            version = std::format("{}", it.get<uint32_t>());
+            version = fmt::format("{}", it.get<uint32_t>());
           }
         }
         mExtensions.push_back(Extension {

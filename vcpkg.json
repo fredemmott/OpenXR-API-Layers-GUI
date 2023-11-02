@@ -1,6 +1,10 @@
 {
   "dependencies": [
     {
+      "name": "cppwinrt",
+      "platform": "windows"
+    },
+    {
       "name": "imgui",
       "features": [
         "freetype",
@@ -9,9 +13,6 @@
     },
     "imgui-sfml",
     "nlohmann-json",
-    {
-      "name": "cppwinrt",
-      "platform": "windows"
-    }
+    "fmt"
   ]
 }

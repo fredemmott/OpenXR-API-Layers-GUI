@@ -2,6 +2,8 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
+#include <fmt/core.h>
+
 #include <cassert>
 #include <unordered_map>
 
@@ -156,7 +158,7 @@ class OrderingLinter final : public Linter {
       const auto& [position, relativeTo, relativeToDetails] = *move;
 
       errors.push_back(std::make_shared<OrderingLintError>(
-        std::format(
+        fmt::format(
           "Because {} ({}) provides {}, it must be {} {} ({})",
           providerDetails.mName,
           provider.mJSONPath.string(),

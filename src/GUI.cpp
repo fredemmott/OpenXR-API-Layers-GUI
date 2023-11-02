@@ -6,9 +6,10 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+#include <fmt/format.h>
 
 #include <algorithm>
-#include <format>
+#include <filesystem>
 #include <iostream>
 #include <ranges>
 #include <unordered_map>
@@ -55,7 +56,7 @@ void GUI::Run() {
   PlatformInit();
   MyWindow window {
     sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
-    std::format(
+    fmt::format(
       "OpenXR API Layers [{}] - v{}",
       Config::BUILD_TARGET_ID,
       Config::BUILD_VERSION)};
@@ -135,7 +136,7 @@ void GUI::GUILayersList() {
       auto label = layer.mJSONPath.string();
 
       if (!layerErrors.empty()) {
-        label = std::format("{} {}", Config::GLYPH_ERROR, label);
+        label = fmt::format("{} {}", Config::GLYPH_ERROR, label);
       }
 
       ImGui::SameLine();
@@ -284,14 +285,20 @@ void GUI::GUIErrorsTab() {
         ImGui::AlignTextToFramePadding();
         if (fixableErrors.size() == selectedErrors.size()) {
           ImGui::Text(
-            "All %llu warnings are automatically fixable:",
-            fixableErrors.size());
+            "%s",
+            fmt::format(
+              "All {} warnings are automatically fixable:",
+              fixableErrors.size())
+              .c_str());
         } else {
           ImGui::Text(
-            "%llu out of %llu warnings are automatically "
-            "fixable:",
-            fixableErrors.size(),
-            selectedErrors.size());
+            "%s",
+            fmt::format(
+              "{} out of {} warnings are automatically "
+              "fixable:",
+              fixableErrors.size(),
+              selectedErrors.size())
+              .c_str());
         }
         ImGui::SameLine();
         if (ImGui::Button("Fix Them!")) {
@@ -316,7 +323,7 @@ void GUI::GUIErrorsTab() {
         ImGui::PushID(i);
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::Text("%llu.", i + 1);
+        ImGui::Text("%s", fmt::to_string(i + 1).c_str());
         ImGui::TableNextColumn();
         ImGui::TextWrapped("%s", desc.c_str());
         ImGui::TableNextColumn();
@@ -385,7 +392,7 @@ void GUI::GUIDetailsTab() {
             error = "The file does not contain data required by OpenXR";
             break;
           default:
-            error = std::format(
+            error = fmt::format(
               "Internal error ({})",
               static_cast<std::underlying_type_t<APILayerDetails::State>>(
                 details.mState));
@@ -405,11 +412,11 @@ void GUI::GUIDetailsTab() {
           ImGui::TableNextColumn();
           if (details.mLibraryPath.empty()) {
             ImGui::Text(
-              "%s", std::format("{} [none]", Config::GLYPH_ERROR).c_str());
+              "%s", fmt::format("{} [none]", Config::GLYPH_ERROR).c_str());
           } else {
             auto text = details.mLibraryPath.string();
             if (!std::filesystem::exists(details.mLibraryPath)) {
-              text = std::format("{} {}", Config::GLYPH_ERROR, text);
+              text = fmt::format("{} {}", Config::GLYPH_ERROR, text);
             }
             if (ImGui::Button("Copy##LibraryPath")) {
               ImGui::SetClipboardText(details.mLibraryPath.string().c_str());

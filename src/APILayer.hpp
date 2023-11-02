@@ -18,14 +18,14 @@ struct APILayer {
   std::filesystem::path mJSONPath;
   bool mIsEnabled {};
 
-  auto operator<=>(const APILayer&) const noexcept = default;
+  bool operator==(const APILayer&) const noexcept = default;
 };
 
 struct Extension {
   std::string mName;
   std::string mVersion;
 
-  auto operator<=>(const Extension&) const noexcept = default;
+  bool operator==(const Extension&) const noexcept = default;
 };
 
 /// Information from the API layer manifest
@@ -47,7 +47,7 @@ struct APILayerDetails {
   std::string mDescription;
   std::vector<Extension> mExtensions;
 
-  auto operator<=>(const APILayerDetails&) const noexcept = default;
+  bool operator==(const APILayerDetails&) const noexcept = default;
 };
 
 }// namespace FredEmmott::OpenXRLayers

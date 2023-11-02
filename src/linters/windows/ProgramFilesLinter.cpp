@@ -45,7 +45,7 @@ class ProgramFilesLinter final : public Linter {
       }
 
       errors.push_back(std::make_shared<LintError>(
-        std::format(
+        fmt::format(
           "{} is outside of Program Files; this can cause issue with sandboxed "
           "MS Store games or apps, such as OpenXR Tools for Windows Mixed "
           "Reality.",

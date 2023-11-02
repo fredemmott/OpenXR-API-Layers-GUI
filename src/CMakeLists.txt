@@ -4,6 +4,8 @@
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+# Using fmt instead of fmt::format until MacOS/libc++ catch up
+find_package(fmt CONFIG REQUIRED)
 
 if(WIN32)
   find_package(cppwinrt CONFIG REQUIRED)
@@ -60,6 +62,7 @@ macro(add_gui)
     PRIVATE
     ImGui-SFML::ImGui-SFML
     nlohmann_json::nlohmann_json
+    fmt::fmt-header-only
   )
 
   set_target_properties(
@@ -70,7 +73,7 @@ macro(add_gui)
 
   set(PLATFORM_APILAYERS_CPP "APILayers_stub.cpp")
   set(PLATFORM_MAIN_CPP "main.cpp")
-  set(PLATFORM_GUI_CPP "GUI_stub.cpp")
+  set(PLATFORM_GUI_CPP "PlatformGUI_stub.cpp")
 
   if(WIN32)
     set(PLATFORM_APILAYERS_CPP "APILayers_windows.cpp")

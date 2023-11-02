@@ -84,7 +84,7 @@ static void BackupAPILayers() {
   }
 
   const auto path = backupFolder
-    / std::format("{:%F-%H-%M-%S}-{}.tsv",
+    / fmt::format("{:%F-%H-%M-%S}-{}.tsv",
                   std::chrono::time_point_cast<std::chrono::seconds>(
                     std::chrono::system_clock::now()),
                   Config::BUILD_TARGET_ID);

@@ -44,7 +44,7 @@ class OutdatedOpenKneeboardLinter final : public Linter {
       }
 
       errors.push_back(std::make_shared<InvalidLayerLintError>(
-        std::format(
+        fmt::format(
           "{} is from an extremely outdated version of OpenKneeboard, which "
           "may cause issues. Remove this API layer, install updates, and "
           "remove any left over old versions from 'Add or Remove Programs'.",
