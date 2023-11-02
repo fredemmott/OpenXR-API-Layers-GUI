@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <format>
 #include <iostream>
+#include <ranges>
 #include <unordered_map>
 
 #include <imgui.h>
@@ -274,6 +275,38 @@ void Run() {
           ImGui::Text("No warnings.");
           ImGui::EndDisabled();
         } else {
+          std::vector<std::shared_ptr<FixableLintError>> fixableErrors;
+          for (const auto& error: selectedErrors) {
+            auto fixable = std::dynamic_pointer_cast<FixableLintError>(error);
+            if (fixable) {
+              fixableErrors.push_back(fixable);
+            }
+          }
+
+          if (fixableErrors.size() > 1) {
+            ImGui::AlignTextToFramePadding();
+            if (fixableErrors.size() == selectedErrors.size()) {
+              ImGui::Text(
+                "All %llu warnings are automatically fixable:",
+                fixableErrors.size());
+            } else {
+              ImGui::Text(
+                "%llu out of %llu warnings are automatically "
+                "fixable:",
+                fixableErrors.size(),
+                selectedErrors.size());
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Fix Them!")) {
+              auto nextLayers = layers;
+              for (auto& fixable: fixableErrors) {
+                nextLayers = fixable->Fix(nextLayers);
+              }
+              SetAPILayers(nextLayers);
+              reloadLayers = true;
+            }
+          }
+
           ImGui::BeginTable(
             "##Errors",
             3,
