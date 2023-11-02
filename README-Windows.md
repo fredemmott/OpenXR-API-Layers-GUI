@@ -1,15 +1,6 @@
 OpenXR Layers UI - Windows
 ==========================
 
-Requirements
-------------
-
-If the programs won't start, you may need to install the latest MSVC runtimes
-from **BOTH**:
-
-- https://aka.ms/vs/17/release/vc_redist.x64.exe
-- https://aka.ms/vs/17/release/vc_redist.x86.exe
-
 Contents
 --------
 
