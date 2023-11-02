@@ -38,12 +38,15 @@ macro(add_gui)
     WIN32
     APILayerDetails.cpp
     GUI.cpp
+    Linter.cpp
+    linters/BadInstallationLinter.cpp
   )
 
   target_include_directories(
     ${TARGET}
     PRIVATE
     "${CODEGEN_BUILD_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
   )
 
   target_link_libraries(
