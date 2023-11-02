@@ -460,11 +460,18 @@ void GUI::GUIDetailsTab() {
           ImGui::TableSetupColumn("Version");
           ImGui::TableHeadersRow();
           for (const auto& ext: details.mExtensions) {
+            ImGui::PushID(ext.mName.c_str());
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
+            if (ImGui::Button("Copy")) {
+              ImGui::SetClipboardText(ext.mName.c_str());
+            }
+            ImGui::SameLine();
+            ImGui::AlignTextToFramePadding();
             ImGui::Text("%s", ext.mName.c_str());
             ImGui::TableNextColumn();
             ImGui::Text("%s", ext.mVersion.c_str());
+            ImGui::PopID();
           }
           ImGui::EndTable();
           ImGui::TableNextColumn();
