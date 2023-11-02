@@ -2,7 +2,7 @@ name: Continuous Integration
 on: [push, pull_request]
 jobs:
   build:
-    name: ${{matrix.os}}/${{matrix.arch}}/${{matrix.build-type}}
+    name: ${{matrix.os-arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.runs-on}}
     steps:
       - uses: actions/checkout@v3
@@ -15,7 +15,7 @@ jobs:
         run: |
           cmake .. `
             -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
-            -A ${{matrix.arch}}
+            -A ${{matrix.cmake-arch}}
         shell: pwsh
       - name: Compile
         working-directory: build
@@ -33,15 +33,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows]
+        os-arch: [Win32, Win64]
         build-type: [RelWithDebInfo, Debug]
         include:
-          - os: windows
+          - os-arch: Win32
             runs-on: windows-latest
-            arch: Win32
-          - os: windows
+            cmake-arch: Win32
+          - os-arch: Win64
             runs-on: windows-latest
-            arch: Win64
+            cmake-arch: Win64
   combined-zip:
     name: Make combined zip file
     runs-on: windows-latest
