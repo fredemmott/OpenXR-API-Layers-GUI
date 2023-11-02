@@ -7,6 +7,6 @@
 //
 // See wwinmain.cpp for Windows
 int main() {
-  FredEmmott::OpenXRLayers::GUI::Run();
+  FredEmmott::OpenXRLayers::GUI().Run();
   return 0;
 }

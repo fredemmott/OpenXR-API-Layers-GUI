@@ -13,6 +13,6 @@ int WINAPI wWinMain(
   [[maybe_unused]] HINSTANCE hPrevInstance,
   [[maybe_unused]] PWSTR pCmdLine,
   [[maybe_unused]] int nCmdShow) {
-  FredEmmott::OpenXRLayers::GUI::Run();
+  FredEmmott::OpenXRLayers::GUI().Run();
   return 0;
 }

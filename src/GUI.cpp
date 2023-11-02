@@ -21,7 +21,7 @@
 #include "Linter.hpp"
 #include <imgui-SFML.h>
 
-namespace FredEmmott::OpenXRLayers::GUI {
+namespace FredEmmott::OpenXRLayers {
 
 namespace {
 constexpr ImVec2 MINIMUM_WINDOW_SIZE {1024, 768};
@@ -51,15 +51,7 @@ class MyWindow final : public sf::RenderWindow {
 };
 }// namespace
 
-void Run() {
-  using LintErrors = std::vector<std::shared_ptr<LintError>>;
-
-  std::vector<APILayer> layers {};
-  APILayer* selectedLayer {nullptr};
-  LintErrors lintErrors;
-  std::unordered_map<APILayer*, LintErrors> lintErrorsByLayer;
-  bool reloadLayers {true};
-
+void GUI::Run() {
   PlatformInit();
   MyWindow window {
     sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
@@ -77,38 +69,38 @@ void Run() {
 
   sf::Clock deltaClock {};
   while (window.isOpen()) {
-    if (reloadLayers) {
+    if (mLayerDataIsStale) {
       auto newLayers = GetAPILayers();
-      if (selectedLayer) {
-        auto it = std::ranges::find(newLayers, *selectedLayer);
+      if (mSelectedLayer) {
+        auto it = std::ranges::find(newLayers, *mSelectedLayer);
         if (it != newLayers.end()) {
-          selectedLayer = &*it;
+          mSelectedLayer = &*it;
         } else {
-          selectedLayer = nullptr;
+          mSelectedLayer = nullptr;
         }
       }
-      layers = std::move(newLayers);
+      mLayers = std::move(newLayers);
 
       std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
-      for (auto& layer: layers) {
+      for (auto& layer: mLayers) {
         layersByPath.emplace(layer.mJSONPath, &layer);
       }
-      lintErrors = RunAllLinters(layers);
-      lintErrorsByLayer.clear();
-      for (auto& error: lintErrors) {
+      mLintErrors = RunAllLinters(mLayers);
+      mLintErrorsByLayer.clear();
+      for (auto& error: mLintErrors) {
         for (const auto& path: error->GetAffectedLayers()) {
           if (!layersByPath.contains(path)) {
             continue;
           }
           auto layer = layersByPath.at(path);
-          if (lintErrorsByLayer.contains(layer)) {
-            lintErrorsByLayer.at(layer).push_back(error);
+          if (mLintErrorsByLayer.contains(layer)) {
+            mLintErrorsByLayer.at(layer).push_back(error);
           } else {
-            lintErrorsByLayer[layer] = {error};
+            mLintErrorsByLayer[layer] = {error};
           }
         }
       }
-      reloadLayers = false;
+      mLayerDataIsStale = false;
     }
     sf::Event event {};
     while (window.pollEvent(event)) {
@@ -134,20 +126,20 @@ void Run() {
     ImGui::BeginListBox(
       "##Layers", {viewport->WorkSize.x - 256, viewport->WorkSize.y / 2});
     ImGuiListClipper clipper {};
-    clipper.Begin(static_cast<int>(layers.size()));
+    clipper.Begin(static_cast<int>(mLayers.size()));
 
     while (clipper.Step()) {
       for (auto i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
-        auto& layer = layers.at(i);
+        auto& layer = mLayers.at(i);
         std::vector<std::shared_ptr<LintError>> layerErrors;
-        if (lintErrorsByLayer.contains(&layer)) {
-          layerErrors = lintErrorsByLayer.at(&layer);
+        if (mLintErrorsByLayer.contains(&layer)) {
+          layerErrors = mLintErrorsByLayer.at(&layer);
         }
 
         ImGui::PushID(i);
 
         if (ImGui::Checkbox("##Enabled", &layer.mIsEnabled)) {
-          SetAPILayers(layers);
+          SetAPILayers(mLayers);
         }
 
         auto label = layer.mJSONPath.string();
@@ -158,8 +150,8 @@ void Run() {
 
         ImGui::SameLine();
 
-        if (ImGui::Selectable(label.c_str(), selectedLayer == &layer)) {
-          selectedLayer = &layer;
+        if (ImGui::Selectable(label.c_str(), mSelectedLayer == &layer)) {
+          mSelectedLayer = &layer;
         }
 
         if (ImGui::BeginDragDropSource()) {
@@ -171,7 +163,7 @@ void Run() {
           if (const auto payload = ImGui::AcceptDragDropPayload("APILayer*")) {
             const auto& dropped = *reinterpret_cast<APILayer*>(payload->Data);
             std::vector<APILayer> newLayers;
-            for (const auto& it: layers) {
+            for (const auto& it: mLayers) {
               if (it == dropped) {
                 continue;
               }
@@ -181,9 +173,9 @@ void Run() {
 
               newLayers.push_back(it);
             }
-            assert(layers.size() == newLayers.size());
+            assert(mLayers.size() == newLayers.size());
             if (SetAPILayers(newLayers)) {
-              reloadLayers = true;
+              mLayerDataIsStale = true;
             }
           }
           ImGui::EndDragDropTarget();
@@ -197,14 +189,14 @@ void Run() {
     ImGui::SameLine();
     ImGui::BeginGroup();
     if (ImGui::Button("Reload List", {-FLT_MIN, 0})) {
-      reloadLayers = true;
+      mLayerDataIsStale = true;
     }
     if (ImGui::Button("Add Layers...", {-FLT_MIN, 0})) {
       auto paths = GetNewAPILayerJSONPaths(window.getSystemHandle());
       for (auto it = paths.begin(); it != paths.end();) {
         auto existingLayer = std::ranges::find_if(
-          layers, [it](const auto& layer) { return layer.mJSONPath == *it; });
-        if (existingLayer != layers.end()) {
+          mLayers, [it](const auto& layer) { return layer.mJSONPath == *it; });
+        if (existingLayer != mLayers.end()) {
           it = paths.erase(it);
           continue;
         }
@@ -212,7 +204,7 @@ void Run() {
       }
 
       if (!paths.empty()) {
-        auto nextLayers = layers;
+        auto nextLayers = mLayers;
         for (const auto& path: paths) {
           nextLayers.push_back(APILayer {
             .mJSONPath = path,
@@ -246,10 +238,10 @@ void Run() {
         } while (changed);
 
         SetAPILayers(nextLayers);
-        reloadLayers = true;
+        mLayerDataIsStale = true;
       }
     }
-    ImGui::BeginDisabled(selectedLayer == nullptr);
+    ImGui::BeginDisabled(mSelectedLayer == nullptr);
 
     if (ImGui::Button("Remove Layer...", {-FLT_MIN, 0})) {
       ImGui::OpenPopup("Remove Layer");
@@ -266,16 +258,16 @@ void Run() {
         "Are you sure you want to completely remove '%s'?\n\nThis can not "
         "be "
         "undone.",
-        selectedLayer->mJSONPath.string().c_str());
+        mSelectedLayer->mJSONPath.string().c_str());
       ImGui::Separator();
       ImGui::SetCursorPosX(256 + 128);
-      if (ImGui::Button("Remove", {64, 0}) && selectedLayer) {
-        auto nextLayers = layers;
-        auto it = std::ranges::find(nextLayers, *selectedLayer);
+      if (ImGui::Button("Remove", {64, 0}) && mSelectedLayer) {
+        auto nextLayers = mLayers;
+        auto it = std::ranges::find(nextLayers, *mSelectedLayer);
         if (it != nextLayers.end()) {
           nextLayers.erase(it);
           SetAPILayers(nextLayers);
-          reloadLayers = true;
+          mLayerDataIsStale = true;
         }
         ImGui::CloseCurrentPopup();
       }
@@ -290,40 +282,42 @@ void Run() {
 
     ImGui::Separator();
 
-    ImGui::BeginDisabled(!(selectedLayer && !selectedLayer->mIsEnabled));
+    ImGui::BeginDisabled(!(mSelectedLayer && !mSelectedLayer->mIsEnabled));
     if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
-      selectedLayer->mIsEnabled = true;
-      SetAPILayers(layers);
+      mSelectedLayer->mIsEnabled = true;
+      SetAPILayers(mLayers);
     }
     ImGui::EndDisabled();
-    ImGui::BeginDisabled(!(selectedLayer && selectedLayer->mIsEnabled));
+    ImGui::BeginDisabled(!(mSelectedLayer && mSelectedLayer->mIsEnabled));
     if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
-      selectedLayer->mIsEnabled = false;
-      SetAPILayers(layers);
+      mSelectedLayer->mIsEnabled = false;
+      SetAPILayers(mLayers);
     }
     ImGui::EndDisabled();
 
     ImGui::Separator();
 
-    ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.front()));
+    ImGui::BeginDisabled(
+      !(mSelectedLayer && *mSelectedLayer != mLayers.front()));
     if (ImGui::Button("Move Up", {-FLT_MIN, 0})) {
-      auto newLayers = layers;
-      auto it = std::ranges::find(newLayers, *selectedLayer);
+      auto newLayers = mLayers;
+      auto it = std::ranges::find(newLayers, *mSelectedLayer);
       if (it != newLayers.begin() && it != newLayers.end()) {
         std::iter_swap((it - 1), it);
         SetAPILayers(newLayers);
-        reloadLayers = true;
+        mLayerDataIsStale = true;
       }
     }
     ImGui::EndDisabled();
-    ImGui::BeginDisabled(!(selectedLayer && *selectedLayer != layers.back()));
+    ImGui::BeginDisabled(
+      !(mSelectedLayer && *mSelectedLayer != mLayers.back()));
     if (ImGui::Button("Move Down", {-FLT_MIN, 0})) {
-      auto newLayers = layers;
-      auto it = std::ranges::find(newLayers, *selectedLayer);
+      auto newLayers = mLayers;
+      auto it = std::ranges::find(newLayers, *mSelectedLayer);
       if (it != newLayers.end() && (it + 1) != newLayers.end()) {
         std::iter_swap(it, it + 1);
         SetAPILayers(newLayers);
-        reloadLayers = true;
+        mLayerDataIsStale = true;
       }
     }
     ImGui::EndDisabled();
@@ -333,19 +327,19 @@ void Run() {
     if (ImGui::BeginTabBar("##Info", ImGuiTabBarFlags_None)) {
       if (ImGui::BeginTabItem("Warnings")) {
         ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
-        if (selectedLayer) {
-          ImGui::Text("For %s:", selectedLayer->mJSONPath.string().c_str());
+        if (mSelectedLayer) {
+          ImGui::Text("For %s:", mSelectedLayer->mJSONPath.string().c_str());
         } else {
           ImGui::Text("All layers:");
         }
 
         LintErrors selectedErrors;
-        if (selectedLayer) {
-          if (lintErrorsByLayer.contains(selectedLayer)) {
-            selectedErrors = lintErrorsByLayer.at(selectedLayer);
+        if (mSelectedLayer) {
+          if (mLintErrorsByLayer.contains(mSelectedLayer)) {
+            selectedErrors = mLintErrorsByLayer.at(mSelectedLayer);
           }
         } else {
-          selectedErrors = lintErrors;
+          selectedErrors = mLintErrors;
         }
 
         ImGui::Indent();
@@ -379,12 +373,12 @@ void Run() {
             }
             ImGui::SameLine();
             if (ImGui::Button("Fix Them!")) {
-              auto nextLayers = layers;
+              auto nextLayers = mLayers;
               for (auto& fixable: fixableErrors) {
                 nextLayers = fixable->Fix(nextLayers);
               }
               SetAPILayers(nextLayers);
-              reloadLayers = true;
+              mLayerDataIsStale = true;
             }
           }
 
@@ -411,8 +405,8 @@ void Run() {
               auto fixer = std::dynamic_pointer_cast<FixableLintError>(error);
               ImGui::BeginDisabled(!fixer);
               if (ImGui::Button("Fix It!")) {
-                SetAPILayers(fixer->Fix(layers));
-                reloadLayers = true;
+                SetAPILayers(fixer->Fix(mLayers));
+                mLayerDataIsStale = true;
               }
               ImGui::EndDisabled();
             }
@@ -433,7 +427,7 @@ void Run() {
 
       if (ImGui::BeginTabItem("Details")) {
         ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
-        if (selectedLayer) {
+        if (mSelectedLayer) {
           ImGui::BeginTable(
             "##DetailsTable",
             2,
@@ -444,12 +438,12 @@ void Run() {
           ImGui::Text("JSON File");
           ImGui::TableNextColumn();
           if (ImGui::Button("Copy##CopyJSONFile")) {
-            ImGui::SetClipboardText(selectedLayer->mJSONPath.string().c_str());
+            ImGui::SetClipboardText(mSelectedLayer->mJSONPath.string().c_str());
           }
           ImGui::SameLine();
-          ImGui::Text("%s", selectedLayer->mJSONPath.string().c_str());
+          ImGui::Text("%s", mSelectedLayer->mJSONPath.string().c_str());
 
-          const APILayerDetails details {selectedLayer->mJSONPath};
+          const APILayerDetails details {mSelectedLayer->mJSONPath};
           if (details.mState != APILayerDetails::State::Loaded) {
             std::string error;
             using State = APILayerDetails::State;
@@ -578,4 +572,4 @@ void Run() {
   ImGui::SFML::Shutdown();
 }
 
-}// namespace FredEmmott::OpenXRLayers::GUI
+}// namespace FredEmmott::OpenXRLayers

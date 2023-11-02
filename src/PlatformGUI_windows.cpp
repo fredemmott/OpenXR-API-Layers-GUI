@@ -12,13 +12,14 @@
 #include "GUI.hpp"
 #include <imgui-SFML.h>
 
-namespace FredEmmott::OpenXRLayers::GUI {
+namespace FredEmmott::OpenXRLayers {
 
-void PlatformInit() {
+void PlatformGUI::PlatformInit() {
   winrt::init_apartment();
 }
 
-std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(sf::WindowHandle) {
+std::vector<std::filesystem::path> PlatformGUI::GetNewAPILayerJSONPaths(
+  sf::WindowHandle) {
   auto picker
     = winrt::create_instance<IFileOpenDialog>(CLSID_FileOpenDialog, CLSCTX_ALL);
 
@@ -79,7 +80,7 @@ std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(sf::WindowHandle) {
   return ret;
 }
 
-void SetupFonts(ImGuiIO* io) {
+void PlatformGUI::SetupFonts(ImGuiIO* io) {
   wchar_t* fontsPathStr {nullptr};
   if (
     SHGetKnownFolderPath(FOLDERID_Fonts, KF_FLAG_DEFAULT, NULL, &fontsPathStr)
@@ -108,4 +109,4 @@ void SetupFonts(ImGuiIO* io) {
   { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
 }
 
-}// namespace FredEmmott::OpenXRLayers::GUI
+}// namespace FredEmmott::OpenXRLayers

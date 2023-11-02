@@ -6,17 +6,38 @@
 #include <sfml/Window.hpp>
 
 #include <filesystem>
+#include <unordered_map>
 #include <vector>
 
 #include <imgui.h>
 
-namespace FredEmmott::OpenXRLayers::GUI {
+#include "APILayer.hpp"
+#include "Linter.hpp"
 
-void Run();
+namespace FredEmmott::OpenXRLayers {
 
-void PlatformInit();
-std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(
-  sf::WindowHandle parent);
-void SetupFonts(ImGuiIO*);
+// Platform-specific functions implemented in PlatformGUI_P*.cpp
+class PlatformGUI {
+ protected:
+  void PlatformInit();
+  std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(
+    sf::WindowHandle parent);
+  void SetupFonts(ImGuiIO*);
+};
 
-}// namespace FredEmmott::OpenXRLayers::GUI
+// The actual app GUI
+class GUI final : public PlatformGUI {
+ public:
+  void Run();
+
+ private:
+  using LintErrors = std::vector<std::shared_ptr<LintError>>;
+
+  std::vector<APILayer> mLayers;
+  APILayer* mSelectedLayer {nullptr};
+  LintErrors mLintErrors;
+  std::unordered_map<APILayer*, LintErrors> mLintErrorsByLayer;
+  bool mLayerDataIsStale {true};
+};
+
+}// namespace FredEmmott::OpenXRLayers

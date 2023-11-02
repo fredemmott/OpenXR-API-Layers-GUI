@@ -70,7 +70,7 @@ macro(add_gui)
 
   if(WIN32)
     set(PLATFORM_APILAYERS_CPP "APILayers_windows.cpp")
-    set(PLATFORM_GUI_CPP "GUI_windows.cpp")
+    set(PLATFORM_GUI_CPP "PlatformGUI_windows.cpp")
     set(PLATFORM_MAIN_CPP "wWinMain.cpp")
 
     target_sources(

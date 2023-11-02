@@ -103,7 +103,7 @@ bool SetAPILayers(const std::vector<APILayer>& newLayers) {
 
   const auto oldLayers = GetAPILayers();
   if (oldLayers == newLayers) {
-    return;
+    return false;
   }
 
   HKEY key {NULL};
