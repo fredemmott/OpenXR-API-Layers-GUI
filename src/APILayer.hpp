@@ -7,6 +7,13 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+/** The basic information about an API layer.
+ *
+ * This contains the information that is available in the list of
+ * API layers, e.g. the Windows registry, not data from the manifest.
+ *
+ * Manifest data is available via `APILayerDetails`.
+ */
 struct APILayer {
   std::filesystem::path mJSONPath;
   bool mIsEnabled {};
@@ -21,6 +28,7 @@ struct Extension {
   auto operator<=>(const Extension&) const noexcept = default;
 };
 
+/// Information from the API layer manifest
 struct APILayerDetails {
   APILayerDetails(const std::filesystem::path& jsonPath);
   enum class State {
