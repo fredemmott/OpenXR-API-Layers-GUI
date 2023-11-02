@@ -31,8 +31,8 @@ jobs:
           } else {
             echo "::warning::Not signing targets"
           }
+          
           cmake .. `
-            -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
             -A ${{matrix.cmake-arch}} `
             @args
         shell: pwsh
