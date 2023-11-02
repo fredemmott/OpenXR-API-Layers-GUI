@@ -78,7 +78,7 @@ static void BackupAPILayers() {
   }
 
   const auto backupFolder
-    = std::filesystem::path(folderPath) / "OpenXR Layers GUI" / "Backups";
+    = std::filesystem::path(folderPath) / "OpenXR API Layers GUI" / "Backups";
   if (!std::filesystem::is_directory(backupFolder)) {
     std::filesystem::create_directories(backupFolder);
   }
