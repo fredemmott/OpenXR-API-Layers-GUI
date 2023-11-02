@@ -23,10 +23,12 @@
 namespace FredEmmott::OpenXRLayers::GUI {
 
 void Run() {
+  using LintErrors = std::vector<std::shared_ptr<LintError>>;
+
   std::vector<APILayer> layers {};
   APILayer* selectedLayer {nullptr};
-  std::unordered_map<APILayer*, std::vector<std::shared_ptr<LintError>>>
-    lintErrors;
+  LintErrors lintErrors;
+  std::unordered_map<APILayer*, LintErrors> lintErrorsByLayer;
   bool reloadLayers {true};
 
   sf::RenderWindow window {
@@ -56,22 +58,23 @@ void Run() {
         }
       }
       layers = std::move(newLayers);
-      lintErrors.clear();
 
       std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
       for (auto& layer: layers) {
         layersByPath.emplace(layer.mJSONPath, &layer);
       }
-      for (auto& error: RunAllLinters(layers)) {
+      lintErrors = RunAllLinters(layers);
+      lintErrorsByLayer.clear();
+      for (auto& error: lintErrors) {
         for (const auto& path: error->GetAffectedLayers()) {
           if (!layersByPath.contains(path)) {
             continue;
           }
           auto layer = layersByPath.at(path);
-          if (lintErrors.contains(layer)) {
-            lintErrors.at(layer).push_back(error);
+          if (lintErrorsByLayer.contains(layer)) {
+            lintErrorsByLayer.at(layer).push_back(error);
           } else {
-            lintErrors[layer] = {error};
+            lintErrorsByLayer[layer] = {error};
           }
         }
       }
@@ -106,8 +109,8 @@ void Run() {
       for (auto i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
         auto& layer = layers.at(i);
         std::vector<std::shared_ptr<LintError>> layerErrors;
-        if (lintErrors.contains(&layer)) {
-          layerErrors = lintErrors.at(&layer);
+        if (lintErrorsByLayer.contains(&layer)) {
+          layerErrors = lintErrorsByLayer.at(&layer);
         }
 
         ImGui::PushID(i);
@@ -248,17 +251,29 @@ void Run() {
     ImGui::SetNextItemWidth(1024);
     if (ImGui::BeginTabBar("##Info", ImGuiTabBarFlags_None)) {
       if (ImGui::BeginTabItem("Warnings")) {
-        if (!lintErrors.contains(selectedLayer)) {
-          ImGui::BeginDisabled();
-          if (selectedLayer) {
-            ImGui::Text("This layer has no warnings.");
-          } else {
-            ImGui::Text("Select a layer to see any warnings.");
+        if (selectedLayer) {
+          ImGui::Text("For %s:", selectedLayer->mJSONPath.string().c_str());
+        } else {
+          ImGui::Text("All layers:");
+        }
+
+        LintErrors selectedErrors;
+        if (selectedLayer) {
+          if (lintErrorsByLayer.contains(selectedLayer)) {
+            selectedErrors = lintErrorsByLayer.at(selectedLayer);
           }
+        } else {
+          selectedErrors = lintErrors;
+        }
+
+        ImGui::Indent();
+
+        if (selectedErrors.empty()) {
+          ImGui::Separator();
+          ImGui::BeginDisabled();
+          ImGui::Text("No warnings.");
           ImGui::EndDisabled();
         } else {
-          const auto layerErrors = lintErrors.at(selectedLayer);
-
           ImGui::BeginTable(
             "##Errors",
             3,
@@ -267,8 +282,8 @@ void Run() {
             "RowNumber", ImGuiTableColumnFlags_WidthFixed);
           ImGui::TableSetupColumn("Description");
           ImGui::TableSetupColumn("Buttons", ImGuiTableColumnFlags_WidthFixed);
-          for (size_t i = 0; i < layerErrors.size(); ++i) {
-            const auto& error = layerErrors.at(i);
+          for (size_t i = 0; i < selectedErrors.size(); ++i) {
+            const auto& error = selectedErrors.at(i);
             const auto desc = error->GetDescription();
 
             ImGui::PushID(i);
@@ -296,6 +311,8 @@ void Run() {
           }
           ImGui::EndTable();
         }
+        ImGui::Unindent();
+
         ImGui::EndTabItem();
       }
 
