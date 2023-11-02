@@ -244,6 +244,44 @@ void Run() {
 
     ImGui::SetNextItemWidth(1024);
     if (ImGui::BeginTabBar("##Info", ImGuiTabBarFlags_None)) {
+      if (ImGui::BeginTabItem("Warnings")) {
+        if (!lintErrors.contains(selectedLayer)) {
+          ImGui::BeginDisabled();
+          if (selectedLayer) {
+            ImGui::Text("This layer has no warnings.");
+          } else {
+            ImGui::Text("Select a layer to see any warnings.");
+          }
+          ImGui::EndDisabled();
+        } else {
+          const auto layerErrors = lintErrors.at(selectedLayer);
+
+          ImGui::BeginTable(
+            "##Errors",
+            3,
+            ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg);
+          for (size_t i = 0; i < layerErrors.size(); ++i) {
+            const auto& error = layerErrors.at(i);
+            const auto desc = error->GetDescription();
+
+            ImGui::PushID(i);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%llu.", i + 1);
+            ImGui::TableNextColumn();
+            ImGui::TextWrapped("%s", desc.c_str());
+            ImGui::TableNextColumn();
+            if (ImGui::Button("Copy")) {
+              ImGui::SetClipboardText(desc.c_str());
+            }
+
+            ImGui::PopID();
+          }
+          ImGui::EndTable();
+        }
+        ImGui::EndTabItem();
+      }
+
       if (ImGui::BeginTabItem("Details")) {
         if (selectedLayer) {
           ImGui::BeginTable(
@@ -374,44 +412,6 @@ void Run() {
           ImGui::BeginDisabled();
           ImGui::Text("Select a layer above for details.");
           ImGui::EndDisabled();
-        }
-        ImGui::EndTabItem();
-      }
-
-      if (ImGui::BeginTabItem("Warnings")) {
-        if (!lintErrors.contains(selectedLayer)) {
-          ImGui::BeginDisabled();
-          if (selectedLayer) {
-            ImGui::Text("This layer has no warnings.");
-          } else {
-            ImGui::Text("Select a layer to see any warnings.");
-          }
-          ImGui::EndDisabled();
-        } else {
-          const auto layerErrors = lintErrors.at(selectedLayer);
-
-          ImGui::BeginTable(
-            "##Errors",
-            3,
-            ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg);
-          for (size_t i = 0; i < layerErrors.size(); ++i) {
-            const auto& error = layerErrors.at(i);
-            const auto desc = error->GetDescription();
-
-            ImGui::PushID(i);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("%llu.", i + 1);
-            ImGui::TableNextColumn();
-            ImGui::TextWrapped("%s", desc.c_str());
-            ImGui::TableNextColumn();
-            if (ImGui::Button("Copy")) {
-              ImGui::SetClipboardText(desc.c_str());
-            }
-
-            ImGui::PopID();
-          }
-          ImGui::EndTable();
         }
         ImGui::EndTabItem();
       }
