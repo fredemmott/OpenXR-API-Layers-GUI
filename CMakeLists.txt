@@ -3,7 +3,22 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+# Enable CMAKE_MSVC_RUNTIME_LIBRARY variable
+cmake_policy(SET CMP0091 NEW)
+
 set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
+
+if("${VCPKG_TARGET_TRIPLET}" MATCHES "-static$")
+  # https://github.com/microsoft/WindowsAppSDK/blob/main/docs/Coding-Guidelines/HybridCRT.md
+  set(
+    CMAKE_MSVC_RUNTIME_LIBRARY
+    "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+  )
+  add_link_options(
+    "/DEFAULTLIB:ucrt$<$<CONFIG:Debug>:d>.lib" # include the dynamic UCRT
+    "/NODEFAULTLIB:libucrt$<$<CONFIG:Debug>:d>.lib" # remove the static UCRT 
+  )
+endif()
 
 set(
   CMAKE_TOOLCHAIN_FILE
@@ -31,6 +46,7 @@ set(
 )
 
 project(OpenXR-Layers-GUI VERSION 0.0.1.${VERSION_BUILD} LANGUAGES CXX C)
+
 
 # Handy for CI
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${CMAKE_PROJECT_VERSION}")
