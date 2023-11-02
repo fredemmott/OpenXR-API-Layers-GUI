@@ -43,7 +43,7 @@ jobs:
             runs-on: windows-latest
             cmake-arch: Win64
   combined-zip:
-    name: Make combined zip file
+    name: Combine
     runs-on: windows-latest
     needs: build
     steps:
