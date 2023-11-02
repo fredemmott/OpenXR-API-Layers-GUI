@@ -13,7 +13,7 @@ endif()
 
 macro(add_gui)
   set(OPTIONS USE_HKCU)
-  set(ONE_VALUE_ARGS BUILD_TARGET_ID)
+  set(ONE_VALUE_ARGS BUILD_TARGET_ID INSTALL_DESTINATION)
   cmake_parse_arguments(ARG "${OPTIONS}" "${ONE_VALUE_ARGS}" "" ${ARGN})
   set(TARGET "${ARG_UNPARSED_ARGUMENTS}")
   set(BUILD_TARGET_ID "${ARG_BUILD_TARGET_ID}")
@@ -102,6 +102,7 @@ macro(add_gui)
       "${CODEGEN_BUILD_DIR}/Config_windows.hpp"
       @ONLY
     )
+
   endif()
 
   target_sources(
@@ -111,20 +112,42 @@ macro(add_gui)
     "${PLATFORM_GUI_CPP}"
     "${PLATFORM_MAIN_CPP}"
   )
+
+  install(
+    TARGETS "${TARGET}"
+    DESTINATION "${ARG_INSTALL_DESTINATION}"
+  )
 endmacro()
 
 if(APPLE)
-  add_gui(gui BUILD_TARGET_ID "MacOS-${CMAKE_SYSTEM_PROCESSOR}")
+  add_gui(
+    gui
+    BUILD_TARGET_ID "MacOS-${CMAKE_SYSTEM_PROCESSOR}"
+    INSTALL_DESTINATION "MacOS"
+  )
 elseif(WIN32)
   option(USE_HKCU "Use HKCU instead of HKLM" OFF)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(BUILD_ARCH "Win64")
   else()
     set(BUILD_ARCH "Win32")
-  endif() 
+  endif()
 
-  add_gui(gui-hklm BUILD_TARGET_ID "${BUILD_ARCH}-HKLM")
-  add_gui(gui-hkcu USE_HKCU BUILD_TARGET_ID "${BUILD_ARCH}-HKCU")
+  # Using BUILD_ARCH instead of just "Windows" as we need separate
+  # DLLs for the 32- and 64-bit versions
+
+  add_gui(
+    gui-hklm
+    BUILD_TARGET_ID "${BUILD_ARCH}-HKLM"
+    INSTALL_DESTINATION "${BUILD_ARCH}"
+  )
+
+  add_gui(
+    gui-hkcu
+    USE_HKCU
+    BUILD_TARGET_ID "${BUILD_ARCH}-HKCU"
+    INSTALL_DESTINATION "${BUILD_ARCH}"
+  )
 
   target_link_options(
     gui-hklm

@@ -3,6 +3,8 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
+
 set(
   CMAKE_TOOLCHAIN_FILE
   "${CMAKE_CURRENT_SOURCE_DIR}/third-party/vcpkg/scripts/buildsystems/vcpkg.cmake"
