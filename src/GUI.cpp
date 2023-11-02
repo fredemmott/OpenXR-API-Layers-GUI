@@ -102,7 +102,8 @@ void Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::BeginListBox("##Layers", {768, 384});
+    ImGui::BeginListBox(
+      "##Layers", {viewport->WorkSize.x - 256, viewport->WorkSize.y / 2});
     ImGuiListClipper clipper {};
     clipper.Begin(static_cast<int>(layers.size()));
 
@@ -249,7 +250,7 @@ void Run() {
     ImGui::EndDisabled();
     ImGui::EndGroup();
 
-    ImGui::SetNextItemWidth(1024);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     if (ImGui::BeginTabBar("##Info", ImGuiTabBarFlags_None)) {
       if (ImGui::BeginTabItem("Warnings")) {
         ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
