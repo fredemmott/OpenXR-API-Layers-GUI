@@ -48,6 +48,7 @@ jobs:
 
           cmake .. `
             -A ${{matrix.cmake-arch}} `
+            -DVCPKG_TARGET_TRIPLET=${{matrix.vcpkg-arch}} `
             @args
 
           Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content version.txt)"
@@ -74,8 +75,8 @@ jobs:
           - os-arch: Win32
             runs-on: windows-latest
             cmake-arch: Win32
-            vcpkg-arch: x86-windows
+            vcpkg-arch: x86-windows-static
           - os-arch: Win64
             runs-on: windows-latest
             cmake-arch: x64
-            vcpkg-arch: x64-windows
+            vcpkg-arch: x64-windows-static

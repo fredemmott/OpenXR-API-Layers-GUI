@@ -14,7 +14,7 @@ endif()
 
 macro(add_gui)
   set(OPTIONS USE_HKCU)
-  set(ONE_VALUE_ARGS BUILD_TARGET_ID INSTALL_DESTINATION)
+  set(ONE_VALUE_ARGS BUILD_TARGET_ID)
   cmake_parse_arguments(ARG "${OPTIONS}" "${ONE_VALUE_ARGS}" "" ${ARGN})
   set(TARGET "${ARG_UNPARSED_ARGUMENTS}")
   set(BUILD_TARGET_ID "${ARG_BUILD_TARGET_ID}")
@@ -117,7 +117,7 @@ macro(add_gui)
 
   install(
     TARGETS "${TARGET}"
-    DESTINATION "${ARG_INSTALL_DESTINATION}"
+    DESTINATION "."
   )
 
   sign_target("${TARGET}")
@@ -127,7 +127,6 @@ if(APPLE)
   add_gui(
     gui
     BUILD_TARGET_ID "MacOS-${CMAKE_SYSTEM_PROCESSOR}"
-    INSTALL_DESTINATION "MacOS"
   )
 elseif(WIN32)
   option(USE_HKCU "Use HKCU instead of HKLM" OFF)
@@ -143,14 +142,12 @@ elseif(WIN32)
   add_gui(
     gui-hklm
     BUILD_TARGET_ID "${BUILD_ARCH}-HKLM"
-    INSTALL_DESTINATION "${BUILD_ARCH}"
   )
 
   add_gui(
     gui-hkcu
     USE_HKCU
     BUILD_TARGET_ID "${BUILD_ARCH}-HKCU"
-    INSTALL_DESTINATION "${BUILD_ARCH}"
   )
 
   target_link_options(
