@@ -42,10 +42,19 @@ class GUI final : public PlatformGUI {
   sf::WindowHandle mWindowHandle {};
 
   void GUILayersList();
+
   void GUIButtons();
+  void GUIRemoveLayerPopup();
+
   void GUITabs();
   void GUIErrorsTab();
   void GUIDetailsTab();
+
+  // This should only be called at the top of the frame loop; set
+  // mLayerDataIsStale instead.
+  void ReloadLayerDataNow();
+
+  void AddLayersClicked();
 };
 
 }// namespace FredEmmott::OpenXRLayers

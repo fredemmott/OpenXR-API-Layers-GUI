@@ -72,38 +72,9 @@ void GUI::Run() {
   sf::Clock deltaClock {};
   while (window.isOpen()) {
     if (mLayerDataIsStale) {
-      auto newLayers = GetAPILayers();
-      if (mSelectedLayer) {
-        auto it = std::ranges::find(newLayers, *mSelectedLayer);
-        if (it != newLayers.end()) {
-          mSelectedLayer = &*it;
-        } else {
-          mSelectedLayer = nullptr;
-        }
-      }
-      mLayers = std::move(newLayers);
-
-      std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
-      for (auto& layer: mLayers) {
-        layersByPath.emplace(layer.mJSONPath, &layer);
-      }
-      mLintErrors = RunAllLinters(mLayers);
-      mLintErrorsByLayer.clear();
-      for (auto& error: mLintErrors) {
-        for (const auto& path: error->GetAffectedLayers()) {
-          if (!layersByPath.contains(path)) {
-            continue;
-          }
-          auto layer = layersByPath.at(path);
-          if (mLintErrorsByLayer.contains(layer)) {
-            mLintErrorsByLayer.at(layer).push_back(error);
-          } else {
-            mLintErrorsByLayer[layer] = {error};
-          }
-        }
-      }
-      mLayerDataIsStale = false;
+      this->ReloadLayerDataNow();
     }
+
     sf::Event event {};
     while (window.pollEvent(event)) {
       ImGui::SFML::ProcessEvent(window, event);
@@ -211,94 +182,17 @@ void GUI::GUIButtons() {
   if (ImGui::Button("Reload List", {-FLT_MIN, 0})) {
     mLayerDataIsStale = true;
   }
+
   if (ImGui::Button("Add Layers...", {-FLT_MIN, 0})) {
-    auto paths = GetNewAPILayerJSONPaths(mWindowHandle);
-    for (auto it = paths.begin(); it != paths.end();) {
-      auto existingLayer = std::ranges::find_if(
-        mLayers, [it](const auto& layer) { return layer.mJSONPath == *it; });
-      if (existingLayer != mLayers.end()) {
-        it = paths.erase(it);
-        continue;
-      }
-      it++;
-    }
-
-    if (!paths.empty()) {
-      auto nextLayers = mLayers;
-      for (const auto& path: paths) {
-        nextLayers.push_back(APILayer {
-          .mJSONPath = path,
-          .mIsEnabled = true,
-        });
-      }
-
-      bool changed = false;
-      do {
-        changed = false;
-        auto errors = RunAllLinters(nextLayers);
-        for (const auto& error: errors) {
-          auto fixable = std::dynamic_pointer_cast<FixableLintError>(error);
-          if (!fixable) {
-            continue;
-          }
-
-          if (!std::ranges::any_of(
-                fixable->GetAffectedLayers(), [&paths](const auto& it) {
-                  return std::ranges::find(paths, it) != paths.end();
-                })) {
-            continue;
-          }
-
-          const auto fixed = fixable->Fix(nextLayers);
-          if (fixed != nextLayers) {
-            nextLayers = fixed;
-            changed = true;
-          }
-        }
-      } while (changed);
-
-      SetAPILayers(nextLayers);
-      mLayerDataIsStale = true;
-    }
+    this->AddLayersClicked();
   }
-  ImGui::BeginDisabled(mSelectedLayer == nullptr);
 
+  ImGui::BeginDisabled(mSelectedLayer == nullptr);
   if (ImGui::Button("Remove Layer...", {-FLT_MIN, 0})) {
     ImGui::OpenPopup("Remove Layer");
   }
-
   ImGui::EndDisabled();
-
-  ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-  ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  ImGui::SetNextWindowSize({512, 0}, ImGuiCond_Appearing);
-  if (ImGui::BeginPopupModal(
-        "Remove Layer", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::TextWrapped(
-      "Are you sure you want to completely remove '%s'?\n\nThis can not "
-      "be "
-      "undone.",
-      mSelectedLayer->mJSONPath.string().c_str());
-    ImGui::Separator();
-    ImGui::SetCursorPosX(256 + 128);
-    if (ImGui::Button("Remove", {64, 0}) && mSelectedLayer) {
-      auto nextLayers = mLayers;
-      auto it = std::ranges::find(nextLayers, *mSelectedLayer);
-      if (it != nextLayers.end()) {
-        nextLayers.erase(it);
-        SetAPILayers(nextLayers);
-        mLayerDataIsStale = true;
-      }
-      ImGui::CloseCurrentPopup();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Cancel", {64, 0})) {
-      ImGui::CloseCurrentPopup();
-    }
-    ImGui::SetItemDefaultFocus();
-
-    ImGui::EndPopup();
-  }
+  this->GUIRemoveLayerPopup();
 
   ImGui::Separator();
 
@@ -308,6 +202,7 @@ void GUI::GUIButtons() {
     SetAPILayers(mLayers);
   }
   ImGui::EndDisabled();
+
   ImGui::BeginDisabled(!(mSelectedLayer && mSelectedLayer->mIsEnabled));
   if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
     mSelectedLayer->mIsEnabled = false;
@@ -584,6 +479,126 @@ void GUI::GUIDetailsTab() {
     }
     ImGui::EndChild();
     ImGui::EndTabItem();
+  }
+}
+
+void GUI::ReloadLayerDataNow() {
+  auto newLayers = GetAPILayers();
+  if (mSelectedLayer) {
+    auto it = std::ranges::find(newLayers, *mSelectedLayer);
+    if (it != newLayers.end()) {
+      mSelectedLayer = &*it;
+    } else {
+      mSelectedLayer = nullptr;
+    }
+  }
+  mLayers = std::move(newLayers);
+
+  std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
+  for (auto& layer: mLayers) {
+    layersByPath.emplace(layer.mJSONPath, &layer);
+  }
+  mLintErrors = RunAllLinters(mLayers);
+  mLintErrorsByLayer.clear();
+  for (auto& error: mLintErrors) {
+    for (const auto& path: error->GetAffectedLayers()) {
+      if (!layersByPath.contains(path)) {
+        continue;
+      }
+      auto layer = layersByPath.at(path);
+      if (mLintErrorsByLayer.contains(layer)) {
+        mLintErrorsByLayer.at(layer).push_back(error);
+      } else {
+        mLintErrorsByLayer[layer] = {error};
+      }
+    }
+  }
+  mLayerDataIsStale = false;
+}
+
+void GUI::AddLayersClicked() {
+  auto paths = GetNewAPILayerJSONPaths(mWindowHandle);
+  for (auto it = paths.begin(); it != paths.end();) {
+    auto existingLayer = std::ranges::find_if(
+      mLayers, [it](const auto& layer) { return layer.mJSONPath == *it; });
+    if (existingLayer != mLayers.end()) {
+      it = paths.erase(it);
+      continue;
+    }
+    it++;
+  }
+
+  if (paths.empty()) {
+    return;
+  }
+  auto nextLayers = mLayers;
+  for (const auto& path: paths) {
+    nextLayers.push_back(APILayer {
+      .mJSONPath = path,
+      .mIsEnabled = true,
+    });
+  }
+
+  bool changed = false;
+  do {
+    changed = false;
+    auto errors = RunAllLinters(nextLayers);
+    for (const auto& error: errors) {
+      auto fixable = std::dynamic_pointer_cast<FixableLintError>(error);
+      if (!fixable) {
+        continue;
+      }
+
+      if (!std::ranges::any_of(
+            fixable->GetAffectedLayers(), [&paths](const auto& it) {
+              return std::ranges::find(paths, it) != paths.end();
+            })) {
+        continue;
+      }
+
+      const auto fixed = fixable->Fix(nextLayers);
+      if (fixed != nextLayers) {
+        nextLayers = fixed;
+        changed = true;
+      }
+    }
+  } while (changed);
+
+  SetAPILayers(nextLayers);
+  mLayerDataIsStale = true;
+}
+
+void GUI::GUIRemoveLayerPopup() {
+  auto viewport = ImGui::GetMainViewport();
+  ImVec2 center = viewport->GetCenter();
+  ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  ImGui::SetNextWindowSize({viewport->WorkSize.x / 2, 0}, ImGuiCond_Appearing);
+  if (ImGui::BeginPopupModal(
+        "Remove Layer", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::TextWrapped(
+      "Are you sure you want to completely remove '%s'?\n\nThis can not "
+      "be "
+      "undone.",
+      mSelectedLayer->mJSONPath.string().c_str());
+    ImGui::Separator();
+    ImGui::SetCursorPosX(256 + 128);
+    if (ImGui::Button("Remove", {64, 0}) && mSelectedLayer) {
+      auto nextLayers = mLayers;
+      auto it = std::ranges::find(nextLayers, *mSelectedLayer);
+      if (it != nextLayers.end()) {
+        nextLayers.erase(it);
+        SetAPILayers(nextLayers);
+        mLayerDataIsStale = true;
+      }
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", {64, 0})) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::SetItemDefaultFocus();
+
+    ImGui::EndPopup();
   }
 }
 
