@@ -244,137 +244,178 @@ void Run() {
 
     ImGui::SetNextItemWidth(1024);
     if (ImGui::BeginTabBar("##Info", ImGuiTabBarFlags_None)) {
-      ImGui::BeginTabItem("Details");
-      if (selectedLayer) {
-        ImGui::BeginTable(
-          "##DetailsTable",
-          2,
-          ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
-
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::Text("JSON File");
-        ImGui::TableNextColumn();
-        if (ImGui::Button("Copy##CopyJSONFile")) {
-          ImGui::SetClipboardText(selectedLayer->mJSONPath.string().c_str());
-        }
-        ImGui::SameLine();
-        ImGui::Text("%s", selectedLayer->mJSONPath.string().c_str());
-
-        const APILayerDetails details {selectedLayer->mJSONPath};
-        if (details.mState != APILayerDetails::State::Loaded) {
-          std::string error;
-          using State = APILayerDetails::State;
-          switch (details.mState) {
-            case State::Uninitialized:
-              error = "Internal error";
-              break;
-            case State::NoJsonFile:
-              error = "The file does not exist";
-              break;
-            case State::UnreadableJsonFile:
-              error = "The JSON file is unreadable";
-              break;
-            case State::InvalidJson:
-              error = "The file does not contain valid JSON";
-              break;
-            case State::MissingData:
-              error = "The file does not contain data required by OpenXR";
-              break;
-            default:
-              error = std::format(
-                "Internal error ({})",
-                static_cast<std::underlying_type_t<APILayerDetails::State>>(
-                  details.mState));
-              break;
-          }
+      if (ImGui::BeginTabItem("Details")) {
+        if (selectedLayer) {
+          ImGui::BeginTable(
+            "##DetailsTable",
+            2,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
 
           ImGui::TableNextRow();
           ImGui::TableNextColumn();
-          ImGui::Text("%s", Config::GLYPH_ERROR);
+          ImGui::Text("JSON File");
           ImGui::TableNextColumn();
-          ImGui::Text("%s", error.c_str());
-        } else /* have details */ {
-          {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Library Path");
-            ImGui::TableNextColumn();
-            if (details.mLibraryPath.empty()) {
-              ImGui::Text(
-                "%s", std::format("{} [none]", Config::GLYPH_ERROR).c_str());
-            } else {
-              auto text = details.mLibraryPath.string();
-              if (!std::filesystem::exists(details.mLibraryPath)) {
-                text = std::format("{} {}", Config::GLYPH_ERROR, text);
-              }
-              if (ImGui::Button("Copy##LibraryPath")) {
-                ImGui::SetClipboardText(details.mLibraryPath.string().c_str());
-              }
-              ImGui::SameLine();
-              ImGui::Text("%s", details.mLibraryPath.string().c_str());
+          if (ImGui::Button("Copy##CopyJSONFile")) {
+            ImGui::SetClipboardText(selectedLayer->mJSONPath.string().c_str());
+          }
+          ImGui::SameLine();
+          ImGui::Text("%s", selectedLayer->mJSONPath.string().c_str());
+
+          const APILayerDetails details {selectedLayer->mJSONPath};
+          if (details.mState != APILayerDetails::State::Loaded) {
+            std::string error;
+            using State = APILayerDetails::State;
+            switch (details.mState) {
+              case State::Uninitialized:
+                error = "Internal error";
+                break;
+              case State::NoJsonFile:
+                error = "The file does not exist";
+                break;
+              case State::UnreadableJsonFile:
+                error = "The JSON file is unreadable";
+                break;
+              case State::InvalidJson:
+                error = "The file does not contain valid JSON";
+                break;
+              case State::MissingData:
+                error = "The file does not contain data required by OpenXR";
+                break;
+              default:
+                error = std::format(
+                  "Internal error ({})",
+                  static_cast<std::underlying_type_t<APILayerDetails::State>>(
+                    details.mState));
+                break;
             }
-          }
 
-          if (!details.mName.empty()) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::Text("Name");
+            ImGui::Text("%s", Config::GLYPH_ERROR);
             ImGui::TableNextColumn();
-            if (ImGui::Button("Copy##Name")) {
-              ImGui::SetClipboardText(details.mName.c_str());
-            }
-            ImGui::SameLine();
-            ImGui::Text("%s", details.mName.c_str());
-          }
-
-          if (!details.mDescription.empty()) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Description");
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", details.mDescription.c_str());
-          }
-
-          if (!details.mFileFormatVersion.empty()) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("File Format Version");
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", details.mFileFormatVersion.c_str());
-          }
-
-          if (!details.mExtensions.empty()) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Extensions");
-            ImGui::TableNextColumn();
-            ImGui::BeginTable(
-              "##ExtensionsTable",
-              2,
-              ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
-            ImGui::TableSetupColumn("Name");
-            ImGui::TableSetupColumn("Version");
-            ImGui::TableHeadersRow();
-            for (const auto& ext: details.mExtensions) {
+            ImGui::Text("%s", error.c_str());
+          } else /* have details */ {
+            {
               ImGui::TableNextRow();
               ImGui::TableNextColumn();
-              ImGui::Text("%s", ext.mName.c_str());
+              ImGui::Text("Library Path");
               ImGui::TableNextColumn();
-              ImGui::Text("%s", ext.mVersion.c_str());
+              if (details.mLibraryPath.empty()) {
+                ImGui::Text(
+                  "%s", std::format("{} [none]", Config::GLYPH_ERROR).c_str());
+              } else {
+                auto text = details.mLibraryPath.string();
+                if (!std::filesystem::exists(details.mLibraryPath)) {
+                  text = std::format("{} {}", Config::GLYPH_ERROR, text);
+                }
+                if (ImGui::Button("Copy##LibraryPath")) {
+                  ImGui::SetClipboardText(
+                    details.mLibraryPath.string().c_str());
+                }
+                ImGui::SameLine();
+                ImGui::Text("%s", details.mLibraryPath.string().c_str());
+              }
             }
-            ImGui::EndTable();
-            ImGui::TableNextColumn();
-          }
-        }
 
-        ImGui::EndTable();
-      } else {
-        ImGui::BeginDisabled();
-        ImGui::Text("Select a layer above for details.");
-        ImGui::EndDisabled();
+            if (!details.mName.empty()) {
+              ImGui::TableNextRow();
+              ImGui::TableNextColumn();
+              ImGui::Text("Name");
+              ImGui::TableNextColumn();
+              if (ImGui::Button("Copy##Name")) {
+                ImGui::SetClipboardText(details.mName.c_str());
+              }
+              ImGui::SameLine();
+              ImGui::Text("%s", details.mName.c_str());
+            }
+
+            if (!details.mDescription.empty()) {
+              ImGui::TableNextRow();
+              ImGui::TableNextColumn();
+              ImGui::Text("Description");
+              ImGui::TableNextColumn();
+              ImGui::Text("%s", details.mDescription.c_str());
+            }
+
+            if (!details.mFileFormatVersion.empty()) {
+              ImGui::TableNextRow();
+              ImGui::TableNextColumn();
+              ImGui::Text("File Format Version");
+              ImGui::TableNextColumn();
+              ImGui::Text("%s", details.mFileFormatVersion.c_str());
+            }
+
+            if (!details.mExtensions.empty()) {
+              ImGui::TableNextRow();
+              ImGui::TableNextColumn();
+              ImGui::Text("Extensions");
+              ImGui::TableNextColumn();
+              ImGui::BeginTable(
+                "##ExtensionsTable",
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
+              ImGui::TableSetupColumn("Name");
+              ImGui::TableSetupColumn("Version");
+              ImGui::TableHeadersRow();
+              for (const auto& ext: details.mExtensions) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", ext.mName.c_str());
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", ext.mVersion.c_str());
+              }
+              ImGui::EndTable();
+              ImGui::TableNextColumn();
+            }
+          }
+
+          ImGui::EndTable();
+        } else {
+          ImGui::BeginDisabled();
+          ImGui::Text("Select a layer above for details.");
+          ImGui::EndDisabled();
+        }
+        ImGui::EndTabItem();
       }
-      ImGui::EndTabItem();
+
+      if (ImGui::BeginTabItem("Warnings")) {
+        if (!lintErrors.contains(selectedLayer)) {
+          ImGui::BeginDisabled();
+          if (selectedLayer) {
+            ImGui::Text("This layer has no warnings.");
+          } else {
+            ImGui::Text("Select a layer to see any warnings.");
+          }
+          ImGui::EndDisabled();
+        } else {
+          const auto layerErrors = lintErrors.at(selectedLayer);
+
+          ImGui::BeginTable(
+            "##Errors",
+            3,
+            ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg);
+          for (size_t i = 0; i < layerErrors.size(); ++i) {
+            const auto& error = layerErrors.at(i);
+            const auto desc = error->GetDescription();
+
+            ImGui::PushID(i);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%llu.", i + 1);
+            ImGui::TableNextColumn();
+            ImGui::TextWrapped("%s", desc.c_str());
+            ImGui::TableNextColumn();
+            if (ImGui::Button("Copy")) {
+              ImGui::SetClipboardText(desc.c_str());
+            }
+
+            ImGui::PopID();
+          }
+          ImGui::EndTable();
+        }
+        ImGui::EndTabItem();
+      }
+
       ImGui::EndTabBar();
     }
 
