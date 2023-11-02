@@ -48,7 +48,7 @@ class OrderingLinter final : public Linter {
           auto [_, provider] = providers.at(feature).front();
           errors.push_back(std::make_shared<LintError>(
             std::format(
-              "As {} consumes {}, it should be before {}",
+              "As {} consumes {}, it should be above {}.",
               details.mName,
               feature,
               provider.mName),
