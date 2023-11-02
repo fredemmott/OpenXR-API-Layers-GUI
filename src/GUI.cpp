@@ -10,12 +10,14 @@
 #include <algorithm>
 #include <format>
 #include <iostream>
+#include <unordered_map>
 
 #include <imgui.h>
 
 #include "APILayer.hpp"
 #include "APILayers.hpp"
 #include "Config.hpp"
+#include "Linter.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers::GUI {
@@ -23,6 +25,8 @@ namespace FredEmmott::OpenXRLayers::GUI {
 void Run() {
   std::vector<APILayer> layers {};
   APILayer* selectedLayer {nullptr};
+  std::unordered_map<APILayer*, std::vector<std::shared_ptr<LintError>>>
+    lintErrors;
   bool reloadLayers {true};
 
   sf::RenderWindow window {
@@ -49,6 +53,25 @@ void Run() {
         }
       }
       layers = std::move(newLayers);
+      lintErrors.clear();
+
+      std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
+      for (auto& layer: layers) {
+        layersByPath.emplace(layer.mJSONPath, &layer);
+      }
+      for (auto& error: RunAllLinters(layers)) {
+        for (const auto& path: error->GetAffectedLayers()) {
+          if (!layersByPath.contains(path)) {
+            continue;
+          }
+          auto layer = layersByPath.at(path);
+          if (lintErrors.contains(layer)) {
+            lintErrors.at(layer).push_back(error);
+          } else {
+            lintErrors[layer] = {error};
+          }
+        }
+      }
       reloadLayers = false;
     }
     sf::Event event {};
@@ -79,6 +102,11 @@ void Run() {
     while (clipper.Step()) {
       for (auto i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
         auto& layer = layers.at(i);
+        std::vector<std::shared_ptr<LintError>> layerErrors;
+        if (lintErrors.contains(&layer)) {
+          layerErrors = lintErrors.at(&layer);
+        }
+
         ImGui::PushID(i);
 
         if (ImGui::Checkbox("##Enabled", &layer.mIsEnabled)) {
@@ -87,7 +115,7 @@ void Run() {
 
         auto label = layer.mJSONPath.string();
 
-        /* if (error) */ {
+        if (!layerErrors.empty()) {
           label = std::format("{} {}", Config::GLYPH_ERROR, label);
         }
 

@@ -38,8 +38,10 @@ macro(add_gui)
     WIN32
     APILayerDetails.cpp
     GUI.cpp
+    KnownLayers.cpp
     Linter.cpp
     linters/BadInstallationLinter.cpp
+    linters/OrderingLinter.cpp
   )
 
   target_include_directories(

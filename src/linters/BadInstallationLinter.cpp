@@ -5,6 +5,7 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+// Detect API layers with missing files or invalid JSON
 class BadInstallationLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
