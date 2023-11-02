@@ -35,6 +35,7 @@ jobs:
             --x-install-root=$(Get-Location)/vcpkg_installed
       - name: Configure
         working-directory: build
+        id: configure
         run: |
           $args = @()
           if ( "${{steps.fetch-key.outputs.HAVE_KEY}}" -eq "true" ) {
@@ -47,6 +48,8 @@ jobs:
           cmake .. `
             -A ${{matrix.cmake-arch}} `
             @args
+
+          Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content version.txt)"
         shell: pwsh
       - name: Compile
         working-directory: build
@@ -59,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ matrix.build-type != 'Debug' }}
         with:
-          name: ${{matrix.build-type}}
+          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
           path: ${{runner.temp}}/install
     strategy:
       fail-fast: false
@@ -73,31 +76,3 @@ jobs:
           - os-arch: Win64
             runs-on: windows-latest
             cmake-arch: x64
-  combined-zip:
-    name: Combine
-    runs-on: windows-latest
-    needs: build
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
-      - name: List artifacts
-        working-directory: artifacts 
-        run: Get-ChildItem -Recurse
-      - name: Create combined installation dir
-        working-directory: artifacts
-        id: install
-        run: |
-          mkdir ${{runner.temp}}\install
-          foreach ($subdir in (Get-ChildItem -Attribute Directory)) {
-            xcopy /iqy "$subdir" "${{runner.temp}}\install"
-          }
-          Get-ChildItem -Recurse ${{runner.temp}}\install
-          
-          Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content ${{runner.temp}}/install/version.txt)"
-      - name: Upload combined zip
-        uses: actions/upload-artifact@v3
-        with:
-          name: "OpenXR-API-Layers-GUI-v${{steps.install.outputs.version}}"
-          path: ${{runner.temp}}/install
