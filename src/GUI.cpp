@@ -260,6 +260,10 @@ void Run() {
             "##Errors",
             3,
             ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg);
+          ImGui::TableSetupColumn(
+            "RowNumber", ImGuiTableColumnFlags_WidthFixed);
+          ImGui::TableSetupColumn("Description");
+          ImGui::TableSetupColumn("Buttons", ImGuiTableColumnFlags_WidthFixed);
           for (size_t i = 0; i < layerErrors.size(); ++i) {
             const auto& error = layerErrors.at(i);
             const auto desc = error->GetDescription();
