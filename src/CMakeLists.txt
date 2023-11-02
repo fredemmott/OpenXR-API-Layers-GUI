@@ -154,6 +154,12 @@ elseif(WIN32)
     PRIVATE
     "/MANIFESTUAC:level='requireAdministrator'"
   )
+
+  install(
+    FILES "${CMAKE_SOURCE_DIR}/README-Windows.md"
+    RENAME "README-Windows.txt"
+    DESTINATION "."
+  )
 else()
 	message(FATAL_ERROR "Unhandled system type")
 endif()
