@@ -77,6 +77,7 @@ macro(add_gui)
       ${TARGET}
       PRIVATE
       manifest.xml
+      linters/windows/ProgramFilesLinter.cpp
     )
 
     target_compile_definitions(
