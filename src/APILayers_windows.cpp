@@ -3,6 +3,9 @@
 
 #include <Windows.h>
 
+#include <fmt/chrono.h>
+#include <fmt/core.h>
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
