@@ -60,7 +60,7 @@ jobs:
             cmake-arch: Win32
           - os-arch: Win64
             runs-on: windows-latest
-            cmake-arch: Win64
+            cmake-arch: x64
   combined-zip:
     name: Combine
     runs-on: windows-latest
