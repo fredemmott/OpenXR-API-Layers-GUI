@@ -252,6 +252,7 @@ void Run() {
     ImGui::SetNextItemWidth(1024);
     if (ImGui::BeginTabBar("##Info", ImGuiTabBarFlags_None)) {
       if (ImGui::BeginTabItem("Warnings")) {
+        ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
         if (selectedLayer) {
           ImGui::Text("For %s:", selectedLayer->mJSONPath.string().c_str());
         } else {
@@ -346,10 +347,12 @@ void Run() {
         }
         ImGui::Unindent();
 
+        ImGui::EndChild();
         ImGui::EndTabItem();
       }
 
       if (ImGui::BeginTabItem("Details")) {
+        ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
         if (selectedLayer) {
           ImGui::BeginTable(
             "##DetailsTable",
@@ -480,6 +483,7 @@ void Run() {
           ImGui::Text("Select a layer above for details.");
           ImGui::EndDisabled();
         }
+        ImGui::EndChild();
         ImGui::EndTabItem();
       }
 
