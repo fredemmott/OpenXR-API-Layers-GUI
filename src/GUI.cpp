@@ -8,8 +8,6 @@
 #include <SFML/Window/Event.hpp>
 #include <fmt/format.h>
 
-#include <algorithm>
-#include <filesystem>
 #include <iostream>
 #include <ranges>
 #include <unordered_map>
