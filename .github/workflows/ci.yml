@@ -13,7 +13,7 @@ jobs:
         run: |
           cmake .. `
             -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
-            -A ${{matrix.architecture}}
+            -A ${{matrix.arch}}
         shell: pwsh
       - name: Compile
         working-directory: build
