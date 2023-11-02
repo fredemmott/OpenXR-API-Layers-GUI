@@ -5,6 +5,10 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+namespace Features {
+const std::string Overlay = "!overlay";
+}
+
 std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
   static std::unordered_map<std::string, KnownLayer> ret;
   if (!ret.empty()) {
@@ -14,8 +18,20 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
   const std::vector<KnownLayer> list {
     {
       .mName = "XR_APILAYER_FREDEMMOTT_HandTrackedCockpitClicking",
-      .mConsumes = {
+      .mAbove = {
         "XR_EXT_hand_tracking",
+      },
+    },
+    {
+      .mName = "XR_APILAYER_FREDEMMOTT_OpenKneeboard",
+      .mProvides = {
+        Features::Overlay,
+      },
+    },
+    {
+      .mName = "XR_APILAYER_NOVENDOR_OBSMirror",
+      .mBelow = {
+        Features::Overlay,
       },
     },
   };

@@ -19,6 +19,16 @@ class OrderingLinter final : public Linter {
     for (const auto& ext: details.mExtensions) {
       ret.emplace(ext.mName);
     }
+
+    const auto knownLayers = GetKnownLayers();
+    if (!knownLayers.contains(details.mName)) {
+      return ret;
+    }
+    const auto& meta = knownLayers.at(details.mName);
+    for (const auto& feature: meta.mProvides) {
+      ret.emplace(feature);
+    }
+
     return ret;
   }
 
@@ -26,15 +36,20 @@ class OrderingLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::vector<std::shared_ptr<LintError>> errors;
-    std::unordered_map<
+
+    using ReqMap = std::unordered_map<
       std::string,
-      std::vector<std::tuple<APILayer, APILayerDetails>>>
-      providers;
+      std::vector<std::tuple<APILayer, APILayerDetails>>>;
+    ReqMap providers;
+    ReqMap consumesFromAbove;
+
     const auto knownLayers = GetKnownLayers();
 
     for (const auto& [layer, details]: layers) {
       if (knownLayers.contains(details.mName)) {
-        const auto consumes = knownLayers.at(details.mName).mConsumes;
+        const auto meta = knownLayers.at(details.mName);
+
+        const auto consumes = meta.mAbove;
         for (const auto& feature: consumes) {
           if (!providers.contains(feature)) {
             continue;
@@ -45,18 +60,46 @@ class OrderingLinter final : public Linter {
             affected.emplace(provider.mJSONPath);
           }
 
-          auto [_, provider] = providers.at(feature).front();
+          auto [providerBasic, providerDetails] = providers.at(feature).front();
           errors.push_back(std::make_shared<LintError>(
             std::format(
-              "As {} consumes {}, it should be above {}.",
+              "As {} ({}) consumes '{}', it should be above {} ({}).",
               details.mName,
+              layer.mJSONPath.string(),
               feature,
-              provider.mName),
+              providerDetails.mName,
+              providerBasic.mJSONPath.string()),
             affected));
+        }
+
+        for (const auto& feature: meta.mBelow) {
+          if (consumesFromAbove.contains(feature)) {
+            consumesFromAbove[feature].push_back({layer, details});
+          } else {
+            consumesFromAbove[feature] = {{layer, details}};
+          }
         }
       }
 
       for (const auto& feature: GetProvides(layer, details)) {
+        if (consumesFromAbove.contains(feature)) {
+          PathSet affected {layer.mJSONPath};
+          const auto& consumers = consumesFromAbove.at(feature);
+          for (const auto& [consumer, _]: consumers) {
+            affected.emplace(consumer.mJSONPath);
+          }
+          const auto& [consumerBasic, consumerDetails] = consumers.back();
+          errors.push_back(std::make_shared<LintError>(
+            std::format(
+              "As {} ({}) consumes '{}', it should be below {} ({}).",
+              consumerDetails.mName,
+              consumerBasic.mJSONPath.string(),
+              feature,
+              details.mName,
+              layer.mJSONPath.string()),
+            affected));
+        }
+
         if (providers.contains(feature)) {
           providers[feature].push_back({layer, details});
         } else {
