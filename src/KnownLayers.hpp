@@ -10,7 +10,7 @@
 namespace FredEmmott::OpenXRLayers {
 
 namespace Features {
-extern const std::string Overlay;
+extern const char* Overlay;
 }
 
 struct KnownLayer {
