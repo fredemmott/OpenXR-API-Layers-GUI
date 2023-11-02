@@ -9,6 +9,9 @@
     },
     "imgui-sfml",
     "nlohmann-json",
-    "cppwinrt"
+    {
+      "name": "cppwinrt",
+      "platform": "windows"
+    }
   ]
 }
