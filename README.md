@@ -29,7 +29,7 @@ Common errors are automatically detected:
 
 ![Lots of errors](docs/errors.png)
 
-Errors can be automatically fixed; the 'Fix Them!' button in the screenshot produces this:
+Most errors can be automatically fixed; the 'Fix Them!' button in the screenshot produces this:
 
 ![Mostly fixed](docs/errors-fixed.png)
 
