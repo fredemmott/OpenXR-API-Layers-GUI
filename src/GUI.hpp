@@ -51,6 +51,8 @@ class GUI final : public PlatformGUI {
   void GUIErrorsTab();
   void GUIDetailsTab();
 
+  bool GUIHyperlink(const char* text);
+
   // This should only be called at the top of the frame loop; set
   // mLayerDataIsStale instead.
   void ReloadLayerDataNow();

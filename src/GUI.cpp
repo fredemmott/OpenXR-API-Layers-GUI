@@ -24,6 +24,7 @@ namespace FredEmmott::OpenXRLayers {
 
 namespace {
 constexpr ImVec2 MINIMUM_WINDOW_SIZE {1024, 768};
+constexpr ImVec4 HYPERLINK_COLOR {0.13f, 0.4f, 1.0f, 1.0f};
 
 class MyWindow final : public sf::RenderWindow {
  public:
@@ -228,14 +229,8 @@ void GUI::GUIButtons() {
     const auto textWidth = ImGui::CalcTextSize(text).x;
     const auto windowWidth = ImGui::GetWindowSize().x;
     const auto x = ImGui::GetCursorPosX();
-    ImGui::SetCursorPosX(
-      ImGui::GetCursorPosX() + ((windowWidth - x - textWidth) / 2));
-
-    ImGui::TextColored({0.13f, 0.4f, 1.0f, 1.0f}, text);
-    if (ImGui::IsItemHovered()) {
-      ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-    }
-    if (ImGui::IsItemClicked()) {
+    ImGui::SetCursorPosX(x + ((windowWidth - x - textWidth) / 2));
+    if (GUIHyperlink(text)) {
       OpenURI("https://github.com/sponsors/fredemmott");
     }
   }
@@ -647,6 +642,14 @@ void GUI::DragDropReorder(const APILayer& source, const APILayer& target) {
   if (SetAPILayers(newLayers)) {
     mLayerDataIsStale = true;
   }
+}
+
+bool GUI::GUIHyperlink(const char* text) {
+  ImGui::TextColored(HYPERLINK_COLOR, text);
+  if (ImGui::IsItemActivated()) {
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  }
+  return ImGui::IsItemClicked();
 }
 
 }// namespace FredEmmott::OpenXRLayers
