@@ -233,6 +233,26 @@ void GUI::GUIButtons() {
     }
   }
   ImGui::EndDisabled();
+
+  {
+    ImGui::Spacing();
+
+    // Center this text
+    const auto text = "You can support this tool!";
+    const auto textWidth = ImGui::CalcTextSize(text).x;
+    const auto windowWidth = ImGui::GetWindowSize().x;
+    const auto x = ImGui::GetCursorPosX();
+    ImGui::SetCursorPosX(
+      ImGui::GetCursorPosX() + ((windowWidth - x - textWidth) / 2));
+
+    ImGui::TextColored({0.13f, 0.4f, 1.0f, 1.0f}, text);
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    }
+    if (ImGui::IsItemClicked()) {
+      OpenURI("https://github.com/sponsors/fredemmott");
+    }
+  }
   ImGui::EndGroup();
 }
 

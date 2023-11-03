@@ -8,6 +8,7 @@
 #include <ShlObj.h>
 #include <ShlObj_core.h>
 #include <imgui_freetype.h>
+#include <shellapi.h>
 
 #include "GUI.hpp"
 #include <imgui-SFML.h>
@@ -107,6 +108,11 @@ void PlatformGUI::SetupFonts(ImGuiIO* io) {
     (fontsPath / "seguiemj.ttf").string().c_str(), 13.0f, &config, ranges);
 
   { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
+}
+
+void PlatformGUI::OpenURI(const std::string& uri) {
+  auto wstring = std::wstring(winrt::to_hstring(uri));
+  ShellExecuteW(NULL, L"open", wstring.c_str(), nullptr, nullptr, 0);
 }
 
 }// namespace FredEmmott::OpenXRLayers

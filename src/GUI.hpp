@@ -23,6 +23,7 @@ class PlatformGUI {
   std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(
     sf::WindowHandle parent);
   void SetupFonts(ImGuiIO*);
+  void OpenURI(const std::string& uri);
 };
 
 // The actual app GUI
