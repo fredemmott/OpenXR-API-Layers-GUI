@@ -17,4 +17,7 @@ void PlatformGUI::SetupFonts(ImGuiIO*) {
   return;
 }
 
+void PlatformGUI::OpenURI(const std::string&) {
+}
+
 }// namespace FredEmmott::OpenXRLayers
