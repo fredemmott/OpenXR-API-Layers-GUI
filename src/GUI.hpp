@@ -56,6 +56,7 @@ class GUI final : public PlatformGUI {
   void ReloadLayerDataNow();
 
   void AddLayersClicked();
+  void DragDropReorder(const APILayer& source, const APILayer& target);
 };
 
 }// namespace FredEmmott::OpenXRLayers

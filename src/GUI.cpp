@@ -150,22 +150,8 @@ void GUI::GUILayersList() {
 
       if (ImGui::BeginDragDropTarget()) {
         if (const auto payload = ImGui::AcceptDragDropPayload("APILayer*")) {
-          const auto& dropped = *reinterpret_cast<APILayer*>(payload->Data);
-          std::vector<APILayer> newLayers;
-          for (const auto& it: mLayers) {
-            if (it == dropped) {
-              continue;
-            }
-            if (it == layer) {
-              newLayers.push_back(dropped);
-            }
-
-            newLayers.push_back(it);
-          }
-          assert(mLayers.size() == newLayers.size());
-          if (SetAPILayers(newLayers)) {
-            mLayerDataIsStale = true;
-          }
+          const auto source = *reinterpret_cast<APILayer*>(payload->Data);
+          DragDropReorder(source, layer);
         }
         ImGui::EndDragDropTarget();
       }
@@ -631,6 +617,35 @@ void GUI::GUIRemoveLayerPopup() {
     ImGui::SetItemDefaultFocus();
 
     ImGui::EndPopup();
+  }
+}
+
+void GUI::DragDropReorder(const APILayer& source, const APILayer& target) {
+  auto newLayers = mLayers;
+
+  auto sourceIt = std::ranges::find(newLayers, source);
+  if (sourceIt == newLayers.end()) {
+    return;
+  }
+
+  auto targetIt = std::ranges::find(newLayers, target);
+  if (targetIt == newLayers.end() || sourceIt == targetIt) {
+    return;
+  }
+
+  const auto insertBefore = sourceIt > targetIt;
+
+  newLayers.erase(sourceIt);
+  targetIt = std::ranges::find(newLayers, target);
+  assert(targetIt != newLayers.end());
+  if (!insertBefore) {
+    targetIt++;
+  }
+  newLayers.insert(targetIt, source);
+
+  assert(mLayers.size() == newLayers.size());
+  if (SetAPILayers(newLayers)) {
+    mLayerDataIsStale = true;
   }
 }
 
