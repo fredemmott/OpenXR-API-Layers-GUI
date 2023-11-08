@@ -646,7 +646,7 @@ void GUI::DragDropReorder(const APILayer& source, const APILayer& target) {
 
 bool GUI::GUIHyperlink(const char* text) {
   ImGui::TextColored(HYPERLINK_COLOR, text);
-  if (ImGui::IsItemActivated()) {
+  if (ImGui::IsItemHovered()) {
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
   }
   return ImGui::IsItemClicked();
