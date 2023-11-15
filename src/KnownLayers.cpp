@@ -43,7 +43,7 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
         "XR_EXT_eye_gaze_interaction",
       },
       .mBelow = {
-        "XR_APILAYER_MBUCCHIA_quad_views_foveated",
+        "XR_VARJO_foveated_rendering",
       },
       .mProvides = {
         Features::Overlay,
@@ -63,6 +63,7 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
       .mName = "XR_APILAYER_NOVENDOR_OBSMirror",
       .mBelow = {
         Features::Overlay,
+        "XR_VARJO_foveated_rendering",
       },
     },
     {
