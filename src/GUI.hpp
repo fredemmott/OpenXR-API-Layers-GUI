@@ -39,6 +39,7 @@ class GUI final : public PlatformGUI {
   LintErrors mLintErrors;
   std::unordered_map<APILayer*, LintErrors> mLintErrorsByLayer;
   bool mLayerDataIsStale {true};
+  bool mLintErrorsAreStale {true};
 
   sf::WindowHandle mWindowHandle {};
 
@@ -56,6 +57,8 @@ class GUI final : public PlatformGUI {
   // This should only be called at the top of the frame loop; set
   // mLayerDataIsStale instead.
   void ReloadLayerDataNow();
+  // Set mLayerDataIsStale or mLintErrorsAreStale instead
+  void RunAllLintersNow();
 
   void AddLayersClicked();
   void DragDropReorder(const APILayer& source, const APILayer& target);

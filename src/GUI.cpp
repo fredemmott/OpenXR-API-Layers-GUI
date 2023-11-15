@@ -75,6 +75,10 @@ void GUI::Run() {
       this->ReloadLayerDataNow();
     }
 
+    if (mLintErrorsAreStale) {
+      this->RunAllLintersNow();
+    }
+
     sf::Event event {};
     while (window.pollEvent(event)) {
       ImGui::SFML::ProcessEvent(window, event);
@@ -129,6 +133,7 @@ void GUI::GUILayersList() {
       ImGui::PushID(i);
 
       if (ImGui::Checkbox("##Enabled", &layer.mIsEnabled)) {
+        mLintErrorsAreStale = true;
         SetAPILayers(mLayers);
       }
 
@@ -185,6 +190,7 @@ void GUI::GUIButtons() {
   ImGui::BeginDisabled(!(mSelectedLayer && !mSelectedLayer->mIsEnabled));
   if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
     mSelectedLayer->mIsEnabled = true;
+    mLintErrorsAreStale = true;
     SetAPILayers(mLayers);
   }
   ImGui::EndDisabled();
@@ -192,6 +198,7 @@ void GUI::GUIButtons() {
   ImGui::BeginDisabled(!(mSelectedLayer && mSelectedLayer->mIsEnabled));
   if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
     mSelectedLayer->mIsEnabled = false;
+    mLintErrorsAreStale = true;
     SetAPILayers(mLayers);
   }
   ImGui::EndDisabled();
@@ -506,7 +513,11 @@ void GUI::ReloadLayerDataNow() {
     }
   }
   mLayers = std::move(newLayers);
+  mLayerDataIsStale = false;
+  mLintErrorsAreStale = true;
+}
 
+void GUI::RunAllLintersNow() {
   std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
   for (auto& layer: mLayers) {
     layersByPath.emplace(layer.mJSONPath, &layer);
@@ -526,7 +537,7 @@ void GUI::ReloadLayerDataNow() {
       }
     }
   }
-  mLayerDataIsStale = false;
+  mLintErrorsAreStale = false;
 }
 
 void GUI::AddLayersClicked() {

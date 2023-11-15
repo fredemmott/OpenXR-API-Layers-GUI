@@ -45,6 +45,7 @@ class OrderingLinter final : public Linter {
       std::vector<std::tuple<APILayer, APILayerDetails>>>;
     ReqMap consumesFromBelow;
     ReqMap consumesFromAbove;
+    ReqMap conflicts;
 
     const auto knownLayers = GetKnownLayers();
 
@@ -69,6 +70,14 @@ class OrderingLinter final : public Linter {
           consumesFromBelow[feature] = {{layer, details}};
         }
       }
+
+      for (const auto& feature: meta.mConflicts) {
+        if (conflicts.contains(feature)) {
+          conflicts[feature].push_back({layer, details});
+        } else {
+          conflicts[feature] = {{layer, details}};
+        }
+      }
     }
 
     for (auto providerIt = layers.begin(); providerIt != layers.end();
@@ -86,6 +95,23 @@ class OrderingLinter final : public Linter {
       using Position = OrderingLintError::Position;
 
       for (const auto& feature: provides) {
+        if (conflicts.contains(feature)) {
+          for (const auto& [other, otherDetails]: conflicts.at(feature)) {
+            if (!(provider.mIsEnabled && other.mIsEnabled)) {
+              continue;
+            }
+            errors.push_back(std::make_shared<LintError>(
+              fmt::format(
+                "{} ({}) and {} ({}) are incompatible; you must remove or "
+                "disable one.",
+                providerDetails.mName,
+                provider.mJSONPath.string(),
+                otherDetails.mName,
+                other.mJSONPath.string()),
+              PathSet {provider.mJSONPath, other.mJSONPath}));
+          }
+        }
+
         if (consumesFromAbove.contains(feature)) {
           const auto& consumers = consumesFromAbove.at(feature);
           for (const auto& consumerPair: consumers) {

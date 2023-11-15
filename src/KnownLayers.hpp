@@ -36,6 +36,10 @@ struct KnownLayer {
    * should be specified in the OpenXR JSON manifest file, not here.
    */
   const std::set<std::string> mProvides;
+
+  /* Features (usually other layers) that this layer is completely
+   * incompatible with. */
+  const std::set<std::string> mConflicts;
 };
 
 std::unordered_map<std::string, KnownLayer> GetKnownLayers();
