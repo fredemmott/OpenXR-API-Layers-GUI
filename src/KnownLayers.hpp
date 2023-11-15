@@ -40,6 +40,10 @@ struct KnownLayer {
   /* Features (usually other layers) that this layer is completely
    * incompatible with. */
   const std::set<std::string> mConflicts;
+
+  /* Features (usually other layers) that this layer is completely
+   * incompatible with, but one or both support enabling/disabling per game. */
+  const std::set<std::string> mConflictsPerApp;
 };
 
 std::unordered_map<std::string, KnownLayer> GetKnownLayers();

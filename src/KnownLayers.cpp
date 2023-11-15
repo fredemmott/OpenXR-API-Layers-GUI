@@ -48,7 +48,7 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
       .mProvides = {
         Features::Overlay,
       },
-      .mConflicts = {
+      .mConflictsPerApp = {
         "XR_APILAYER_MBUCCHIA_varjo_foveated",
       },
     },

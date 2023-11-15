@@ -46,6 +46,7 @@ class OrderingLinter final : public Linter {
     ReqMap consumesFromBelow;
     ReqMap consumesFromAbove;
     ReqMap conflicts;
+    ReqMap conflictsPerApp;
 
     const auto knownLayers = GetKnownLayers();
 
@@ -53,31 +54,22 @@ class OrderingLinter final : public Linter {
       if (!knownLayers.contains(details.mName)) {
         continue;
       }
+
+      const auto populate = [&layer, &details](auto& out, const auto& in) {
+        for (const auto& feature: in) {
+          if (out.contains(feature)) {
+            out[feature].push_back({layer, details});
+          } else {
+            out[feature] = {{layer, details}};
+          }
+        }
+      };
+
       const auto meta = knownLayers.at(details.mName);
-
-      for (const auto& feature: meta.mAbove) {
-        if (consumesFromAbove.contains(feature)) {
-          consumesFromAbove[feature].push_back({layer, details});
-        } else {
-          consumesFromAbove[feature] = {{layer, details}};
-        }
-      }
-
-      for (const auto& feature: meta.mBelow) {
-        if (consumesFromBelow.contains(feature)) {
-          consumesFromBelow[feature].push_back({layer, details});
-        } else {
-          consumesFromBelow[feature] = {{layer, details}};
-        }
-      }
-
-      for (const auto& feature: meta.mConflicts) {
-        if (conflicts.contains(feature)) {
-          conflicts[feature].push_back({layer, details});
-        } else {
-          conflicts[feature] = {{layer, details}};
-        }
-      }
+      populate(consumesFromAbove, meta.mAbove);
+      populate(consumesFromBelow, meta.mBelow);
+      populate(conflicts, meta.mConflicts);
+      populate(conflictsPerApp, meta.mConflictsPerApp);
     }
 
     for (auto providerIt = layers.begin(); providerIt != layers.end();
@@ -95,6 +87,7 @@ class OrderingLinter final : public Linter {
       using Position = OrderingLintError::Position;
 
       for (const auto& feature: provides) {
+        // LINT RULE: Hard conflicts
         if (conflicts.contains(feature)) {
           for (const auto& [other, otherDetails]: conflicts.at(feature)) {
             if (!(provider.mIsEnabled && other.mIsEnabled)) {
@@ -112,6 +105,23 @@ class OrderingLinter final : public Linter {
           }
         }
 
+        if (conflictsPerApp.contains(feature)) {
+          for (const auto& [other, otherDetails]: conflictsPerApp.at(feature)) {
+            if (!(provider.mIsEnabled && other.mIsEnabled)) {
+              continue;
+            }
+            errors.push_back(std::make_shared<LintError>(
+              fmt::format(
+                "Make sure that games using {} ({}) are disabled in {} ({})",
+                providerDetails.mName,
+                provider.mJSONPath.string(),
+                otherDetails.mName,
+                other.mJSONPath.string()),
+              PathSet {provider.mJSONPath, other.mJSONPath}));
+          }
+        }
+
+        // LINT RULE: Consumes from above
         if (consumesFromAbove.contains(feature)) {
           const auto& consumers = consumesFromAbove.at(feature);
           for (const auto& consumerPair: consumers) {
@@ -140,6 +150,7 @@ class OrderingLinter final : public Linter {
           }
         }
 
+        // LINT RULE: consumes from below
         if (consumesFromBelow.contains(feature)) {
           const auto& consumers = consumesFromBelow.at(feature);
           for (const auto& consumerPair: consumers) {
