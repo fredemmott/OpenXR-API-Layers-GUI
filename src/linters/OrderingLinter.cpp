@@ -157,18 +157,25 @@ class OrderingLinter final : public Linter {
 
       const auto& [position, relativeTo, relativeToDetails] = *move;
 
-      errors.push_back(std::make_shared<OrderingLintError>(
-        fmt::format(
+      const auto errorString = (providerDetails.mName == conflictFeature)
+        ? fmt::format(
+          "{} ({}) must be {} {} ({})",
+          providerDetails.mName,
+          provider.mJSONPath.string(),
+          (position == Position::Above ? "above" : "below"),
+          relativeToDetails.mName,
+          relativeTo.mJSONPath.string())
+        : fmt::format(
           "Because {} ({}) provides {}, it must be {} {} ({})",
           providerDetails.mName,
           provider.mJSONPath.string(),
           conflictFeature,
           (position == Position::Above ? "above" : "below"),
           relativeToDetails.mName,
-          relativeTo.mJSONPath.string()),
-        provider.mJSONPath,
-        position,
-        relativeTo.mJSONPath));
+          relativeTo.mJSONPath.string());
+
+      errors.push_back(std::make_shared<OrderingLintError>(
+        errorString, provider.mJSONPath, position, relativeTo.mJSONPath));
     }
 
     return errors;
