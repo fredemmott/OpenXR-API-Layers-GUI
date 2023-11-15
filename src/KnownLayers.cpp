@@ -42,6 +42,9 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
         "XR_EXT_hand_tracking",
         "XR_EXT_eye_gaze_interaction",
       },
+      .mBelow = {
+        "XR_APILAYER_MBUCCHIA_quad_views_foveated",
+      },
       .mProvides = {
         Features::Overlay,
       },
