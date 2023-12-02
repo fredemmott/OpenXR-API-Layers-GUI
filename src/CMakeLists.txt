@@ -47,6 +47,7 @@ macro(add_gui)
     KnownLayers.cpp
     Linter.cpp
     linters/BadInstallationLinter.cpp
+    linters/DuplicatesLinter.cpp
     linters/OrderingLinter.cpp
   )
 
