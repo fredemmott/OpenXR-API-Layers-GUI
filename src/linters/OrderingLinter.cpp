@@ -51,6 +51,10 @@ class OrderingLinter final : public Linter {
     const auto knownLayers = GetKnownLayers();
 
     for (const auto& [layer, details]: layers) {
+      if (!layer.mIsEnabled) {
+        continue;
+      }
+
       if (!knownLayers.contains(details.mName)) {
         continue;
       }
@@ -75,6 +79,10 @@ class OrderingLinter final : public Linter {
     for (auto providerIt = layers.begin(); providerIt != layers.end();
          providerIt++) {
       auto [provider, providerDetails] = *providerIt;
+      if (!provider.mIsEnabled) {
+        continue;
+      }
+
       const auto provides = this->GetProvides(provider, providerDetails);
 
       auto targetIt = providerIt;
