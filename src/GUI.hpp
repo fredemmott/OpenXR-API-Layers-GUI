@@ -22,8 +22,9 @@ class PlatformGUI {
   void PlatformInit();
   std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(
     sf::WindowHandle parent);
-  void SetupFonts(ImGuiIO*);
+  void SetupFonts(ImGuiIO*, float dpiScale);
   void OpenURI(const std::string& uri);
+  float GetDPIScaling(sf::WindowHandle);
 };
 
 // The actual app GUI
@@ -40,6 +41,7 @@ class GUI final : public PlatformGUI {
   std::unordered_map<APILayer*, LintErrors> mLintErrorsByLayer;
   bool mLayerDataIsStale {true};
   bool mLintErrorsAreStale {true};
+  float mDPIScale {1.0f};
 
   sf::WindowHandle mWindowHandle {};
 

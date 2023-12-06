@@ -81,7 +81,7 @@ std::vector<std::filesystem::path> PlatformGUI::GetNewAPILayerJSONPaths(
   return ret;
 }
 
-void PlatformGUI::SetupFonts(ImGuiIO* io) {
+void PlatformGUI::SetupFonts(ImGuiIO* io, float dpiScale) {
   wchar_t* fontsPathStr {nullptr};
   if (
     SHGetKnownFolderPath(FOLDERID_Fonts, KF_FLAG_DEFAULT, NULL, &fontsPathStr)
@@ -96,7 +96,7 @@ void PlatformGUI::SetupFonts(ImGuiIO* io) {
 
   io->Fonts->Clear();
   io->Fonts->AddFontFromFileTTF(
-    (fontsPath / "segoeui.ttf").string().c_str(), 16.0f);
+    (fontsPath / "segoeui.ttf").string().c_str(), 16.0f * dpiScale);
 
   static ImWchar ranges[] = {0x1, 0x1ffff, 0};
   static ImFontConfig config {};
@@ -105,7 +105,10 @@ void PlatformGUI::SetupFonts(ImGuiIO* io) {
   config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
   io->Fonts->AddFontFromFileTTF(
-    (fontsPath / "seguiemj.ttf").string().c_str(), 13.0f, &config, ranges);
+    (fontsPath / "seguiemj.ttf").string().c_str(),
+    13.0f * dpiScale,
+    &config,
+    ranges);
 
   { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
 }
@@ -113,6 +116,10 @@ void PlatformGUI::SetupFonts(ImGuiIO* io) {
 void PlatformGUI::OpenURI(const std::string& uri) {
   auto wstring = std::wstring(winrt::to_hstring(uri));
   ShellExecuteW(NULL, L"open", wstring.c_str(), nullptr, nullptr, 0);
+}
+
+float PlatformGUI::GetDPIScaling(sf::WindowHandle window) {
+  return static_cast<float>(GetDpiForWindow(window)) / USER_DEFAULT_SCREEN_DPI;
 }
 
 }// namespace FredEmmott::OpenXRLayers

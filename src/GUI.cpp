@@ -32,15 +32,20 @@ class MyWindow final : public sf::RenderWindow {
   using sf::RenderWindow::RenderWindow;
   virtual ~MyWindow() = default;
 
+  void setMinimumSize(const ImVec2& value) {
+    mMinimumSize = value;
+    this->onResize();
+  }
+
  protected:
   virtual void onResize() override {
     auto size = this->getSize();
     auto newSize = size;
-    if (size.x < MINIMUM_WINDOW_SIZE.x) {
-      newSize.x = MINIMUM_WINDOW_SIZE.x;
+    if (size.x < mMinimumSize.x) {
+      newSize.x = static_cast<unsigned int>(mMinimumSize.x);
     }
-    if (size.y < MINIMUM_WINDOW_SIZE.y) {
-      newSize.y = MINIMUM_WINDOW_SIZE.y;
+    if (size.y < mMinimumSize.y) {
+      newSize.y = static_cast<unsigned int>(mMinimumSize.y);
     }
 
     if (size == newSize) {
@@ -49,6 +54,9 @@ class MyWindow final : public sf::RenderWindow {
 
     this->setSize(newSize);
   }
+
+ private:
+  ImVec2 mMinimumSize {MINIMUM_WINDOW_SIZE};
 };
 }// namespace
 
@@ -67,8 +75,12 @@ void GUI::Run() {
 
   mWindowHandle = window.getSystemHandle();
 
-  auto& io = ImGui::GetIO();
-  SetupFonts(&io);
+  mDPIScale = this->GetDPIScaling(mWindowHandle);
+  window.setMinimumSize({
+    MINIMUM_WINDOW_SIZE.x * mDPIScale,
+    MINIMUM_WINDOW_SIZE.y * mDPIScale,
+  });
+  SetupFonts(&ImGui::GetIO(), mDPIScale);
 
   sf::Clock deltaClock {};
   auto& watcher = Watcher::Get();
@@ -82,6 +94,18 @@ void GUI::Run() {
 
     if (mLintErrorsAreStale) {
       this->RunAllLintersNow();
+    }
+
+    {
+      const auto newScale = this->GetDPIScaling(mWindowHandle);
+      if (newScale != mDPIScale) {
+        window.setMinimumSize({
+          MINIMUM_WINDOW_SIZE.x * mDPIScale,
+          MINIMUM_WINDOW_SIZE.y * mDPIScale,
+        });
+        mDPIScale = newScale;
+        SetupFonts(&ImGui::GetIO(), mDPIScale);
+      }
     }
 
     sf::Event event {};
@@ -123,7 +147,8 @@ void GUI::Run() {
 void GUI::GUILayersList() {
   auto viewport = ImGui::GetMainViewport();
   ImGui::BeginListBox(
-    "##Layers", {viewport->WorkSize.x - 256, viewport->WorkSize.y / 2});
+    "##Layers",
+    {viewport->WorkSize.x - (256 * mDPIScale), viewport->WorkSize.y / 2});
   ImGuiListClipper clipper {};
   clipper.Begin(static_cast<int>(mLayers.size()));
 
