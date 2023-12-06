@@ -18,7 +18,8 @@
 
 namespace FredEmmott::OpenXRLayers {
 
-constexpr auto SUBKEY {L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit"};
+static constexpr auto SUBKEY {
+  L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit"};
 
 std::vector<APILayer> GetAPILayers() {
   HKEY key {NULL};

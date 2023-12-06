@@ -18,6 +18,7 @@
 #include "APILayers.hpp"
 #include "Config.hpp"
 #include "Linter.hpp"
+#include "Watcher.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers {
@@ -70,7 +71,11 @@ void GUI::Run() {
   SetupFonts(&io);
 
   sf::Clock deltaClock {};
+  auto& watcher = Watcher::Get();
   while (window.isOpen()) {
+    if (watcher.Poll()) {
+      mLayerDataIsStale = true;
+    }
     if (mLayerDataIsStale) {
       this->ReloadLayerDataNow();
     }
