@@ -147,7 +147,7 @@ class PlatformGUI_Windows final : public PlatformGUI {
   }
 
  protected:
-  static LRESULT SubclassProc(
+  static LRESULT CALLBACK SubclassProc(
     HWND hWnd,
     UINT uMsg,
     WPARAM wParam,
