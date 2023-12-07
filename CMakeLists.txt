@@ -45,7 +45,7 @@ set(
   "Identifier for the current build, e.g. OS, architecture, HKLM vs HKCU"
 )
 
-project(OpenXR-Layers-GUI VERSION 0.0.3.${VERSION_BUILD} LANGUAGES CXX C)
+project(OpenXR-Layers-GUI VERSION 2023.12.7.${VERSION_BUILD} LANGUAGES CXX C)
 
 
 # Handy for CI
