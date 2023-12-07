@@ -16,19 +16,36 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+struct DPIChangeInfo {
+  float mDPIScaling {};
+  std::optional<ImVec2> mRecommendedSize;
+};
+
 // Platform-specific functions implemented in PlatformGUI_P*.cpp
 class PlatformGUI {
+ public:
+  static PlatformGUI& Get();
+  virtual ~PlatformGUI() = default;
+
+  virtual void SetWindow(sf::WindowHandle) = 0;
+
+  virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
+  virtual void SetupFonts(ImGuiIO*) = 0;
+  virtual void OpenURI(const std::string& uri) = 0;
+  virtual float GetDPIScaling() = 0;
+  virtual std::optional<DPIChangeInfo> GetDPIChangeInfo() = 0;
+
+  PlatformGUI(const PlatformGUI&) = delete;
+  PlatformGUI(PlatformGUI&&) = delete;
+  PlatformGUI& operator=(const PlatformGUI&) = delete;
+  PlatformGUI& operator=(PlatformGUI&&) = delete;
+
  protected:
-  void PlatformInit();
-  std::vector<std::filesystem::path> GetNewAPILayerJSONPaths(
-    sf::WindowHandle parent);
-  void SetupFonts(ImGuiIO*, float dpiScale);
-  void OpenURI(const std::string& uri);
-  float GetDPIScaling(sf::WindowHandle);
+  PlatformGUI() = default;
 };
 
 // The actual app GUI
-class GUI final : public PlatformGUI {
+class GUI final {
  public:
   void Run();
 
@@ -41,7 +58,6 @@ class GUI final : public PlatformGUI {
   std::unordered_map<APILayer*, LintErrors> mLintErrorsByLayer;
   bool mLayerDataIsStale {true};
   bool mLintErrorsAreStale {true};
-  float mDPIScale {1.0f};
 
   sf::WindowHandle mWindowHandle {};
 

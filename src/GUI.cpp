@@ -61,7 +61,8 @@ class MyWindow final : public sf::RenderWindow {
 }// namespace
 
 void GUI::Run() {
-  PlatformInit();
+  auto& platform = PlatformGUI::Get();
+
   MyWindow window {
     sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
     fmt::format(
@@ -72,15 +73,15 @@ void GUI::Run() {
   if (!ImGui::SFML::Init(window)) {
     return;
   }
-
   mWindowHandle = window.getSystemHandle();
+  platform.SetWindow(mWindowHandle);
 
-  mDPIScale = this->GetDPIScaling(mWindowHandle);
+  auto dpiScaling = platform.GetDPIScaling();
   window.setMinimumSize({
-    MINIMUM_WINDOW_SIZE.x * mDPIScale,
-    MINIMUM_WINDOW_SIZE.y * mDPIScale,
+    MINIMUM_WINDOW_SIZE.x * dpiScaling,
+    MINIMUM_WINDOW_SIZE.y * dpiScaling,
   });
-  SetupFonts(&ImGui::GetIO(), mDPIScale);
+  platform.SetupFonts(&ImGui::GetIO());
 
   sf::Clock deltaClock {};
   auto& watcher = Watcher::Get();
@@ -97,14 +98,17 @@ void GUI::Run() {
     }
 
     {
-      const auto newScale = this->GetDPIScaling(mWindowHandle);
-      if (newScale != mDPIScale) {
+      const auto changeInfo = platform.GetDPIChangeInfo();
+      if (changeInfo) {
+        window.setMinimumSize({0, 0});
+        if (changeInfo->mRecommendedSize) {
+          window.setSize(*changeInfo->mRecommendedSize);
+        }
         window.setMinimumSize({
-          MINIMUM_WINDOW_SIZE.x * mDPIScale,
-          MINIMUM_WINDOW_SIZE.y * mDPIScale,
+          MINIMUM_WINDOW_SIZE.x * changeInfo->mDPIScaling,
+          MINIMUM_WINDOW_SIZE.y * changeInfo->mDPIScaling,
         });
-        mDPIScale = newScale;
-        SetupFonts(&ImGui::GetIO(), mDPIScale);
+        platform.SetupFonts(&ImGui::GetIO());
       }
     }
 
@@ -146,9 +150,10 @@ void GUI::Run() {
 
 void GUI::GUILayersList() {
   auto viewport = ImGui::GetMainViewport();
+  const auto dpiScale = PlatformGUI::Get().GetDPIScaling();
   ImGui::BeginListBox(
     "##Layers",
-    {viewport->WorkSize.x - (256 * mDPIScale), viewport->WorkSize.y / 2});
+    {viewport->WorkSize.x - (256 * dpiScale), viewport->WorkSize.y / 2});
   ImGuiListClipper clipper {};
   clipper.Begin(static_cast<int>(mLayers.size()));
 
@@ -268,7 +273,7 @@ void GUI::GUIButtons() {
     const auto x = ImGui::GetCursorPosX();
     ImGui::SetCursorPosX(x + ((windowWidth - x - textWidth) / 2));
     if (GUIHyperlink(text)) {
-      OpenURI("https://github.com/sponsors/fredemmott");
+      PlatformGUI::Get().OpenURI("https://github.com/sponsors/fredemmott");
     }
   }
   ImGui::EndGroup();
@@ -571,7 +576,7 @@ void GUI::RunAllLintersNow() {
 }
 
 void GUI::AddLayersClicked() {
-  auto paths = GetNewAPILayerJSONPaths(mWindowHandle);
+  auto paths = PlatformGUI::Get().GetNewAPILayerJSONPaths();
   for (auto it = paths.begin(); it != paths.end();) {
     auto existingLayer = std::ranges::find_if(
       mLayers, [it](const auto& layer) { return layer.mJSONPath == *it; });
@@ -635,8 +640,9 @@ void GUI::GUIRemoveLayerPopup() {
       "undone.",
       mSelectedLayer->mJSONPath.string().c_str());
     ImGui::Separator();
-    ImGui::SetCursorPosX(256 + 128);
-    if (ImGui::Button("Remove", {64, 0}) && mSelectedLayer) {
+    const auto dpiScaling = PlatformGUI::Get().GetDPIScaling();
+    ImGui::SetCursorPosX((256 + 128) * dpiScaling);
+    if (ImGui::Button("Remove", {64 * dpiScaling, 0}) && mSelectedLayer) {
       auto nextLayers = mLayers;
       auto it = std::ranges::find(nextLayers, *mSelectedLayer);
       if (it != nextLayers.end()) {
@@ -647,7 +653,7 @@ void GUI::GUIRemoveLayerPopup() {
       ImGui::CloseCurrentPopup();
     }
     ImGui::SameLine();
-    if (ImGui::Button("Cancel", {64, 0})) {
+    if (ImGui::Button("Cancel", {64 * dpiScaling, 0})) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::SetItemDefaultFocus();

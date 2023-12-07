@@ -111,6 +111,7 @@ macro(add_gui)
       ${TARGET}
       PRIVATE
       Microsoft::CppWinRT
+      Comctl32
     )
 
     configure_file(
