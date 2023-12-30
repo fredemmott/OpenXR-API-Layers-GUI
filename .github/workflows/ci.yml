@@ -84,6 +84,7 @@ jobs:
             vcpkg-arch: x64-windows-static
   combine:
     name: Combine Artifacts
+    needs: build
     runs-on: windows-latest
     steps:
       - name: Download artifacts
