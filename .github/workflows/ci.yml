@@ -87,10 +87,21 @@ jobs:
     needs: build
     runs-on: windows-latest
     steps:
-      - name: Download artifacts
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           path: ${{runner.temp}}/artifacts
           merge-multiple: true
       - name: List artifacts
         run: Get-ChildItem -Recurse ${{runner.temp}}/artifacts
+      - name: Get Version Number
+        id: version
+        run: |
+          $Version=$(Get-Content ${{runner.temp}}/artifacts/version.txt)
+          Write-Host "Version: ${Version}"
+          Add-Content $Env:GITHUB_OUTPUT "version=${version}"
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "OpenXR-API-Layers-GUI-v${{steps.version.outputs.version}}"
+          path: ${{runner.temp}}/artifacts
