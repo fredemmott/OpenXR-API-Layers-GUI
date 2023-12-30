@@ -66,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ matrix.build-type != 'Debug' }}
         with:
-          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
+          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}-${{matrix.os-arch}}"
           path: ${{runner.temp}}/install
     strategy:
       fail-fast: false
@@ -82,3 +82,11 @@ jobs:
             runs-on: windows-latest
             cmake-arch: x64
             vcpkg-arch: x64-windows-static
+  combine:
+    name: Combine Artifacts
+    runs-on: windows-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: List artifacts
+        run: Get-ChildItem -Recurse
