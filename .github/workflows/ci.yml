@@ -89,5 +89,8 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: ${{runner.temp}}/artifacts
+          merge-multiple: true
       - name: List artifacts
-        run: Get-ChildItem -Recurse
+        run: Get-ChildItem -Recurse ${{runner.temp}}/artifacts
