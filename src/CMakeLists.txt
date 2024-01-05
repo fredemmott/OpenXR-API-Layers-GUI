@@ -49,6 +49,7 @@ macro(add_gui)
     linters/BadInstallationLinter.cpp
     linters/DuplicatesLinter.cpp
     linters/OrderingLinter.cpp
+    "${CMAKE_SOURCE_DIR}/icon/icon.rc"
   )
 
   target_include_directories(
