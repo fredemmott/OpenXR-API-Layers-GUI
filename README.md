@@ -6,6 +6,8 @@ This is a tool for:
 - enabling, disabling, adding, or removing OpenXR API layers
 - re-ordering OpenXR API layers
 
+There is no general way to detect errors with OpenXR API layers, so this tool is only able to detect problems that it knows about. If it doesn't show any errors, that just means that you have no particularly common problems, not necessarily that everything is set up correctly.
+
 ## Getting Started
 
 1. Download [the latest version](https://github.com/fredemmott/OpenXR-API-Layers-GUI/releases/latest)
