@@ -2,88 +2,9 @@ name: Continuous Integration
 on: [push, pull_request]
 jobs:
   build:
-    name: ${{matrix.os-arch}}/${{matrix.build-type}}
-    runs-on: ${{matrix.runs-on}}
-    steps:
-      - name: Fetch code-signing key
-        env:
-          CODE_SIGNING_PFX_BASE64: ${{ secrets.CODE_SIGNING_KEY_PFX_BASE64 }}
-        id: fetch-key
-        if: ${{ (github.repository == 'fredemmott/OpenXR-API-Layers-GUI') && (github.event_name == 'push') && (github.actor == 'fredemmott') }}
-        shell: pwsh
-        run: |
-          $pfxPath="${{runner.temp}}/MyCert.pfx"
-          [System.Convert]::FromBase64String($Env:CODE_SIGNING_PFX_BASE64) | Set-Content "$pfxPath" -AsByteStream
-          Add-Content $Env:GITHUB_OUTPUT "HAVE_KEY=true"
-          Add-Content $Env:GITHUB_OUTPUT "PATH=$pfxPath"
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Make build directory
-        run: cmake -E make_directory build
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-      - name: "Initialize vcpkg"
-        working-directory: build
-        run: ../third-party/vcpkg/bootstrap-vcpkg.bat
-      - name: "Install dependencies with vcpkg"
-        working-directory: build
-        run: |
-          ../third-party/vcpkg/vcpkg.exe install `
-            --binarysource="clear;x-gha,readwrite" `
-            --x-install-root=$(Get-Location)/vcpkg_installed `
-            --triplet ${{matrix.vcpkg-arch}}
-      - name: Configure
-        working-directory: build
-        id: configure
-        run: |
-          $args = @()
-          if ( "${{steps.fetch-key.outputs.HAVE_KEY}}" -eq "true" ) {
-            echo "::notice::Signing build targets"
-            $args += "-DSIGNTOOL_KEY_ARGS=/f;${{steps.fetch-key.outputs.PATH}}" `
-          } else {
-            echo "::warning::Not signing targets"
-          }
-
-          cmake .. `
-            -A ${{matrix.cmake-arch}} `
-            -DVCPKG_TARGET_TRIPLET=${{matrix.vcpkg-arch}} `
-            @args
-
-          Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content version.txt)"
-        shell: pwsh
-      - name: Compile
-        working-directory: build
-        run: cmake --build . --parallel --config ${{matrix.build-type}} --verbose
-      - name: Install
-        working-directory: build
-        run: |
-          cmake --install . --config ${{matrix.build-type}} --prefix ${{runner.temp}}/install
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        if: ${{ matrix.build-type != 'Debug' }}
-        with:
-          name: "build-OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}-${{matrix.os-arch}}"
-          path: ${{runner.temp}}/install
-    outputs:
-      version: ${{steps.configure.outputs.version}}
-    strategy:
-      fail-fast: false
-      matrix:
-        os-arch: [Win32, Win64]
-        build-type: [RelWithDebInfo, Debug]
-        include:
-          - os-arch: Win32
-            runs-on: windows-latest
-            cmake-arch: Win32
-            vcpkg-arch: x86-windows-static
-          - os-arch: Win64
-            runs-on: windows-latest
-            cmake-arch: x64
-            vcpkg-arch: x64-windows-static
+    name: Build
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
   combine:
     name: Combine Artifacts
     needs: build
