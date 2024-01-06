@@ -36,6 +36,10 @@ class PlatformGUI_Windows final : public PlatformGUI {
       static_cast<SUBCLASSPROC>(SubclassProc),
       0,
       reinterpret_cast<DWORD_PTR>(this));
+    auto icon = LoadIconA(GetModuleHandle(nullptr), "appIcon");
+    if (icon) {
+      SetClassLongPtr(mWindow, GCLP_HICON, reinterpret_cast<LONG_PTR>(icon));
+    }
   }
 
   std::optional<DPIChangeInfo> GetDPIChangeInfo() override {
