@@ -45,6 +45,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
+The majority of this project is licensed under the MIT license (below).
+
+The images in the 'icons' subfolder may not be reused or distributed outside of this product.
+
+A separate license for these images may be purchased from https://glyphicons.com
+
+------
+
 Copyright (c) 2023 Fred Emmott.
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
