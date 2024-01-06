@@ -1,6 +1,6 @@
 $nativeSize = 32
 $nativeDpi = 96
-$sizes = 16,32,48,64,128,256
+$sizes = 16,32,40,48,64,96,128,256
 $intermediates = @()
 foreach ($size in $sizes) {
   $out = "icon-${size}.png"
