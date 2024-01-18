@@ -185,13 +185,16 @@ void GUI::GUILayersList() {
       }
 
       if (ImGui::BeginDragDropSource()) {
-        ImGui::SetDragDropPayload("APILayer*", &layer, sizeof(layer));
+        const size_t index = i;
+        ImGui::SetDragDropPayload("APILayerIndex", &index, sizeof(index));
         ImGui::EndDragDropSource();
       }
 
       if (ImGui::BeginDragDropTarget()) {
-        if (const auto payload = ImGui::AcceptDragDropPayload("APILayer*")) {
-          const auto source = *reinterpret_cast<APILayer*>(payload->Data);
+        if (
+          const auto payload = ImGui::AcceptDragDropPayload("APILayerIndex")) {
+          auto sourceIndex = *reinterpret_cast<const size_t*>(payload->Data);
+          const auto& source = mLayers.at(sourceIndex);
           DragDropReorder(source, layer);
         }
         ImGui::EndDragDropTarget();
