@@ -27,6 +27,17 @@ OpenXR games and API layers are 64-bit, and should be installed system-wide.
 If you are currently encountering problems with OpenXR, you should check all
 four for errors and fix them.
 
+As of 2024-01-20, the following OpenXR runtmes are 64-bit only - the 32-bit versions will have no effect on them:
+- Meta OpenXR Simulator
+- SteamVR
+- Varjo
+
+The following support both 32- and 64-bit, however it is still extremely likely that your game will use the 64-bit version, as most games will want to at least support SteamVR:
+- Oculus OpenXR
+- PimaxXR
+- VirtualDesktop-OpenXR
+- Window Mixed Reality
+
 How To Get Help
 ---------------
 
