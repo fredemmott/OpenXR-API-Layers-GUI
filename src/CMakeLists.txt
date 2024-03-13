@@ -90,6 +90,7 @@ macro(add_gui)
       manifest.xml
       linters/windows/OutdatedOpenKneeboardLinter.cpp
       linters/windows/ProgramFilesLinter.cpp
+      linters/windows/UnsignedDllLinter.cpp
     )
 
     target_compile_definitions(
@@ -113,6 +114,7 @@ macro(add_gui)
       PRIVATE
       Microsoft::CppWinRT
       Comctl32
+      WinTrust
     )
 
     configure_file(
