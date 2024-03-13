@@ -152,6 +152,7 @@ elseif(WIN32)
   else()
     set(BUILD_ARCH "Win32")
   endif()
+  message(STATUS "Building for ${BUILD_ARCH} with ${CMAKE_SIZEOF_VOID_P}-byte pointers")
 
   # Using BUILD_ARCH instead of just "Windows" as we need separate
   # DLLs for the 32- and 64-bit versions
