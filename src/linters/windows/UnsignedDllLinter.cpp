@@ -54,10 +54,13 @@ class UnsignedDllLinter final : public Linter {
             PathSet {layer.mJSONPath}));
           break;
         case CERT_E_EXPIRED:
+          // Not seen reports of this so far; don't know if anti-cheats are
+          // generally OK with this, or if they recognize the most popular
+          // layers now
           errors.push_back(std::make_shared<LintError>(
             fmt::format(
               "{} has a signature without a timestamp, from an expired "
-              "certificate; This is likely to cause issues with games that use "
+              "certificate; This may cause issues with games that use "
               "anti-cheat software.",
               details.mLibraryPath.string()),
             PathSet {layer.mJSONPath}));
