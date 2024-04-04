@@ -16,6 +16,12 @@ There is no general way to detect errors with OpenXR API layers, so this tool is
 
 While this project is designed to be easily portable, it currently only supports Windows - [contributions are very welcome :)](CONTRIBUTING.md).
 
+## FAQ
+
+### Why does OpenXR Explorer show the layers in a different order?
+
+OpenXR Explorer v1.4 (latest as of 2024-04-04) and below show API layers in alphabetical order; OpenXR API Layers GUI instead shows API layers in their actual order.
+
 ## Getting Help
 
 If you have a problem with a specific layer, or aren't sure which order things
