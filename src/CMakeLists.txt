@@ -115,6 +115,9 @@ macro(add_gui)
       Microsoft::CppWinRT
       Comctl32
       WinTrust
+      # Missing dependency for CppWinRT vcpkg
+      # https://github.com/microsoft/vcpkg/issues/15339
+      RuntimeObject
     )
 
     configure_file(
