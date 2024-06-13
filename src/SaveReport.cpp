@@ -18,7 +18,10 @@ namespace FredEmmott::OpenXRLayers {
 
 static std::string GenerateReportText(const APILayerStore* store) {
   auto ret = std::format(
-    "\n{}\n--------------------------------", store->GetDisplayName());
+    "\n--------------------------------\n"
+    "{}\n"
+    "--------------------------------",
+    store->GetDisplayName());
   const auto layers = store->GetAPILayers();
   if (layers.empty()) {
     ret += "\nNo layers.";
@@ -100,8 +103,7 @@ static std::string GenerateReportText(const APILayerStore* store) {
 void SaveReport(const std::filesystem::path& path) {
   auto text = std::format(
     "OpenXR API Layers GUI v{}\n"
-    "Reported generated at {:%Y-%m-%d %H:%M:%S}\n"
-    "================================",
+    "Reported generated at {:%Y-%m-%d %H:%M:%S}",
     Config::BUILD_VERSION,
     std::chrono::zoned_time(
       std::chrono::current_zone(), std::chrono::system_clock::now()));
