@@ -30,9 +30,13 @@ class PlatformGUI {
   virtual void SetWindow(sf::WindowHandle) = 0;
 
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
+  virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
   virtual void SetupFonts(ImGuiIO*) = 0;
   virtual float GetDPIScaling() = 0;
   virtual std::optional<DPIChangeInfo> GetDPIChangeInfo() = 0;
+
+  // Use OS/environment equivalent to Explorer
+  virtual void ShowFolderContainingFile(const std::filesystem::path&) = 0;
 
   PlatformGUI(const PlatformGUI&) = delete;
   PlatformGUI(PlatformGUI&&) = delete;
@@ -54,7 +58,7 @@ class GUI final {
   std::vector<APILayer> mLayers;
   APILayer* mSelectedLayer {nullptr};
   LintErrors mLintErrors;
-  std::unordered_map<APILayer*, LintErrors> mLintErrorsByLayer;
+  std::unordered_map<const APILayer*, LintErrors> mLintErrorsByLayer;
   bool mLayerDataIsStale {true};
   bool mLintErrorsAreStale {true};
 
@@ -80,6 +84,8 @@ class GUI final {
 
   void AddLayersClicked();
   void DragDropReorder(const APILayer& source, const APILayer& target);
+
+  void Export();
 };
 
 }// namespace FredEmmott::OpenXRLayers

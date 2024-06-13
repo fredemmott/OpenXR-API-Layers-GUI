@@ -24,11 +24,11 @@ IncludeCategories:
     Priority: 30
   - Regex: '^<Unknwn\.h>'
     Priority: 31
+  - Regex: '^<winrt/.+'
+    Priority: 32
+    SortPriority: 32
   - Regex: '^<ppl[a-z]+\.h>'
     Priority: 33
-  - Regex: '^<shims/winrt/.+'
-    Priority: 1
-    SortPriority: 34
   - Regex: '^<winrt/.+'
     Priority: 35
   - Regex: '^<wil/.+'

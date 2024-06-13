@@ -3,13 +3,20 @@
 
 #include <Windows.h>
 
+#include <Unknwn.h>
+
 #include <winrt/base.h>
+
+#include <chrono>
+#include <format>
 
 #include <ShlObj.h>
 #include <ShlObj_core.h>
 #include <imgui_freetype.h>
 #include <shellapi.h>
+#include <shtypes.h>
 
+#include "Config.hpp"
 #include "GUI.hpp"
 #include <imgui-SFML.h>
 
@@ -45,6 +52,66 @@ class PlatformGUI_Windows final : public PlatformGUI {
   std::optional<DPIChangeInfo> GetDPIChangeInfo() override {
     auto ret = mDPIChangeInfo;
     mDPIChangeInfo = {};
+    return ret;
+  }
+
+  std::optional<std::filesystem::path> GetExportFilePath() override {
+    auto picker = winrt::create_instance<IFileSaveDialog>(
+      CLSID_FileSaveDialog, CLSCTX_ALL);
+    {
+      FILEOPENDIALOGOPTIONS opts;
+      picker->GetOptions(&opts);
+      opts |= FOS_FORCEFILESYSTEM | FOS_ALLOWMULTISELECT;
+      picker->SetOptions(opts);
+    }
+
+    {
+      constexpr winrt::guid persistenceGuid {
+        0x4e4c8046,
+        0x231a,
+        0x4ffc,
+        {0x82, 0x01, 0x68, 0xe5, 0x17, 0x18, 0x58, 0xb0}};
+      picker->SetClientGuid(persistenceGuid);
+    }
+
+    picker->SetTitle(L"Export to File");
+
+    winrt::com_ptr<IShellFolder> desktopFolder;
+    winrt::check_hresult(SHGetDesktopFolder(desktopFolder.put()));
+    winrt::com_ptr<IShellItem> desktopItem;
+    winrt::check_hresult(SHGetItemFromObject(
+      desktopFolder.get(), IID_PPV_ARGS(desktopItem.put())));
+    picker->SetDefaultFolder(desktopItem.get());
+
+    COMDLG_FILTERSPEC filter {
+      .pszName = L"Plain Text",
+      .pszSpec = L"*.txt",
+    };
+    picker->SetFileTypes(1, &filter);
+
+    const auto filename = std::format(
+      L"OpenXR-API-Layers-{}-{:%Y-%m-%d-%H-%M-%S}.txt",
+      winrt::to_hstring(Config::BUILD_TARGET_ID),
+      std::chrono::zoned_time(
+        std::chrono::current_zone(),
+        std::chrono::time_point_cast<std::chrono::seconds>(
+          std::chrono::system_clock::now())));
+    picker->SetFileName(filename.c_str());
+
+    if (picker->Show(NULL) != S_OK) {
+      return {};
+    }
+
+    winrt::com_ptr<IShellItem> shellItem;
+    if (picker->GetResult(shellItem.put()) != S_OK) {
+      return {};
+    }
+
+    PWSTR buf {nullptr};
+    winrt::check_hresult(shellItem->GetDisplayName(SIGDN_FILESYSPATH, &buf));
+    const std::filesystem::path ret {std::wstring_view {buf}};
+    CoTaskMemFree(buf);
+
     return ret;
   }
 
@@ -143,6 +210,22 @@ class PlatformGUI_Windows final : public PlatformGUI {
 
   float GetDPIScaling() override {
     return mDPIScaling;
+  }
+
+  void ShowFolderContainingFile(const std::filesystem::path& path) override {
+    const auto absolute = std::filesystem::absolute(path).wstring();
+
+    PIDLIST_ABSOLUTE pidl {nullptr};
+    winrt::check_hresult(SHParseDisplayName(
+      std::filesystem::absolute(path).wstring().c_str(),
+      nullptr,
+      &pidl,
+      0,
+      nullptr));
+
+    SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+
+    CoTaskMemFree(pidl);
   }
 
  protected:

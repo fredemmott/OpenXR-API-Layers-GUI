@@ -8,6 +8,7 @@
 #include <SFML/Window/Event.hpp>
 #include <fmt/format.h>
 
+#include <fstream>
 #include <iostream>
 #include <ranges>
 #include <unordered_map>
@@ -270,6 +271,11 @@ void GUI::GUIButtons() {
   }
   ImGui::EndDisabled();
 
+  ImGui::Spacing();
+  if (ImGui::Button("Export...", {-FLT_MIN, 0})) {
+    this->Export();
+  }
+
   {
     ImGui::Spacing();
 
@@ -402,6 +408,28 @@ void GUI::GUIErrorsTab() {
   }
 }
 
+static std::string LayerStateToString(APILayerDetails::State state) {
+  using State = APILayerDetails::State;
+  switch (state) {
+    case State::Loaded:
+      return "Loaded";
+    case State::Uninitialized:
+      return "Internal error";
+    case State::NoJsonFile:
+      return "The file does not exist";
+    case State::UnreadableJsonFile:
+      return "The JSON file is unreadable";
+    case State::InvalidJson:
+      return "The file does not contain valid JSON";
+    case State::MissingData:
+      return "The file does not contain data required by OpenXR";
+    default:
+      return fmt::format(
+        "Internal error ({})",
+        static_cast<std::underlying_type_t<APILayerDetails::State>>(state));
+  }
+}
+
 void GUI::GUIDetailsTab() {
   if (ImGui::BeginTabItem("Details")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
@@ -423,32 +451,7 @@ void GUI::GUIDetailsTab() {
 
       const APILayerDetails details {mSelectedLayer->mJSONPath};
       if (details.mState != APILayerDetails::State::Loaded) {
-        std::string error;
-        using State = APILayerDetails::State;
-        switch (details.mState) {
-          case State::Uninitialized:
-            error = "Internal error";
-            break;
-          case State::NoJsonFile:
-            error = "The file does not exist";
-            break;
-          case State::UnreadableJsonFile:
-            error = "The JSON file is unreadable";
-            break;
-          case State::InvalidJson:
-            error = "The file does not contain valid JSON";
-            break;
-          case State::MissingData:
-            error = "The file does not contain data required by OpenXR";
-            break;
-          default:
-            error = fmt::format(
-              "Internal error ({})",
-              static_cast<std::underlying_type_t<APILayerDetails::State>>(
-                details.mState));
-            break;
-        }
-
+        const auto error = LayerStateToString(details.mState);
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::Text("%s", Config::GLYPH_ERROR);
@@ -720,11 +723,92 @@ void GUI::DragDropReorder(const APILayer& source, const APILayer& target) {
 }
 
 bool GUI::GUIHyperlink(const char* text) {
-  ImGui::TextColored(HYPERLINK_COLOR, text);
+  ImGui::TextColored(HYPERLINK_COLOR, "%s", text);
   if (ImGui::IsItemHovered()) {
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
   }
   return ImGui::IsItemClicked();
+}
+
+void GUI::Export() {
+  const auto path = PlatformGUI::Get().GetExportFilePath();
+  if (!path) {
+    return;
+  }
+
+  auto text = fmt::format(
+    "OpenXR API Layers GUI {} v{}\n"
+    "---",
+    Config::BUILD_TARGET_ID,
+    Config::BUILD_VERSION);
+
+  size_t count = 0;
+  for (const auto& layer: mLayers) {
+    using Value = APILayer::Value;
+    std::string value;
+    switch (layer.mValue) {
+      case Value::Enabled:
+        value = fmt::format("{}.", ++count);
+        break;
+      case Value::Disabled:
+        value = "Disabled";
+        break;
+      default:
+        value = Config::GLYPH_ERROR;
+    }
+
+    text += fmt::format("\n{}\t{}", value, layer.mJSONPath.string());
+
+    const APILayerDetails details {layer.mJSONPath};
+    if (details.mState != APILayerDetails::State::Loaded) {
+      text += fmt::format(
+        "\n\t- {} {}", Config::GLYPH_ERROR, LayerStateToString(details.mState));
+    } else {
+      if (!details.mName.empty()) {
+        text += fmt::format("\n\tName: {}", details.mName);
+      }
+
+      if (details.mLibraryPath.empty()) {
+        text += fmt::format(
+          "\n\tLibrary path: {} No library path in JSON file",
+          Config::GLYPH_ERROR);
+      } else {
+        text
+          += fmt::format("\n\tLibrary path: {}", details.mLibraryPath.string());
+      }
+
+      if (!details.mDescription.empty()) {
+        text += fmt::format("\n\tDescription: {}", details.mDescription);
+      }
+
+      if (!details.mFileFormatVersion.empty()) {
+        text += fmt::format(
+          "\n\tFile format version: {}", details.mFileFormatVersion);
+      }
+
+      if (!details.mExtensions.empty()) {
+        text += "\n\tExtensions:";
+        for (const auto& ext: details.mExtensions) {
+          text
+            += fmt::format("\n\t\t- {} (version {})", ext.mName, ext.mVersion);
+        }
+      }
+    }
+
+    if (mLintErrorsByLayer.contains(&layer)) {
+      const auto& errors = mLintErrorsByLayer.at(&layer);
+      text += "\n\tErrors:";
+      for (const auto& error: errors) {
+        text += fmt::format(
+          "\n\t\t- {} {}", Config::GLYPH_ERROR, error->GetDescription());
+      }
+    }
+  }
+
+  std::ofstream(*path, std::ios::binary | std::ios::out | std::ios::trunc)
+    .write(text.data(), text.size());
+
+  PlatformGUI::Get().ShowFolderContainingFile(*path);
 }
 
 }// namespace FredEmmott::OpenXRLayers
