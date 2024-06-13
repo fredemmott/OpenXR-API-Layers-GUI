@@ -160,10 +160,10 @@ void GUI::LayerSet::GUILayersList() {
   while (clipper.Step()) {
     for (auto i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
       auto& layer = mLayers.at(i);
-      std::vector<std::shared_ptr<LintError>> layerErrors;
-      if (mLintErrorsByLayer.contains(&layer)) {
-        layerErrors = mLintErrorsByLayer.at(&layer);
-      }
+      auto layerErrors
+        = std::ranges::filter_view(mLintErrors, [&layer](const auto& error) {
+            return error->GetAffectedLayers().contains(layer.mJSONPath);
+          });
 
       ImGui::PushID(i);
 
@@ -296,11 +296,13 @@ void GUI::LayerSet::GUIErrorsTab() {
       ImGui::Text("All layers:");
     }
 
-    LintErrors selectedErrors;
+    LintErrors selectedErrors {};
     if (mSelectedLayer) {
-      if (mLintErrorsByLayer.contains(mSelectedLayer)) {
-        selectedErrors = mLintErrorsByLayer.at(mSelectedLayer);
-      }
+      auto view = std::ranges::filter_view(
+        mLintErrors, [layer = mSelectedLayer](const auto& error) {
+          return error->GetAffectedLayers().contains(layer->mJSONPath);
+        });
+      selectedErrors = {view.begin(), view.end()};
     } else {
       selectedErrors = mLintErrors;
     }
@@ -532,20 +534,6 @@ void GUI::LayerSet::RunAllLintersNow() {
     layersByPath.emplace(layer.mJSONPath, &layer);
   }
   mLintErrors = RunAllLinters(mStore, mLayers);
-  mLintErrorsByLayer.clear();
-  for (auto& error: mLintErrors) {
-    for (const auto& path: error->GetAffectedLayers()) {
-      if (!layersByPath.contains(path)) {
-        continue;
-      }
-      auto layer = layersByPath.at(path);
-      if (mLintErrorsByLayer.contains(layer)) {
-        mLintErrorsByLayer.at(layer).push_back(error);
-      } else {
-        mLintErrorsByLayer[layer] = {error};
-      }
-    }
-  }
   mLintErrorsAreStale = false;
 }
 

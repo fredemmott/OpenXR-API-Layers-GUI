@@ -6,6 +6,7 @@
 #include <portability/filesystem.hpp>
 #include <sfml/Window.hpp>
 
+#include <ranges>
 #include <unordered_map>
 #include <vector>
 
@@ -65,7 +66,6 @@ class GUI final {
     std::vector<APILayer> mLayers;
     APILayer* mSelectedLayer {nullptr};
     LintErrors mLintErrors;
-    std::unordered_map<const APILayer*, LintErrors> mLintErrorsByLayer;
     bool mLayerDataIsStale {true};
     bool mLintErrorsAreStale {true};
 

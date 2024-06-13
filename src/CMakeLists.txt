@@ -26,9 +26,11 @@ configure_file(
   @ONLY
 )
 
+# Using an OBJECT library instead of `STATIC`, because otherwise
+# Microsoft's linker gets rid of the static initializers used to register linters :(
 add_library(
   lib
-  STATIC
+  OBJECT
   APILayerDetails.cpp
   GUI.cpp
   KnownLayers.cpp
