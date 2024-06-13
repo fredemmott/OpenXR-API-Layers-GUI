@@ -17,7 +17,7 @@ class DuplicatesLinter final : public Linter {
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::unordered_map<std::string, PathSet> byName;
     for (const auto& [layer, details]: layers) {
-      if (!layer.mIsEnabled) {
+      if (!layer.IsEnabled()) {
         continue;
       }
 

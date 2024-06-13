@@ -9,7 +9,7 @@ std::vector<APILayer> GetAPILayers() {
   return {
     APILayer {
       .mJSONPath = {"/var/not_a_real_layer.json"},
-      .mIsEnabled = true,
+      .mValue = APILayer::Value::Enabled,
     },
   };
 }

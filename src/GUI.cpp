@@ -167,7 +167,10 @@ void GUI::GUILayersList() {
 
       ImGui::PushID(i);
 
-      if (ImGui::Checkbox("##Enabled", &layer.mIsEnabled)) {
+      bool layerIsEnabled = layer.IsEnabled();
+      if (ImGui::Checkbox("##Enabled", &layerIsEnabled)) {
+        using Value = APILayer::Value;
+        layer.mValue = layerIsEnabled ? Value::Enabled : Value::Disabled;
         mLintErrorsAreStale = true;
         SetAPILayers(mLayers);
       }
@@ -225,17 +228,18 @@ void GUI::GUIButtons() {
 
   ImGui::Separator();
 
-  ImGui::BeginDisabled(!(mSelectedLayer && !mSelectedLayer->mIsEnabled));
+  ImGui::BeginDisabled(!(mSelectedLayer && !mSelectedLayer->IsEnabled()));
+  using Value = APILayer::Value;
   if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
-    mSelectedLayer->mIsEnabled = true;
+    mSelectedLayer->mValue = Value::Enabled;
     mLintErrorsAreStale = true;
     SetAPILayers(mLayers);
   }
   ImGui::EndDisabled();
 
-  ImGui::BeginDisabled(!(mSelectedLayer && mSelectedLayer->mIsEnabled));
+  ImGui::BeginDisabled(!(mSelectedLayer && mSelectedLayer->IsEnabled()));
   if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
-    mSelectedLayer->mIsEnabled = false;
+    mSelectedLayer->mValue = Value::Disabled;
     mLintErrorsAreStale = true;
     SetAPILayers(mLayers);
   }
@@ -597,7 +601,7 @@ void GUI::AddLayersClicked() {
   for (const auto& path: paths) {
     nextLayers.push_back(APILayer {
       .mJSONPath = path,
-      .mIsEnabled = true,
+      .mValue = APILayer::Value::Enabled,
     });
   }
 

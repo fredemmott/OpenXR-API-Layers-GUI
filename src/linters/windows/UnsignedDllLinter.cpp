@@ -21,7 +21,7 @@ class UnsignedDllLinter final : public Linter {
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::vector<std::shared_ptr<LintError>> errors;
     for (const auto& [layer, details]: layers) {
-      if (!layer.mIsEnabled) {
+      if (!layer.IsEnabled()) {
         continue;
       }
       const auto dllPath = details.mLibraryPath.native();

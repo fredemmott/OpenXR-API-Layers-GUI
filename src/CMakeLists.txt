@@ -88,6 +88,7 @@ macro(add_gui)
       ${TARGET}
       PRIVATE
       manifest.xml
+      linters/windows/NotADWORDLinter.cpp
       linters/windows/OutdatedOpenKneeboardLinter.cpp
       linters/windows/ProgramFilesLinter.cpp
       linters/windows/UnsignedDllLinter.cpp

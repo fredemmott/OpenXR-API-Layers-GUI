@@ -23,7 +23,7 @@ class ProgramFilesLinter final : public Linter {
 
     std::vector<std::shared_ptr<LintError>> errors;
     for (const auto& [layer, details]: layers) {
-      if (!layer.mIsEnabled) {
+      if (!layer.IsEnabled()) {
         continue;
       }
 

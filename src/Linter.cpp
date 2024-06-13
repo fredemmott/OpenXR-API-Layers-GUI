@@ -63,9 +63,9 @@ OrderingLintError::OrderingLintError(
   const std::filesystem::path& relativeTo,
   const PathSet& allAffectedLayers)
   : FixableLintError(
-    description,
-    allAffectedLayers.empty() ? PathSet {layerToMove, relativeTo}
-                              : allAffectedLayers),
+      description,
+      allAffectedLayers.empty() ? PathSet {layerToMove, relativeTo}
+                                : allAffectedLayers),
     mLayerToMove(layerToMove),
     mPosition(position),
     mRelativeTo(relativeTo) {
@@ -122,6 +122,29 @@ std::vector<APILayer> InvalidLayerLintError::Fix(
   if (it != newLayers.end()) {
     newLayers.erase(it);
   }
+  return newLayers;
+}
+
+InvalidLayerStateLintError::InvalidLayerStateLintError(
+  const std::string& description,
+  const std::filesystem::path& layer)
+  : FixableLintError(description, {layer}) {
+}
+
+std::vector<APILayer> InvalidLayerStateLintError::Fix(
+  const std::vector<APILayer>& allLayers) {
+  const auto affected = this->GetAffectedLayers();
+  assert(affected.size() == 1);
+  const auto& path = *affected.begin();
+
+  auto newLayers = allLayers;
+  auto it = std::ranges::find_if(
+    newLayers, [&path](const auto& layer) { return layer.mJSONPath == path; });
+
+  if (it != newLayers.end()) {
+    it->mValue = APILayer::Value::Disabled;
+  }
+
   return newLayers;
 }
 

@@ -15,8 +15,18 @@ namespace FredEmmott::OpenXRLayers {
  * Manifest data is available via `APILayerDetails`.
  */
 struct APILayer {
+  enum class Value {
+    Enabled,
+    Disabled,
+    Win32_NotDWORD,
+  };
+
   std::filesystem::path mJSONPath;
-  bool mIsEnabled {};
+  Value mValue;
+
+  constexpr bool IsEnabled() const noexcept {
+    return mValue == Value::Enabled;
+  };
 
   bool operator==(const APILayer&) const noexcept = default;
 };

@@ -51,7 +51,7 @@ class OrderingLinter final : public Linter {
     const auto knownLayers = GetKnownLayers();
 
     for (const auto& [layer, details]: layers) {
-      if (!layer.mIsEnabled) {
+      if (!layer.IsEnabled()) {
         continue;
       }
 
@@ -79,7 +79,7 @@ class OrderingLinter final : public Linter {
     for (auto providerIt = layers.begin(); providerIt != layers.end();
          providerIt++) {
       auto [provider, providerDetails] = *providerIt;
-      if (!provider.mIsEnabled) {
+      if (!provider.IsEnabled()) {
         continue;
       }
 
@@ -98,7 +98,7 @@ class OrderingLinter final : public Linter {
         // LINT RULE: Hard conflicts
         if (conflicts.contains(feature)) {
           for (const auto& [other, otherDetails]: conflicts.at(feature)) {
-            if (!(provider.mIsEnabled && other.mIsEnabled)) {
+            if (!(provider.IsEnabled() && other.IsEnabled())) {
               continue;
             }
             errors.push_back(std::make_shared<LintError>(
@@ -115,7 +115,7 @@ class OrderingLinter final : public Linter {
 
         if (conflictsPerApp.contains(feature)) {
           for (const auto& [other, otherDetails]: conflictsPerApp.at(feature)) {
-            if (!(provider.mIsEnabled && other.mIsEnabled)) {
+            if (!(provider.IsEnabled() && other.IsEnabled())) {
               continue;
             }
             errors.push_back(std::make_shared<LintError>(
@@ -204,20 +204,20 @@ class OrderingLinter final : public Linter {
 
       const auto errorString = (providerDetails.mName == conflictFeature)
         ? fmt::format(
-          "{} ({}) must be {} {} ({})",
-          providerDetails.mName,
-          provider.mJSONPath.string(),
-          (position == Position::Above ? "above" : "below"),
-          relativeToDetails.mName,
-          relativeTo.mJSONPath.string())
+            "{} ({}) must be {} {} ({})",
+            providerDetails.mName,
+            provider.mJSONPath.string(),
+            (position == Position::Above ? "above" : "below"),
+            relativeToDetails.mName,
+            relativeTo.mJSONPath.string())
         : fmt::format(
-          "Because {} ({}) provides {}, it must be {} {} ({})",
-          providerDetails.mName,
-          provider.mJSONPath.string(),
-          conflictFeature,
-          (position == Position::Above ? "above" : "below"),
-          relativeToDetails.mName,
-          relativeTo.mJSONPath.string());
+            "Because {} ({}) provides {}, it must be {} {} ({})",
+            providerDetails.mName,
+            provider.mJSONPath.string(),
+            conflictFeature,
+            (position == Position::Above ? "above" : "below"),
+            relativeToDetails.mName,
+            relativeTo.mJSONPath.string());
 
       errors.push_back(std::make_shared<OrderingLintError>(
         errorString, provider.mJSONPath, position, relativeTo.mJSONPath));
