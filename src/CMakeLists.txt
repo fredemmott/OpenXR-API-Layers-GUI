@@ -172,15 +172,25 @@ configure_file(
   @ONLY
 )
 add_executable(
-  OpenXR-API-Layers-Create-Report
+  create-report 
   WIN32
   "${PLATFORM_REPORT_MAIN_CPP}"
   "${CMAKE_SOURCE_DIR}/icon/icon.rc"
   "${CODEGEN_BUILD_DIR}/create-report-version.rc"
 )
 target_link_libraries(
-  OpenXR-API-Layers-Create-Report
+  create_report
   PRIVATE
   lib
   linters
+)
+set_target_properties(
+  create-report
+  PROPERTIES
+  OUTPUT_NAME "${OUTPUT_NAME}"
+)
+sign_target(create-report)
+install(
+  TARGETS create-report
+  DESTINATION "."
 )
