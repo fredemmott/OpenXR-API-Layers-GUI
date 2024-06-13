@@ -17,9 +17,6 @@ void PlatformGUI::SetupFonts(ImGuiIO*, float /* dpiScale */) {
   return;
 }
 
-void PlatformGUI::OpenURI(const std::string&) {
-}
-
 float PlatformGUI::GetDPIScaling(sf::WindowHandle) {
   return 1.0f;
 }

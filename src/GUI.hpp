@@ -31,7 +31,6 @@ class PlatformGUI {
 
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual void SetupFonts(ImGuiIO*) = 0;
-  virtual void OpenURI(const std::string& uri) = 0;
   virtual float GetDPIScaling() = 0;
   virtual std::optional<DPIChangeInfo> GetDPIChangeInfo() = 0;
 

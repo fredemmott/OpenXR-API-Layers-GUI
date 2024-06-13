@@ -141,11 +141,6 @@ class PlatformGUI_Windows final : public PlatformGUI {
     { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
   }
 
-  void OpenURI(const std::string& uri) override {
-    auto wstring = std::wstring(winrt::to_hstring(uri));
-    ShellExecuteW(NULL, L"open", wstring.c_str(), nullptr, nullptr, 0);
-  }
-
   float GetDPIScaling() override {
     return mDPIScaling;
   }
