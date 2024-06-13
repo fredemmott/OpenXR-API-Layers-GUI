@@ -98,10 +98,10 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
 }
 
 bool WindowsAPILayerStore::Poll() const noexcept {
-  const auto ret = WaitForSingleObject(mEvent, 0);
+  const auto result = WaitForSingleObject(mEvent, 0);
   RegNotifyChangeKeyValue(
     mKey, false, REG_NOTIFY_CHANGE_LAST_SET, mEvent, true);
-  return ret;
+  return (result == WAIT_OBJECT_0);
 }
 
 WindowsAPILayerStore::~WindowsAPILayerStore() {
