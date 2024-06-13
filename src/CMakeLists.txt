@@ -129,13 +129,6 @@ macro(add_gui)
       # https://github.com/microsoft/vcpkg/issues/15339
       RuntimeObject
     )
-
-    configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/Config_windows.in.hpp"
-      "${CODEGEN_BUILD_DIR}/Config_windows.hpp"
-      @ONLY
-    )
-
   endif()
 
   target_sources(

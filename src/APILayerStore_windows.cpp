@@ -14,23 +14,33 @@
 
 #include "APILayerStore.hpp"
 #include "Config.hpp"
-#include "Config_windows.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
-static constexpr auto SUBKEY {
+static constexpr auto SubKey {
   L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit"};
 
 class WindowsAPILayerStore final : public APILayerStore {
  public:
+  WindowsAPILayerStore() = delete;
+  WindowsAPILayerStore(auto displayName, REGSAM samFlags, HKEY rootKey)
+    : mDisplayName(displayName) {
+    if (
+      RegOpenKeyExW(rootKey, SubKey, 0, KEY_ALL_ACCESS | samFlags, &mKey)
+      != ERROR_SUCCESS) {
+      mKey = {};
+      return;
+    }
+    mEvent = CreateEvent(nullptr, false, false, nullptr);
+    this->Poll();
+  }
+
   std::string GetDisplayName() const noexcept override {
-    return std::string {Config::BUILD_TARGET_ID};
+    return mDisplayName;
   }
 
   std::vector<APILayer> GetAPILayers() const noexcept override {
-    HKEY key {NULL};
-    if (
-      RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &key) != ERROR_SUCCESS) {
+    if (!mKey) {
       return {};
     }
 
@@ -46,7 +56,7 @@ class WindowsAPILayerStore final : public APILayerStore {
 
     std::vector<APILayer> layers;
     while (RegEnumValueW(
-             key,
+             mKey,
              index++,
              nameBuffer,
              &nameSize,
@@ -71,8 +81,6 @@ class WindowsAPILayerStore final : public APILayerStore {
       nameSize = maxNameSize;
       disabledSize = sizeof(disabled);
     }
-
-    RegCloseKey(key);
     return layers;
   }
 
@@ -85,28 +93,24 @@ class WindowsAPILayerStore final : public APILayerStore {
       return false;
     }
 
-    HKEY key {NULL};
-    if (
-      RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &key) != ERROR_SUCCESS) {
+    if (!mKey) {
       return false;
     }
 
     for (const auto& layer: oldLayers) {
-      RegDeleteValueW(key, layer.mJSONPath.wstring().c_str());
+      RegDeleteValueW(mKey, layer.mJSONPath.wstring().c_str());
     }
 
     for (const auto& layer: newLayers) {
       DWORD disabled = layer.IsEnabled() ? 0 : 1;
       RegSetValueExW(
-        key,
+        mKey,
         layer.mJSONPath.wstring().c_str(),
         NULL,
         REG_DWORD,
         reinterpret_cast<BYTE*>(&disabled),
         sizeof(disabled));
     }
-    RegCloseKey(key);
-
     return true;
   }
 
@@ -117,18 +121,14 @@ class WindowsAPILayerStore final : public APILayerStore {
     return ret;
   }
 
-  WindowsAPILayerStore() {
-    RegOpenKeyW(Config::APILAYER_HKEY_ROOT, SUBKEY, &mKey);
-    mEvent = CreateEvent(nullptr, false, false, nullptr);
-    this->Poll();
-  }
-
   virtual ~WindowsAPILayerStore() {
     RegCloseKey(mKey);
     CloseHandle(mEvent);
   }
 
  private:
+  const std::string mDisplayName;
+
   HKEY mKey {};
   HANDLE mEvent {};
 
@@ -174,8 +174,20 @@ class WindowsAPILayerStore final : public APILayerStore {
 };
 
 std::span<const APILayerStore*> APILayerStore::Get() noexcept {
-  static const WindowsAPILayerStore sInstance;
-  static const APILayerStore* sStores[] {&sInstance};
+  static const WindowsAPILayerStore sHKLM64 {
+    "Win64-HKLM", KEY_WOW64_64KEY, HKEY_LOCAL_MACHINE};
+  static const WindowsAPILayerStore sHKCU64 {
+    "Win64-HKCU", KEY_WOW64_64KEY, HKEY_CURRENT_USER};
+  static const WindowsAPILayerStore sHKLM32 {
+    "Win32-HKLM", KEY_WOW64_32KEY, HKEY_LOCAL_MACHINE};
+  static const WindowsAPILayerStore sHKCU32 {
+    "Win32-HKCU", KEY_WOW64_32KEY, HKEY_CURRENT_USER};
+  static const APILayerStore* sStores[] {
+    &sHKLM64,
+    &sHKCU64,
+    &sHKLM32,
+    &sHKCU32,
+  };
   return sStores;
 };
 

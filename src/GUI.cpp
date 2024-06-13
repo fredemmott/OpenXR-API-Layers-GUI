@@ -84,7 +84,11 @@ void GUI::Run() {
   platform.SetupFonts(&ImGui::GetIO());
 
   sf::Clock deltaClock {};
-  LayerSet layerSet {APILayerStore::Get().front()};
+
+  std::vector<LayerSet> layerSets;
+  for (auto&& store: APILayerStore::Get()) {
+    layerSets.push_back({std::move(store)});
+  }
   while (window.isOpen()) {
     {
       const auto changeInfo = platform.GetDPIChangeInfo();
@@ -122,7 +126,18 @@ void GUI::Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    layerSet.Draw();
+    if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
+      for (auto& layerSet: layerSets) {
+        if (ImGui::BeginTabItem(layerSet.mStore->GetDisplayName().c_str())) {
+          layerSet.Draw();
+          ImGui::EndTabItem();
+        }
+      }
+
+      ImGui::EndTabBar();
+    }
+
+    ImGui::End();
 
     ImGui::SFML::Render(window);
     window.display();
@@ -276,7 +291,7 @@ void GUI::LayerSet::GUIButtons() {
 }
 
 void GUI::LayerSet::GUITabs() {
-  if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) {
+  if (ImGui::BeginTabBar("##ErrorDetailsTabs", ImGuiTabBarFlags_None)) {
     this->GUIErrorsTab();
     this->GUIDetailsTab();
 
@@ -731,8 +746,6 @@ void GUI::LayerSet::Draw() {
 
   ImGui::SetNextItemWidth(-FLT_MIN);
   this->GUITabs();
-
-  ImGui::End();
 }
 
 void GUI::LayerSet::Export() {
