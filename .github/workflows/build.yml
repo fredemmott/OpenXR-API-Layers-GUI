@@ -69,7 +69,7 @@ jobs:
           cmake --install . --config ${{matrix.build-type}} --prefix ${{runner.temp}}/install
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.build-type != 'Debug' && matrix.os-arch != 'Win32' }}
+        if: ${{ matrix.build-type != 'Debug' && matrix.os-arch != 'Win64' }}
         with:
           name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
           path: ${{runner.temp}}/install
