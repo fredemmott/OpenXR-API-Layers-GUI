@@ -57,6 +57,8 @@ jobs:
             -A ${{matrix.cmake-arch}} `
             -DVCPKG_TARGET_TRIPLET=${{matrix.vcpkg-arch}} `
             @args
+          
+            Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content version.txt)"
         shell: pwsh
       - name: Compile
         working-directory: build
