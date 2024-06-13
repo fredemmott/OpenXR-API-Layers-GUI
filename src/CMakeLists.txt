@@ -145,12 +145,6 @@ if(WIN32)
     PRIVATE
     "/MANIFESTUAC:level='requireAdministrator'"
   )
-
-  install(
-    FILES "${CMAKE_SOURCE_DIR}/README-Windows.md"
-    RENAME "README-Windows.txt"
-    DESTINATION "."
-  )
 endif()
 
 target_sources(
