@@ -26,21 +26,26 @@ configure_file(
   @ONLY
 )
 
-# Using an OBJECT library instead of `STATIC`, because otherwise
-# Microsoft's linker gets rid of the static initializers used to register linters :(
 add_library(
   lib
-  OBJECT
+  STATIC
   APILayerDetails.cpp
   GUI.cpp
   KnownLayers.cpp
   SaveReport.cpp
+)
+
+# Using an OBJECT library instead of `STATIC`, because otherwise
+# Microsoft's linker gets rid of the static initializers used to register linters :(
+add_library(
+  linters
+  OBJECT
   Linter.cpp
   linters/BadInstallationLinter.cpp
   linters/DuplicatesLinter.cpp
   linters/OrderingLinter.cpp
 )
-
+target_link_libraries(linters PUBLIC lib)
 target_include_directories(
   lib
   PUBLIC
@@ -73,7 +78,7 @@ set_target_properties(
   PROPERTIES
   OUTPUT_NAME "${OUTPUT_NAME}"
 )
-target_link_libraries(gui PRIVATE lib)
+target_link_libraries(gui PRIVATE lib linters)
 
 set(PLATFORM_APILAYERS_CPP "APILayerStore_stub.cpp")
 set(PLATFORM_MAIN_CPP "main.cpp")
@@ -93,7 +98,7 @@ if(WIN32)
   )
 
   target_sources(
-    lib
+    linters
     PRIVATE
     linters/windows/NotADWORDLinter.cpp
     linters/windows/OutdatedOpenKneeboardLinter.cpp
@@ -177,4 +182,5 @@ target_link_libraries(
   OpenXR-API-Layers-Create-Report
   PRIVATE
   lib
+  linters
 )
