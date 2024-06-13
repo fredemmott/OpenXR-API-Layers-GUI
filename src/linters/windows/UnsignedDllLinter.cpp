@@ -26,6 +26,10 @@ class UnsignedDllLinter final : public Linter {
         continue;
       }
       const auto dllPath = details.mLibraryPath.native();
+      if (!std::filesystem::exists(dllPath)) {
+        continue;
+      }
+
       WINTRUST_FILE_INFO fileInfo {
         .cbStruct = sizeof(WINTRUST_FILE_INFO),
         .pcwszFilePath = dllPath.c_str(),
