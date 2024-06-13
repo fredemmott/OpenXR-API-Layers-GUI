@@ -74,13 +74,10 @@ class GUI final {
 
     void GUIButtons();
     void GUIRemoveLayerPopup();
-    void GUILicensePopup();
 
     void GUITabs();
     void GUIErrorsTab();
     void GUIDetailsTab();
-
-    bool GUIHyperlink(const char* text);
 
     // This should only be called at the top of the frame loop; set
     // mLayerDataIsStale instead.

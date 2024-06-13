@@ -7,7 +7,7 @@
 
 namespace FredEmmott::OpenXRLayers::Config {
 
-constexpr std::string_view BUILD_VERSION {"@BUILD_VERSION_STRING@"};
+constexpr auto BUILD_VERSION {"@BUILD_VERSION_STRING@"};
 
 // clang-format off
 constexpr bool USE_EMOJI { @USE_EMOJI_BOOL@ };
