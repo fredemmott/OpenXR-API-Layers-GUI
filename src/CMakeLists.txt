@@ -77,16 +77,14 @@ macro(add_gui)
     OUTPUT_NAME "${OUTPUT_NAME}"
   )
 
-  set(PLATFORM_APILAYERS_CPP "APILayers_stub.cpp")
+  set(PLATFORM_APILAYERS_CPP "APILayerStore_stub.cpp")
   set(PLATFORM_MAIN_CPP "main.cpp")
   set(PLATFORM_GUI_CPP "PlatformGUI_stub.cpp")
-  set(PLATFORM_WATCHER_CPP "Watcher_stub.cpp")
 
   if(WIN32)
-    set(PLATFORM_APILAYERS_CPP "APILayers_windows.cpp")
+    set(PLATFORM_APILAYERS_CPP "APILayerStore_windows.cpp")
     set(PLATFORM_GUI_CPP "PlatformGUI_windows.cpp")
     set(PLATFORM_MAIN_CPP "wWinMain.cpp")
-    set(PLATFORM_WATCHER_CPP "Watcher_windows.cpp")
 
     configure_file(
       "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
@@ -146,7 +144,6 @@ macro(add_gui)
     "${PLATFORM_APILAYERS_CPP}"
     "${PLATFORM_GUI_CPP}"
     "${PLATFORM_MAIN_CPP}"
-    "${PLATFORM_WATCHER_CPP}"
   )
 
   install(

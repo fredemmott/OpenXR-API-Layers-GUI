@@ -16,10 +16,9 @@
 #include <imgui.h>
 
 #include "APILayer.hpp"
-#include "APILayers.hpp"
+#include "APILayerStore.hpp"
 #include "Config.hpp"
 #include "Linter.hpp"
-#include "Watcher.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers {
@@ -85,19 +84,8 @@ void GUI::Run() {
   platform.SetupFonts(&ImGui::GetIO());
 
   sf::Clock deltaClock {};
-  auto& watcher = Watcher::Get();
+  LayerSet layerSet {APILayerStore::Get().front()};
   while (window.isOpen()) {
-    if (watcher.Poll()) {
-      mLayerDataIsStale = true;
-    }
-    if (mLayerDataIsStale) {
-      this->ReloadLayerDataNow();
-    }
-
-    if (mLintErrorsAreStale) {
-      this->RunAllLintersNow();
-    }
-
     {
       const auto changeInfo = platform.GetDPIChangeInfo();
       if (changeInfo) {
@@ -134,14 +122,7 @@ void GUI::Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    this->GUILayersList();
-    ImGui::SameLine();
-    this->GUIButtons();
-
-    ImGui::SetNextItemWidth(-FLT_MIN);
-    this->GUITabs();
-
-    ImGui::End();
+    layerSet.Draw();
 
     ImGui::SFML::Render(window);
     window.display();
@@ -149,7 +130,7 @@ void GUI::Run() {
   ImGui::SFML::Shutdown();
 }
 
-void GUI::GUILayersList() {
+void GUI::LayerSet::GUILayersList() {
   auto viewport = ImGui::GetMainViewport();
   const auto dpiScale = PlatformGUI::Get().GetDPIScaling();
   ImGui::BeginListBox(
@@ -173,7 +154,7 @@ void GUI::GUILayersList() {
         using Value = APILayer::Value;
         layer.mValue = layerIsEnabled ? Value::Enabled : Value::Disabled;
         mLintErrorsAreStale = true;
-        SetAPILayers(mLayers);
+        mStore->SetAPILayers(mLayers);
       }
 
       auto label = layer.mJSONPath.string();
@@ -210,7 +191,7 @@ void GUI::GUILayersList() {
   ImGui::EndListBox();
 }
 
-void GUI::GUIButtons() {
+void GUI::LayerSet::GUIButtons() {
   ImGui::BeginGroup();
   if (ImGui::Button("Reload List", {-FLT_MIN, 0})) {
     mLayerDataIsStale = true;
@@ -234,7 +215,7 @@ void GUI::GUIButtons() {
   if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
     mSelectedLayer->mValue = Value::Enabled;
     mLintErrorsAreStale = true;
-    SetAPILayers(mLayers);
+    mStore->SetAPILayers(mLayers);
   }
   ImGui::EndDisabled();
 
@@ -242,7 +223,7 @@ void GUI::GUIButtons() {
   if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
     mSelectedLayer->mValue = Value::Disabled;
     mLintErrorsAreStale = true;
-    SetAPILayers(mLayers);
+    mStore->SetAPILayers(mLayers);
   }
   ImGui::EndDisabled();
 
@@ -254,7 +235,7 @@ void GUI::GUIButtons() {
     auto it = std::ranges::find(newLayers, *mSelectedLayer);
     if (it != newLayers.begin() && it != newLayers.end()) {
       std::iter_swap((it - 1), it);
-      SetAPILayers(newLayers);
+      mStore->SetAPILayers(newLayers);
       mLayerDataIsStale = true;
     }
   }
@@ -265,7 +246,7 @@ void GUI::GUIButtons() {
     auto it = std::ranges::find(newLayers, *mSelectedLayer);
     if (it != newLayers.end() && (it + 1) != newLayers.end()) {
       std::iter_swap(it, it + 1);
-      SetAPILayers(newLayers);
+      mStore->SetAPILayers(newLayers);
       mLayerDataIsStale = true;
     }
   }
@@ -294,7 +275,7 @@ void GUI::GUIButtons() {
   ImGui::EndGroup();
 }
 
-void GUI::GUITabs() {
+void GUI::LayerSet::GUITabs() {
   if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) {
     this->GUIErrorsTab();
     this->GUIDetailsTab();
@@ -303,7 +284,7 @@ void GUI::GUITabs() {
   }
 }
 
-void GUI::GUIErrorsTab() {
+void GUI::LayerSet::GUIErrorsTab() {
   if (ImGui::BeginTabItem("Warnings")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
     if (mSelectedLayer) {
@@ -362,7 +343,7 @@ void GUI::GUIErrorsTab() {
           for (auto& fixable: fixableErrors) {
             nextLayers = fixable->Fix(nextLayers);
           }
-          SetAPILayers(nextLayers);
+          mStore->SetAPILayers(nextLayers);
           mLayerDataIsStale = true;
         }
       }
@@ -387,7 +368,7 @@ void GUI::GUIErrorsTab() {
           auto fixer = std::dynamic_pointer_cast<FixableLintError>(error);
           ImGui::BeginDisabled(!fixer);
           if (ImGui::Button("Fix It!")) {
-            SetAPILayers(fixer->Fix(mLayers));
+            mStore->SetAPILayers(fixer->Fix(mLayers));
             mLayerDataIsStale = true;
           }
           ImGui::EndDisabled();
@@ -430,7 +411,7 @@ static std::string LayerStateToString(APILayerDetails::State state) {
   }
 }
 
-void GUI::GUIDetailsTab() {
+void GUI::LayerSet::GUIDetailsTab() {
   if (ImGui::BeginTabItem("Details")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
     if (mSelectedLayer) {
@@ -549,8 +530,8 @@ void GUI::GUIDetailsTab() {
   }
 }
 
-void GUI::ReloadLayerDataNow() {
-  auto newLayers = GetAPILayers();
+void GUI::LayerSet::ReloadLayerDataNow() {
+  auto newLayers = mStore->GetAPILayers();
   if (mSelectedLayer) {
     auto it = std::ranges::find(newLayers, *mSelectedLayer);
     if (it != newLayers.end()) {
@@ -564,7 +545,7 @@ void GUI::ReloadLayerDataNow() {
   mLintErrorsAreStale = true;
 }
 
-void GUI::RunAllLintersNow() {
+void GUI::LayerSet::RunAllLintersNow() {
   std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
   for (auto& layer: mLayers) {
     layersByPath.emplace(layer.mJSONPath, &layer);
@@ -587,7 +568,7 @@ void GUI::RunAllLintersNow() {
   mLintErrorsAreStale = false;
 }
 
-void GUI::AddLayersClicked() {
+void GUI::LayerSet::AddLayersClicked() {
   auto paths = PlatformGUI::Get().GetNewAPILayerJSONPaths();
   for (auto it = paths.begin(); it != paths.end();) {
     auto existingLayer = std::ranges::find_if(
@@ -635,11 +616,11 @@ void GUI::AddLayersClicked() {
     }
   } while (changed);
 
-  SetAPILayers(nextLayers);
+  mStore->SetAPILayers(nextLayers);
   mLayerDataIsStale = true;
 }
 
-void GUI::GUIRemoveLayerPopup() {
+void GUI::LayerSet::GUIRemoveLayerPopup() {
   auto viewport = ImGui::GetMainViewport();
   ImVec2 center = viewport->GetCenter();
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -659,7 +640,7 @@ void GUI::GUIRemoveLayerPopup() {
       auto it = std::ranges::find(nextLayers, *mSelectedLayer);
       if (it != nextLayers.end()) {
         nextLayers.erase(it);
-        SetAPILayers(nextLayers);
+        mStore->SetAPILayers(nextLayers);
         mLayerDataIsStale = true;
       }
       ImGui::CloseCurrentPopup();
@@ -674,7 +655,7 @@ void GUI::GUIRemoveLayerPopup() {
   }
 }
 
-void GUI::GUILicensePopup() {
+void GUI::LayerSet::GUILicensePopup() {
   auto viewport = ImGui::GetMainViewport();
   ImVec2 center = viewport->GetCenter();
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -693,7 +674,9 @@ void GUI::GUILicensePopup() {
   }
 }
 
-void GUI::DragDropReorder(const APILayer& source, const APILayer& target) {
+void GUI::LayerSet::DragDropReorder(
+  const APILayer& source,
+  const APILayer& target) {
   auto newLayers = mLayers;
 
   auto sourceIt = std::ranges::find(newLayers, source);
@@ -717,12 +700,12 @@ void GUI::DragDropReorder(const APILayer& source, const APILayer& target) {
   newLayers.insert(targetIt, source);
 
   assert(mLayers.size() == newLayers.size());
-  if (SetAPILayers(newLayers)) {
+  if (mStore->SetAPILayers(newLayers)) {
     mLayerDataIsStale = true;
   }
 }
 
-bool GUI::GUIHyperlink(const char* text) {
+bool GUI::LayerSet::GUIHyperlink(const char* text) {
   ImGui::TextColored(HYPERLINK_COLOR, "%s", text);
   if (ImGui::IsItemHovered()) {
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
@@ -730,7 +713,29 @@ bool GUI::GUIHyperlink(const char* text) {
   return ImGui::IsItemClicked();
 }
 
-void GUI::Export() {
+void GUI::LayerSet::Draw() {
+  if (mStore->Poll()) {
+    mLayerDataIsStale = true;
+  }
+  if (mLayerDataIsStale) {
+    this->ReloadLayerDataNow();
+  }
+
+  if (mLintErrorsAreStale) {
+    this->RunAllLintersNow();
+  }
+
+  this->GUILayersList();
+  ImGui::SameLine();
+  this->GUIButtons();
+
+  ImGui::SetNextItemWidth(-FLT_MIN);
+  this->GUITabs();
+
+  ImGui::End();
+}
+
+void GUI::LayerSet::Export() {
   const auto path = PlatformGUI::Get().GetExportFilePath();
   if (!path) {
     return;

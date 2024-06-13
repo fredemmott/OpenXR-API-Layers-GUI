@@ -16,6 +16,8 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+class APILayerStore;
+
 struct DPIChangeInfo {
   float mDPIScaling {};
   std::optional<ImVec2> mRecommendedSize;
@@ -55,37 +57,44 @@ class GUI final {
  private:
   using LintErrors = std::vector<std::shared_ptr<LintError>>;
 
-  std::vector<APILayer> mLayers;
-  APILayer* mSelectedLayer {nullptr};
-  LintErrors mLintErrors;
-  std::unordered_map<const APILayer*, LintErrors> mLintErrorsByLayer;
-  bool mLayerDataIsStale {true};
-  bool mLintErrorsAreStale {true};
+  class LayerSet {
+   public:
+    std::type_identity_t<const APILayerStore>* mStore {nullptr};
+
+    std::vector<APILayer> mLayers;
+    APILayer* mSelectedLayer {nullptr};
+    LintErrors mLintErrors;
+    std::unordered_map<const APILayer*, LintErrors> mLintErrorsByLayer;
+    bool mLayerDataIsStale {true};
+    bool mLintErrorsAreStale {true};
+
+    void Draw();
+
+    void GUILayersList();
+
+    void GUIButtons();
+    void GUIRemoveLayerPopup();
+    void GUILicensePopup();
+
+    void GUITabs();
+    void GUIErrorsTab();
+    void GUIDetailsTab();
+
+    bool GUIHyperlink(const char* text);
+
+    // This should only be called at the top of the frame loop; set
+    // mLayerDataIsStale instead.
+    void ReloadLayerDataNow();
+    // Set mLayerDataIsStale or mLintErrorsAreStale instead
+    void RunAllLintersNow();
+
+    void AddLayersClicked();
+    void DragDropReorder(const APILayer& source, const APILayer& target);
+
+    void Export();
+  };
 
   sf::WindowHandle mWindowHandle {};
-
-  void GUILayersList();
-
-  void GUIButtons();
-  void GUIRemoveLayerPopup();
-  void GUILicensePopup();
-
-  void GUITabs();
-  void GUIErrorsTab();
-  void GUIDetailsTab();
-
-  bool GUIHyperlink(const char* text);
-
-  // This should only be called at the top of the frame loop; set
-  // mLayerDataIsStale instead.
-  void ReloadLayerDataNow();
-  // Set mLayerDataIsStale or mLintErrorsAreStale instead
-  void RunAllLintersNow();
-
-  void AddLayersClicked();
-  void DragDropReorder(const APILayer& source, const APILayer& target);
-
-  void Export();
 };
 
 }// namespace FredEmmott::OpenXRLayers
