@@ -12,6 +12,7 @@ namespace FredEmmott::OpenXRLayers {
 // Warn about installations outside of program files
 class ProgramFilesLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     wchar_t* programFilesPath {nullptr};
     if (

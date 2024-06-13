@@ -10,6 +10,7 @@ namespace FredEmmott::OpenXRLayers {
 
 class NotADWORDLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::vector<std::shared_ptr<LintError>> ret;
     for (const auto& [layer, details]: layers) {

@@ -14,6 +14,7 @@ namespace FredEmmott::OpenXRLayers {
 class DuplicatesLinter final : public Linter {
  public:
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::unordered_map<std::string, PathSet> byName;
     for (const auto& [layer, details]: layers) {

@@ -37,6 +37,7 @@ class OrderingLinter final : public Linter {
 
  public:
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::vector<std::shared_ptr<LintError>> errors;
 

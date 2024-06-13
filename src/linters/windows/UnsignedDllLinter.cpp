@@ -18,6 +18,7 @@ namespace FredEmmott::OpenXRLayers {
 // Warn about DLLs without valid authenticode signatures
 class UnsignedDllLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     std::vector<std::shared_ptr<LintError>> errors;
     for (const auto& [layer, details]: layers) {

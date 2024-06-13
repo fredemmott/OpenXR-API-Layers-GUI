@@ -65,10 +65,7 @@ void GUI::Run() {
 
   MyWindow window {
     sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
-    fmt::format(
-      "OpenXR API Layers [{}] - v{}",
-      Config::BUILD_TARGET_ID,
-      Config::BUILD_VERSION)};
+    fmt::format("OpenXR API Layers - v{}", Config::BUILD_VERSION)};
   window.setFramerateLimit(60);
   if (!ImGui::SFML::Init(window)) {
     return;
@@ -565,7 +562,7 @@ void GUI::LayerSet::RunAllLintersNow() {
   for (auto& layer: mLayers) {
     layersByPath.emplace(layer.mJSONPath, &layer);
   }
-  mLintErrors = RunAllLinters(mLayers);
+  mLintErrors = RunAllLinters(mStore, mLayers);
   mLintErrorsByLayer.clear();
   for (auto& error: mLintErrors) {
     for (const auto& path: error->GetAffectedLayers()) {
@@ -609,7 +606,7 @@ void GUI::LayerSet::AddLayersClicked() {
   bool changed = false;
   do {
     changed = false;
-    auto errors = RunAllLinters(nextLayers);
+    auto errors = RunAllLinters(mStore, nextLayers);
     for (const auto& error: errors) {
       auto fixable = std::dynamic_pointer_cast<FixableLintError>(error);
       if (!fixable) {
@@ -755,9 +752,8 @@ void GUI::LayerSet::Export() {
   }
 
   auto text = fmt::format(
-    "OpenXR API Layers GUI {} v{}\n"
+    "OpenXR API Layers GUI v{}\n"
     "---",
-    Config::BUILD_TARGET_ID,
     Config::BUILD_VERSION);
 
   for (const auto& layer: mLayers) {

@@ -15,6 +15,8 @@ namespace FredEmmott::OpenXRLayers {
 
 using PathSet = std::set<std::filesystem::path>;
 
+class APILayerStore;
+
 class LintError {
  public:
   LintError() = delete;
@@ -92,11 +94,13 @@ class Linter {
   virtual ~Linter();
 
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>&)
     = 0;
 };
 
 std::vector<std::shared_ptr<LintError>> RunAllLinters(
+  const APILayerStore*,
   const std::vector<APILayer>&);
 
 }// namespace FredEmmott::OpenXRLayers

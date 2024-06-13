@@ -7,7 +7,6 @@
 
 namespace FredEmmott::OpenXRLayers::Config {
 
-constexpr std::string_view BUILD_TARGET_ID {"@BUILD_TARGET_ID@"};
 constexpr std::string_view BUILD_VERSION {"@BUILD_VERSION_STRING@"};
 
 // clang-format off

@@ -90,8 +90,7 @@ class PlatformGUI_Windows final : public PlatformGUI {
     picker->SetFileTypes(1, &filter);
 
     const auto filename = std::format(
-      L"OpenXR-API-Layers-{}-{:%Y-%m-%d-%H-%M-%S}.txt",
-      winrt::to_hstring(Config::BUILD_TARGET_ID),
+      L"OpenXR-API-Layers-{:%Y-%m-%d-%H-%M-%S}.txt",
       std::chrono::zoned_time(
         std::chrono::current_zone(),
         std::chrono::time_point_cast<std::chrono::seconds>(

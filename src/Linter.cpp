@@ -40,6 +40,7 @@ Linter::~Linter() {
 }
 
 std::vector<std::shared_ptr<LintError>> RunAllLinters(
+  const APILayerStore* store,
   const std::vector<APILayer>& layers) {
   std::vector<std::shared_ptr<LintError>> errors;
 
@@ -50,7 +51,7 @@ std::vector<std::shared_ptr<LintError>> RunAllLinters(
 
   auto it = std::back_inserter(errors);
   for (const auto linter: gLinters) {
-    std::ranges::move(linter->Lint(layersWithDetails), it);
+    std::ranges::move(linter->Lint(store, layersWithDetails), it);
   }
 
   return errors;

@@ -5,7 +5,7 @@
 
 #include <ShlObj.h>
 
-#include "Config_windows.hpp"
+#include "APILayerStore_windows.hpp"
 #include "Linter.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -18,7 +18,15 @@ namespace FredEmmott::OpenXRLayers {
 // it's then still possible to co-install an old msix afterwards.
 class OutdatedOpenKneeboardLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
+    const APILayerStore* store,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
+    auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
+    if (
+      winStore->GetRegistryBitness()
+      != WindowsAPILayerStore::RegistryBitness::Wow64_64) {
+      return {};
+    }
+
     std::vector<std::shared_ptr<LintError>> errors;
     for (const auto& [layer, details]: layers) {
       bool outdated = false;
@@ -28,7 +36,7 @@ class OutdatedOpenKneeboardLinter final : public Linter {
         continue;
       }
 
-      if (Config::APILAYER_HKEY_ROOT == HKEY_CURRENT_USER) {
+      if (winStore->GetRootKey() == HKEY_CURRENT_USER) {
         outdated = true;
       }
 
