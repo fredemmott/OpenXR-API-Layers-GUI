@@ -270,19 +270,6 @@ void GUI::GUIButtons() {
   }
   ImGui::EndDisabled();
 
-  {
-    ImGui::Spacing();
-
-    // Center this text
-    const auto text = "You can support this tool!";
-    const auto textWidth = ImGui::CalcTextSize(text).x;
-    const auto windowWidth = ImGui::GetWindowSize().x;
-    const auto x = ImGui::GetCursorPosX();
-    ImGui::SetCursorPosX(x + ((windowWidth - x - textWidth) / 2));
-    if (GUIHyperlink(text)) {
-      PlatformGUI::Get().OpenURI("https://github.com/sponsors/fredemmott");
-    }
-  }
   ImGui::EndGroup();
 }
 
