@@ -270,8 +270,8 @@ void GUI::LayerSet::GUIButtons() {
   }
   ImGui::EndDisabled();
 
-  ImGui::Spacing();
-  if (ImGui::Button("Export...", {-FLT_MIN, 0})) {
+  ImGui::Separator();
+  if (ImGui::Button("Save Report...", {-FLT_MIN, 0})) {
     this->Export();
   }
 
