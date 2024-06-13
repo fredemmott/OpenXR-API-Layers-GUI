@@ -173,7 +173,7 @@ add_executable(
   "${CODEGEN_BUILD_DIR}/create-report-version.rc"
 )
 target_link_libraries(
-  create_report
+  create-report
   PRIVATE
   lib
   linters
