@@ -69,10 +69,12 @@ macro(add_gui)
     fmt::fmt-header-only
   )
 
+  # Used by version.in.rc
+  set(OUTPUT_NAME "OpenXR-API-Layers-${BUILD_TARGET_ID}")
   set_target_properties(
     ${TARGET}
     PROPERTIES
-    OUTPUT_NAME "OpenXR-API-Layers-${BUILD_TARGET_ID}"
+    OUTPUT_NAME "${OUTPUT_NAME}"
   )
 
   set(PLATFORM_APILAYERS_CPP "APILayers_stub.cpp")
@@ -86,9 +88,16 @@ macro(add_gui)
     set(PLATFORM_MAIN_CPP "wWinMain.cpp")
     set(PLATFORM_WATCHER_CPP "Watcher_windows.cpp")
 
+    configure_file(
+      "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
+      "${CODEGEN_BUILD_DIR}/version.rc"
+      @ONLY
+    )
+
     target_sources(
       ${TARGET}
       PRIVATE
+      "${CODEGEN_BUILD_DIR}/version.rc"
       manifest.xml
       linters/windows/NotADWORDLinter.cpp
       linters/windows/OutdatedOpenKneeboardLinter.cpp
