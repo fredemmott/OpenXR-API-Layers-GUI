@@ -17,6 +17,7 @@
 namespace FredEmmott::OpenXRLayers {
 
 class APILayerStore;
+class ReadWriteAPILayerStore;
 
 struct DPIChangeInfo {
   float mDPIScaling {};
@@ -59,7 +60,7 @@ class GUI final {
 
   class LayerSet {
    public:
-    std::type_identity_t<const APILayerStore>* mStore {nullptr};
+    std::type_identity_t<const ReadWriteAPILayerStore>* mStore {nullptr};
 
     std::vector<APILayer> mLayers;
     APILayer* mSelectedLayer {nullptr};

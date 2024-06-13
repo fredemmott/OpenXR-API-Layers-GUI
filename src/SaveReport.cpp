@@ -18,7 +18,7 @@ namespace FredEmmott::OpenXRLayers {
 
 static std::string GenerateReportText(const APILayerStore* store) {
   auto ret = std::format(
-    "\n{}--------------------------------", store->GetDisplayName());
+    "\n{}\n--------------------------------", store->GetDisplayName());
   const auto layers = store->GetAPILayers();
   if (layers.empty()) {
     ret += "\nNo layers.";

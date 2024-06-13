@@ -7,7 +7,7 @@
 
 namespace FredEmmott::OpenXRLayers {
 
-class WindowsAPILayerStore final : public APILayerStore {
+class WindowsAPILayerStore : public virtual APILayerStore {
  public:
   enum class RegistryBitness {
     Wow64_64,
@@ -15,18 +15,11 @@ class WindowsAPILayerStore final : public APILayerStore {
   };
 
   WindowsAPILayerStore() = delete;
-  WindowsAPILayerStore(
-    std::string_view displayName,
-    RegistryBitness bitness,
-    HKEY rootKey);
   virtual ~WindowsAPILayerStore();
 
   std::string GetDisplayName() const noexcept override;
 
   std::vector<APILayer> GetAPILayers() const noexcept override;
-
-  bool SetAPILayers(
-    const std::vector<APILayer>& newLayers) const noexcept override;
 
   bool Poll() const noexcept override;
 
@@ -38,17 +31,20 @@ class WindowsAPILayerStore final : public APILayerStore {
     return mRootKey;
   }
 
- private:
-  const std::string mDisplayName;
-  const RegistryBitness mRegistryBitness;
-  const HKEY mRootKey;
+ protected:
+  WindowsAPILayerStore(
+    std::string_view displayName,
+    RegistryBitness bitness,
+    HKEY rootKey,
+    REGSAM desiredAccess);
 
   HKEY mKey {};
   HANDLE mEvent {};
 
-  mutable bool mHaveBackup {false};
-
-  void BackupAPILayers() const;
+ private:
+  const std::string mDisplayName;
+  const RegistryBitness mRegistryBitness;
+  const HKEY mRootKey;
 };
 
 }// namespace FredEmmott::OpenXRLayers

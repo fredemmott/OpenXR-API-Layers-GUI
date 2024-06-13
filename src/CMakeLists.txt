@@ -26,9 +26,9 @@ configure_file(
   @ONLY
 )
 
-add_executable(
-  gui
-  WIN32
+add_library(
+  lib
+  STATIC
   APILayerDetails.cpp
   GUI.cpp
   KnownLayers.cpp
@@ -37,6 +37,26 @@ add_executable(
   linters/BadInstallationLinter.cpp
   linters/DuplicatesLinter.cpp
   linters/OrderingLinter.cpp
+)
+
+target_include_directories(
+  lib
+  PUBLIC
+  "${CODEGEN_BUILD_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_link_libraries(
+  lib
+  PUBLIC
+  ImGui-SFML::ImGui-SFML
+  nlohmann_json::nlohmann_json
+  fmt::fmt-header-only
+)
+
+add_executable(
+  gui
+  WIN32
   "${CMAKE_SOURCE_DIR}/icon/icon.rc"
 )
 install(
@@ -45,64 +65,57 @@ install(
 )
 sign_target(gui)
 # Used by version.in.rc
-set(OUTPUT_NAME "OpenXR-API-Layers")
+set(OUTPUT_NAME "OpenXR-API-Layers-GUI")
 set_target_properties(
   gui
   PROPERTIES
   OUTPUT_NAME "${OUTPUT_NAME}"
 )
-
-target_include_directories(
-  gui
-  PRIVATE
-  "${CODEGEN_BUILD_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
-target_link_libraries(
-  gui
-  PRIVATE
-  ImGui-SFML::ImGui-SFML
-  nlohmann_json::nlohmann_json
-  fmt::fmt-header-only
-)
+target_link_libraries(gui PRIVATE lib)
 
 set(PLATFORM_APILAYERS_CPP "APILayerStore_stub.cpp")
 set(PLATFORM_MAIN_CPP "main.cpp")
 set(PLATFORM_GUI_CPP "PlatformGUI_stub.cpp")
+set(PLATFORM_REPORT_MAIN_CPP "SaveReport_main.cpp")
 
 if(WIN32)
   set(PLATFORM_APILAYERS_CPP "APILayerStore_windows.cpp")
   set(PLATFORM_GUI_CPP "PlatformGUI_windows.cpp")
   set(PLATFORM_MAIN_CPP "wWinMain.cpp")
+  set(PLATFORM_REPORT_MAIN_CPP "SaveReport_wWinMain.cpp")
 
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
-    "${CODEGEN_BUILD_DIR}/version.rc"
+    "${CODEGEN_BUILD_DIR}/gui-version.rc"
     @ONLY
   )
 
   target_sources(
-    gui
+    lib
     PRIVATE
-    "${CODEGEN_BUILD_DIR}/version.rc"
-    manifest.xml
     linters/windows/NotADWORDLinter.cpp
     linters/windows/OutdatedOpenKneeboardLinter.cpp
     linters/windows/ProgramFilesLinter.cpp
     linters/windows/UnsignedDllLinter.cpp
   )
 
-  target_compile_definitions(
+  target_sources(
     gui
     PRIVATE
+    "${CODEGEN_BUILD_DIR}/gui-version.rc"
+    manifest.xml
+  )
+
+  target_compile_definitions(
+    lib
+    PUBLIC
     "WIN32_LEAN_AND_MEAN"
     "NOMINMAX"
   )
 
   target_compile_options(
-    gui
-    PRIVATE
+    lib
+    PUBLIC
     "/EHsc"
     "/diagnostics:caret" 
     "/utf-8"
@@ -110,8 +123,8 @@ if(WIN32)
   )
 
   target_link_libraries(
-    gui
-    PRIVATE
+    lib
+    PUBLIC
     Microsoft::CppWinRT
     Comctl32
     WinTrust
@@ -134,9 +147,32 @@ if(WIN32)
 endif()
 
 target_sources(
-  gui
+  lib
   PRIVATE
   "${PLATFORM_APILAYERS_CPP}"
   "${PLATFORM_GUI_CPP}"
+)
+target_sources(
+  gui
+  PRIVATE
   "${PLATFORM_MAIN_CPP}"
+)
+
+set(OUTPUT_NAME "OpenXR-API-Layers-Create-Report")
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
+  "${CODEGEN_BUILD_DIR}/create-report-version.rc"
+  @ONLY
+)
+add_executable(
+  OpenXR-API-Layers-Create-Report
+  WIN32
+  "${PLATFORM_REPORT_MAIN_CPP}"
+  "${CMAKE_SOURCE_DIR}/icon/icon.rc"
+  "${CODEGEN_BUILD_DIR}/create-report-version.rc"
+)
+target_link_libraries(
+  OpenXR-API-Layers-Create-Report
+  PRIVATE
+  lib
 )

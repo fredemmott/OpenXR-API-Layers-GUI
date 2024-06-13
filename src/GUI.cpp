@@ -81,7 +81,7 @@ void GUI::Run() {
   sf::Clock deltaClock {};
 
   std::vector<LayerSet> layerSets;
-  for (auto&& store: APILayerStore::Get()) {
+  for (auto&& store: ReadWriteAPILayerStore::Get()) {
     layerSets.push_back({std::move(store)});
   }
   while (window.isOpen()) {
