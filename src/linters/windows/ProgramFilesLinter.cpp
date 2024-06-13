@@ -5,6 +5,7 @@
 
 #include <ShlObj.h>
 
+#include "APILayerStore_windows.hpp"
 #include "Linter.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -12,11 +13,27 @@ namespace FredEmmott::OpenXRLayers {
 // Warn about installations outside of program files
 class ProgramFilesLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
-    const APILayerStore*,
+    const APILayerStore* store,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     wchar_t* programFilesPath {nullptr};
+
+    auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
+    if (!winStore) {
+#ifndef NDEBUG
+      __debugbreak();
+#endif
+      return {};
+    }
+
     if (
-      SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &programFilesPath)
+      SHGetKnownFolderPath(
+        (winStore->GetRegistryBitness()
+         == WindowsAPILayerStore::RegistryBitness::Wow64_64)
+          ? FOLDERID_ProgramFilesX64
+          : FOLDERID_ProgramFilesX86,
+        0,
+        NULL,
+        &programFilesPath)
       != S_OK) {
       return {};
     }
