@@ -51,10 +51,6 @@ project(OpenXR-Layers-GUI VERSION ${BUILD_VERSION_STRING} LANGUAGES CXX C)
 
 # Handy for CI
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${BUILD_VERSION_STRING}")
-install(
-  FILES "${CMAKE_BINARY_DIR}/version.txt"
-  DESTINATION "."
-)
 
 option(USE_EMOJI "Use emoji for status symbols" ON)
 
