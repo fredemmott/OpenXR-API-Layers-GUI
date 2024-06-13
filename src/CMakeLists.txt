@@ -17,6 +17,8 @@ else()
   set(USE_EMOJI_BOOL "false")
 endif()
 
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE" LICENSE_TEXT)
+
 macro(add_gui)
   set(OPTIONS USE_HKCU)
   set(ONE_VALUE_ARGS BUILD_TARGET_ID)

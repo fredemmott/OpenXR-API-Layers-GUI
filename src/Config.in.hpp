@@ -16,4 +16,6 @@ constexpr bool USE_EMOJI { @USE_EMOJI_BOOL@ };
 
 constexpr auto GLYPH_ERROR {USE_EMOJI ? "\u26a0" : "!"};
 
+constexpr auto LICENSE_TEXT {R"---LICENSE---(@LICENSE_TEXT@)---LICENSE---"};
+
 }// namespace FredEmmott::OpenXRLayers::Config

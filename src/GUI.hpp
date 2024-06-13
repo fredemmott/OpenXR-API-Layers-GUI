@@ -65,6 +65,7 @@ class GUI final {
 
   void GUIButtons();
   void GUIRemoveLayerPopup();
+  void GUILicensePopup();
 
   void GUITabs();
   void GUIErrorsTab();

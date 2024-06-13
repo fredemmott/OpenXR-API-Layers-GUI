@@ -64,9 +64,3 @@ message(STATUS "Building OpenXR-Layers-GUI v${CMAKE_PROJECT_VERSION}")
 include(sign_target.cmake)
 
 add_subdirectory("src")
-
-install(
-  FILES LICENSE
-  DESTINATION "."
-  RENAME LICENSE.txt
-)

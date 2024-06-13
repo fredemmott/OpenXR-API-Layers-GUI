@@ -270,6 +270,21 @@ void GUI::GUIButtons() {
   }
   ImGui::EndDisabled();
 
+  {
+    ImGui::Spacing();
+
+    // Center this text
+    const auto text = "License";
+    const auto textWidth = ImGui::CalcTextSize(text).x;
+    const auto windowWidth = ImGui::GetWindowSize().x;
+    const auto x = ImGui::GetCursorPosX();
+    ImGui::SetCursorPosX(x + ((windowWidth - x - textWidth) / 2));
+    if (GUIHyperlink(text)) {
+      ImGui::OpenPopup("License");
+    }
+  }
+  this->GUILicensePopup();
+
   ImGui::EndGroup();
 }
 
@@ -648,6 +663,25 @@ void GUI::GUIRemoveLayerPopup() {
     }
     ImGui::SameLine();
     if (ImGui::Button("Cancel", {64 * dpiScaling, 0})) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::SetItemDefaultFocus();
+
+    ImGui::EndPopup();
+  }
+}
+
+void GUI::GUILicensePopup() {
+  auto viewport = ImGui::GetMainViewport();
+  ImVec2 center = viewport->GetCenter();
+  ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  if (ImGui::BeginPopupModal(
+        "License", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::TextWrapped("%s", Config::LICENSE_TEXT);
+    ImGui::Separator();
+    const auto dpiScaling = PlatformGUI::Get().GetDPIScaling();
+    ImGui::SetCursorPosX((256 + 128) * dpiScaling);
+    if (ImGui::Button("Close", {64 * dpiScaling, 0})) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::SetItemDefaultFocus();
