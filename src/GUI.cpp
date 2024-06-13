@@ -8,8 +8,6 @@
 #include <SFML/Window/Event.hpp>
 #include <fmt/format.h>
 
-#include <fstream>
-#include <iostream>
 #include <ranges>
 #include <unordered_map>
 
@@ -19,13 +17,13 @@
 #include "APILayerStore.hpp"
 #include "Config.hpp"
 #include "Linter.hpp"
+#include "SaveReport.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers {
 
 namespace {
 constexpr ImVec2 MINIMUM_WINDOW_SIZE {1024, 768};
-constexpr ImVec4 HYPERLINK_COLOR {0.13f, 0.4f, 1.0f, 1.0f};
 
 class MyWindow final : public sf::RenderWindow {
  public:
@@ -394,28 +392,6 @@ void GUI::LayerSet::GUIErrorsTab() {
   }
 }
 
-static std::string LayerStateToString(APILayerDetails::State state) {
-  using State = APILayerDetails::State;
-  switch (state) {
-    case State::Loaded:
-      return "Loaded";
-    case State::Uninitialized:
-      return "Internal error";
-    case State::NoJsonFile:
-      return "The file does not exist";
-    case State::UnreadableJsonFile:
-      return "The JSON file is unreadable";
-    case State::InvalidJson:
-      return "The file does not contain valid JSON";
-    case State::MissingData:
-      return "The file does not contain data required by OpenXR";
-    default:
-      return fmt::format(
-        "Internal error ({})",
-        static_cast<std::underlying_type_t<APILayerDetails::State>>(state));
-  }
-}
-
 void GUI::LayerSet::GUIDetailsTab() {
   if (ImGui::BeginTabItem("Details")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
@@ -437,7 +413,7 @@ void GUI::LayerSet::GUIDetailsTab() {
 
       const APILayerDetails details {mSelectedLayer->mJSONPath};
       if (details.mState != APILayerDetails::State::Loaded) {
-        const auto error = LayerStateToString(details.mState);
+        const auto error = details.StateAsString();
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::Text("%s", Config::GLYPH_ERROR);
@@ -717,77 +693,11 @@ void GUI::LayerSet::Export() {
     return;
   }
 
-  auto text = fmt::format(
-    "OpenXR API Layers GUI v{}\n"
-    "---",
-    Config::BUILD_VERSION);
+  SaveReport(*path);
 
-  for (const auto& layer: mLayers) {
-    using Value = APILayer::Value;
-    std::string_view value;
-    switch (layer.mValue) {
-      case Value::Enabled:
-        value = Config::GLYPH_ENABLED;
-        break;
-      case Value::Disabled:
-        value = Config::GLYPH_DISABLED;
-        break;
-      default:
-        value = Config::GLYPH_ERROR;
-        break;
-    }
-    text += std::format("\n{} {}", value, layer.mJSONPath.string());
-
-    const APILayerDetails details {layer.mJSONPath};
-    if (details.mState != APILayerDetails::State::Loaded) {
-      text += fmt::format(
-        "\n\t- {} {}", Config::GLYPH_ERROR, LayerStateToString(details.mState));
-    } else {
-      if (!details.mName.empty()) {
-        text += fmt::format("\n\tName: {}", details.mName);
-      }
-
-      if (details.mLibraryPath.empty()) {
-        text += fmt::format(
-          "\n\tLibrary path: {} No library path in JSON file",
-          Config::GLYPH_ERROR);
-      } else {
-        text
-          += fmt::format("\n\tLibrary path: {}", details.mLibraryPath.string());
-      }
-
-      if (!details.mDescription.empty()) {
-        text += fmt::format("\n\tDescription: {}", details.mDescription);
-      }
-
-      if (!details.mFileFormatVersion.empty()) {
-        text += fmt::format(
-          "\n\tFile format version: {}", details.mFileFormatVersion);
-      }
-
-      if (!details.mExtensions.empty()) {
-        text += "\n\tExtensions:";
-        for (const auto& ext: details.mExtensions) {
-          text
-            += fmt::format("\n\t\t- {} (version {})", ext.mName, ext.mVersion);
-        }
-      }
-    }
-
-    if (mLintErrorsByLayer.contains(&layer)) {
-      const auto& errors = mLintErrorsByLayer.at(&layer);
-      text += "\n\tErrors:";
-      for (const auto& error: errors) {
-        text += fmt::format(
-          "\n\t\t- {} {}", Config::GLYPH_ERROR, error->GetDescription());
-      }
-    }
+  if (std::filesystem::exists(*path)) {
+    PlatformGUI::Get().ShowFolderContainingFile(*path);
   }
-
-  std::ofstream(*path, std::ios::binary | std::ios::out | std::ios::trunc)
-    .write(text.data(), text.size());
-
-  PlatformGUI::Get().ShowFolderContainingFile(*path);
 }
 
 }// namespace FredEmmott::OpenXRLayers

@@ -58,6 +58,8 @@ struct APILayerDetails {
   std::vector<Extension> mExtensions;
 
   bool operator==(const APILayerDetails&) const noexcept = default;
+
+  std::string StateAsString() const noexcept;
 };
 
 }// namespace FredEmmott::OpenXRLayers

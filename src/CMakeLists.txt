@@ -32,6 +32,7 @@ add_executable(
   APILayerDetails.cpp
   GUI.cpp
   KnownLayers.cpp
+  SaveReport.cpp
   Linter.cpp
   linters/BadInstallationLinter.cpp
   linters/DuplicatesLinter.cpp

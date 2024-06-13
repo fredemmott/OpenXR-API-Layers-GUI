@@ -79,4 +79,25 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   mState = State::Loaded;
 }
 
+std::string APILayerDetails::StateAsString() const noexcept {
+  switch (mState) {
+    case State::Loaded:
+      return "Loaded";
+    case State::Uninitialized:
+      return "Internal error";
+    case State::NoJsonFile:
+      return "The file does not exist";
+    case State::UnreadableJsonFile:
+      return "The JSON file is unreadable";
+    case State::InvalidJson:
+      return "The file does not contain valid JSON";
+    case State::MissingData:
+      return "The file does not contain data required by OpenXR";
+    default:
+      return fmt::format(
+        "Internal error ({})",
+        static_cast<std::underlying_type_t<APILayerDetails::State>>(mState));
+  }
+}
+
 }// namespace FredEmmott::OpenXRLayers
