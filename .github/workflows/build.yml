@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ matrix.build-type != 'Debug' && matrix.os-arch != 'Win32' }}
         with:
-          name: "build-OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}-${{matrix.os-arch}}"
+          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
           path: ${{runner.temp}}/install
     outputs:
       version: ${{steps.configure.outputs.version}}
