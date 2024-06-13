@@ -17,6 +17,8 @@ jobs:
           merge-multiple: true
       - name: List artifacts
         run: Get-ChildItem -Recurse ${{runner.temp}}/artifacts
+      - name: Delete version.txt
+        run: Remove-Item ${{runner.temp}}/artifacts/version.txt
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
