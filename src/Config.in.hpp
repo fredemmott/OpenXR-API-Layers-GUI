@@ -14,6 +14,8 @@ constexpr std::string_view BUILD_VERSION {"@BUILD_VERSION_STRING@"};
 constexpr bool USE_EMOJI { @USE_EMOJI_BOOL@ };
 // clang-format on
 
+constexpr auto GLYPH_ENABLED {USE_EMOJI ? "\u2705" : "Y"};
+constexpr auto GLYPH_DISABLED {USE_EMOJI ? "\u274c" : "N"};
 constexpr auto GLYPH_ERROR {USE_EMOJI ? "\u26a0" : "!"};
 
 constexpr auto LICENSE_TEXT {R"---LICENSE---(@LICENSE_TEXT@)---LICENSE---"};

@@ -742,22 +742,21 @@ void GUI::Export() {
     Config::BUILD_TARGET_ID,
     Config::BUILD_VERSION);
 
-  size_t count = 0;
   for (const auto& layer: mLayers) {
     using Value = APILayer::Value;
-    std::string value;
+    std::string_view value;
     switch (layer.mValue) {
       case Value::Enabled:
-        value = fmt::format("{}.", ++count);
+        value = Config::GLYPH_ENABLED;
         break;
       case Value::Disabled:
-        value = "Disabled";
+        value = Config::GLYPH_DISABLED;
         break;
       default:
         value = Config::GLYPH_ERROR;
+        break;
     }
-
-    text += fmt::format("\n{}\t{}", value, layer.mJSONPath.string());
+    text += std::format("\n{} {}", value, layer.mJSONPath.string());
 
     const APILayerDetails details {layer.mJSONPath};
     if (details.mState != APILayerDetails::State::Loaded) {
