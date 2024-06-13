@@ -12,7 +12,7 @@ There is no general way to detect errors with OpenXR API layers, so this tool is
 
 1. Download [the latest version](https://github.com/fredemmott/OpenXR-API-Layers-GUI/releases/latest)
 2. Extract it somewhere handy
-3. Read the `README-Windows.txt` you just extracted :)
+3. Run `OpenXR-API-Layers-GUI.exe` :)
 
 While this project is designed to be easily portable, it currently only supports Windows - [contributions are very welcome :)](CONTRIBUTING.md).
 
