@@ -5,6 +5,10 @@
       "platform": "windows"
     },
     {
+      "name": "wil",
+      "platform": "windows"
+    },
+    {
       "name": "imgui",
       "features": [
         "freetype",

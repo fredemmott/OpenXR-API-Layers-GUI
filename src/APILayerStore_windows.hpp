@@ -3,6 +3,10 @@
 
 #include <Windows.h>
 
+#include <winrt/base.h>
+
+#include <wil/registry.h>
+
 #include "APILayerStore.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -38,8 +42,8 @@ class WindowsAPILayerStore : public virtual APILayerStore {
     HKEY rootKey,
     REGSAM desiredAccess);
 
-  HKEY mKey {};
-  HANDLE mEvent {};
+  wil::unique_hkey mKey {};
+  winrt::handle mEvent {};
 
  private:
   const std::string mDisplayName;

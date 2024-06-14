@@ -37,16 +37,19 @@ WindowsAPILayerStore::WindowsAPILayerStore(
       samFlags |= KEY_WOW64_32KEY;
       break;
   }
-  if (RegOpenKeyExW(rootKey, SubKey, 0, samFlags, &mKey) != ERROR_SUCCESS) {
+  if (
+    RegOpenKeyExW(rootKey, SubKey, 0, samFlags, mKey.put()) != ERROR_SUCCESS) {
 #ifndef NDEBUG
     __debugbreak();
 #endif
     mKey = {};
     return;
   }
-  mEvent = CreateEvent(nullptr, false, false, nullptr);
+  mEvent.attach(CreateEvent(nullptr, false, false, nullptr));
   this->Poll();
 }
+
+WindowsAPILayerStore::~WindowsAPILayerStore() = default;
 
 std::string WindowsAPILayerStore::GetDisplayName() const noexcept {
   return mDisplayName;
@@ -69,7 +72,7 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
 
   std::vector<APILayer> layers;
   while (RegEnumValueW(
-           mKey,
+           mKey.get(),
            index++,
            nameBuffer,
            &nameSize,
@@ -98,15 +101,10 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
 }
 
 bool WindowsAPILayerStore::Poll() const noexcept {
-  const auto result = WaitForSingleObject(mEvent, 0);
+  const auto result = WaitForSingleObject(mEvent.get(), 0);
   RegNotifyChangeKeyValue(
-    mKey, false, REG_NOTIFY_CHANGE_LAST_SET, mEvent, true);
+    mKey.get(), false, REG_NOTIFY_CHANGE_LAST_SET, mEvent.get(), true);
   return (result == WAIT_OBJECT_0);
-}
-
-WindowsAPILayerStore::~WindowsAPILayerStore() {
-  RegCloseKey(mKey);
-  CloseHandle(mEvent);
 }
 
 class ReadOnlyWindowsAPILayerStore final : public WindowsAPILayerStore {
@@ -147,13 +145,13 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
     }
 
     for (const auto& layer: oldLayers) {
-      RegDeleteValueW(mKey, layer.mJSONPath.wstring().c_str());
+      RegDeleteValueW(mKey.get(), layer.mJSONPath.wstring().c_str());
     }
 
     for (const auto& layer: newLayers) {
       DWORD disabled = layer.IsEnabled() ? 0 : 1;
       RegSetValueExW(
-        mKey,
+        mKey.get(),
         layer.mJSONPath.wstring().c_str(),
         NULL,
         REG_DWORD,

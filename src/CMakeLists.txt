@@ -9,6 +9,7 @@ find_package(fmt CONFIG REQUIRED)
 
 if(WIN32)
   find_package(cppwinrt CONFIG REQUIRED)
+  find_package(wil CONFIG REQUIRED)
 endif()
 
 if(USE_EMOJI)
@@ -133,6 +134,7 @@ if(WIN32)
     lib
     PUBLIC
     Microsoft::CppWinRT
+    WIL::WIL
     Comctl32
     WinTrust
     # Missing dependency for CppWinRT vcpkg
