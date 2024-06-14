@@ -90,9 +90,9 @@ class GUI final {
 
     void AddLayersClicked();
     void DragDropReorder(const APILayer& source, const APILayer& target);
-
-    void Export();
   };
+
+  void Export();
 
   sf::WindowHandle mWindowHandle {};
 };

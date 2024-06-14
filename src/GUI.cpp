@@ -141,6 +141,10 @@ void GUI::Run() {
         ImGui::EndTabItem();
       }
 
+      if (ImGui::TabItemButton("Save Report...", ImGuiTabItemFlags_Trailing)) {
+        this->Export();
+      }
+
       ImGui::EndTabBar();
     }
 
@@ -273,11 +277,6 @@ void GUI::LayerSet::GUIButtons() {
     }
   }
   ImGui::EndDisabled();
-
-  ImGui::Separator();
-  if (ImGui::Button("Save Report...", {-FLT_MIN, 0})) {
-    this->Export();
-  }
 
   ImGui::EndGroup();
 }
@@ -685,7 +684,7 @@ void GUI::LayerSet::Draw() {
   this->GUITabs();
 }
 
-void GUI::LayerSet::Export() {
+void GUI::Export() {
   const auto path = PlatformGUI::Get().GetExportFilePath();
   if (!path) {
     return;
