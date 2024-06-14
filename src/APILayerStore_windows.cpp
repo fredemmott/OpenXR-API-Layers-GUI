@@ -101,6 +101,7 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
         moreItems = false;
         break;
       case ERROR_MORE_DATA:
+        // If it's bigger than a DWORD, it's definitely not a DWORD :)
         layers.push_back({
           .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
           .mValue = Value::Win32_NotDWORD,
