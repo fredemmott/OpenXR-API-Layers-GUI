@@ -85,32 +85,30 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
       &disabledSize);
     switch (result) {
       case ERROR_SUCCESS:
-        if (dataType == REG_DWORD) {
-          layers.push_back({
-            .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-            .mValue = disabled ? Value::Disabled : Value::Enabled,
-          });
-        } else {
-          layers.push_back({
-            .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-            .mValue = Value::Win32_NotDWORD,
-          });
-        }
         break;
       case ERROR_NO_MORE_ITEMS:
         moreItems = false;
-        break;
+        continue;
       case ERROR_MORE_DATA:
-        // If it's bigger than a DWORD, it's definitely not a DWORD :)
-        layers.push_back({
-          .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-          .mValue = Value::Win32_NotDWORD,
-        });
+        // Bigger than a DWORD means not a DWORD< so handled by dataType check
         break;
       default:
 #ifndef NDEBUG
         __debugbreak();
 #endif
+        break;
+    }
+
+    if (dataType == REG_DWORD) {
+      layers.push_back({
+        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
+        .mValue = disabled ? Value::Disabled : Value::Enabled,
+      });
+    } else {
+      layers.push_back({
+        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
+        .mValue = Value::Win32_NotDWORD,
+      });
     }
 
     nameSize = maxNameSize;
