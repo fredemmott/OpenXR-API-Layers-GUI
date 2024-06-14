@@ -529,10 +529,6 @@ void GUI::LayerSet::ReloadLayerDataNow() {
 }
 
 void GUI::LayerSet::RunAllLintersNow() {
-  std::unordered_map<std::filesystem::path, APILayer*> layersByPath;
-  for (auto& layer: mLayers) {
-    layersByPath.emplace(layer.mJSONPath, &layer);
-  }
   mLintErrors = RunAllLinters(mStore, mLayers);
   mLintErrorsAreStale = false;
 }
