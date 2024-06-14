@@ -71,27 +71,45 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
   DWORD index = 0;
 
   std::vector<APILayer> layers;
-  while (RegEnumValueW(
-           mKey.get(),
-           index++,
-           nameBuffer,
-           &nameSize,
-           nullptr,
-           &dataType,
-           reinterpret_cast<LPBYTE>(&disabled),
-           &disabledSize)
-         == ERROR_SUCCESS) {
+  bool moreItems = true;
+  while (moreItems) {
     using Value = APILayer::Value;
-    if (dataType == REG_DWORD) {
-      layers.push_back({
-        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-        .mValue = disabled ? Value::Disabled : Value::Enabled,
-      });
-    } else {
-      layers.push_back({
-        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-        .mValue = Value::Win32_NotDWORD,
-      });
+    const auto result = RegEnumValueW(
+      mKey.get(),
+      index++,
+      nameBuffer,
+      &nameSize,
+      nullptr,
+      &dataType,
+      reinterpret_cast<LPBYTE>(&disabled),
+      &disabledSize);
+    switch (result) {
+      case ERROR_SUCCESS:
+        if (dataType == REG_DWORD) {
+          layers.push_back({
+            .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
+            .mValue = disabled ? Value::Disabled : Value::Enabled,
+          });
+        } else {
+          layers.push_back({
+            .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
+            .mValue = Value::Win32_NotDWORD,
+          });
+        }
+        break;
+      case ERROR_NO_MORE_ITEMS:
+        moreItems = false;
+        break;
+      case ERROR_MORE_DATA:
+        layers.push_back({
+          .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
+          .mValue = Value::Win32_NotDWORD,
+        });
+        break;
+      default:
+#ifndef NDEBUG
+        __debugbreak();
+#endif
     }
 
     nameSize = maxNameSize;
