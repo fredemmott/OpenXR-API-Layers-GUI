@@ -123,7 +123,11 @@ void GUI::Run() {
 
     if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
       for (auto& layerSet: layerSets) {
-        if (ImGui::BeginTabItem(layerSet.mStore->GetDisplayName().c_str())) {
+        const auto label = layerSet.HasErrors()
+          ? fmt::format(
+              "{} {}", Config::GLYPH_ERROR, layerSet.mStore->GetDisplayName())
+          : layerSet.mStore->GetDisplayName();
+        if (ImGui::BeginTabItem(label.c_str())) {
           layerSet.Draw();
           ImGui::EndTabItem();
         }
@@ -526,6 +530,16 @@ void GUI::LayerSet::ReloadLayerDataNow() {
   mLayers = std::move(newLayers);
   mLayerDataIsStale = false;
   mLintErrorsAreStale = true;
+}
+
+bool GUI::LayerSet::HasErrors() {
+  if (mLayerDataIsStale) {
+    this->ReloadLayerDataNow();
+  }
+  if (mLintErrorsAreStale) {
+    this->RunAllLintersNow();
+  }
+  return !mLintErrors.empty();
 }
 
 void GUI::LayerSet::RunAllLintersNow() {

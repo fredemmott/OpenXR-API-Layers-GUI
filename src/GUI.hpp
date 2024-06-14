@@ -69,6 +69,8 @@ class GUI final {
     bool mLayerDataIsStale {true};
     bool mLintErrorsAreStale {true};
 
+    bool HasErrors();
+
     void Draw();
 
     void GUILayersList();
