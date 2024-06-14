@@ -18,7 +18,8 @@ class BadInstallationLinter final : public Linter {
     for (const auto& [layer, details]: layers) {
       if (!std::filesystem::exists(layer.mJSONPath)) {
         errors.push_back(std::make_shared<InvalidLayerLintError>(
-          fmt::format("JSON file {} does not exist", layer.mJSONPath.string()),
+          fmt::format(
+            "JSON file `{}` does not exist", layer.mJSONPath.string()),
           layer.mJSONPath));
         continue;
       }
@@ -26,7 +27,7 @@ class BadInstallationLinter final : public Linter {
       if (details.mState != APILayerDetails::State::Loaded) {
         errors.push_back(std::make_shared<InvalidLayerLintError>(
           fmt::format(
-            "Unable to load details from the JSON file {}",
+            "Unable to load details from the JSON file `{}`",
             layer.mJSONPath.string()),
           layer.mJSONPath));
         continue;
@@ -35,7 +36,7 @@ class BadInstallationLinter final : public Linter {
       if (details.mLibraryPath.empty()) {
         errors.push_back(std::make_shared<InvalidLayerLintError>(
           fmt::format(
-            "Layer does not specify an implementation in {}",
+            "Layer does not specify an implementation in `{}`",
             layer.mJSONPath.string()),
           layer.mJSONPath));
         continue;
@@ -44,7 +45,7 @@ class BadInstallationLinter final : public Linter {
       if (!std::filesystem::exists(details.mLibraryPath)) {
         errors.push_back(std::make_shared<InvalidLayerLintError>(
           fmt::format(
-            "Implementation file '{}' does not exist",
+            "Implementation file `{}` does not exist",
             details.mLibraryPath.string()),
           layer.mJSONPath));
         continue;
