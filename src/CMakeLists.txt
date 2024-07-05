@@ -81,9 +81,9 @@ set_target_properties(
 )
 target_link_libraries(gui PRIVATE lib linters)
 
-set(PLATFORM_APILAYERS_CPP "APILayerStore_stub.cpp")
+set(PLATFORM_APILAYERS_CPP "stubs/APILayerStore.cpp")
 set(PLATFORM_MAIN_CPP "main.cpp")
-set(PLATFORM_GUI_CPP "PlatformGUI_stub.cpp")
+set(PLATFORM_GUI_CPP "stubs/PlatformGUI.cpp")
 set(PLATFORM_REPORT_MAIN_CPP "SaveReport_main.cpp")
 
 if(WIN32)
