@@ -87,10 +87,10 @@ set(PLATFORM_GUI_CPP "PlatformGUI_stub.cpp")
 set(PLATFORM_REPORT_MAIN_CPP "SaveReport_main.cpp")
 
 if(WIN32)
-  set(PLATFORM_APILAYERS_CPP "APILayerStore_windows.cpp")
-  set(PLATFORM_GUI_CPP "PlatformGUI_windows.cpp")
-  set(PLATFORM_MAIN_CPP "wWinMain.cpp")
-  set(PLATFORM_REPORT_MAIN_CPP "SaveReport_wWinMain.cpp")
+  set(PLATFORM_APILAYERS_CPP "windows/WindowsAPILayerStore.cpp")
+  set(PLATFORM_GUI_CPP "windows/PlatformGUI.cpp")
+  set(PLATFORM_MAIN_CPP "windows/wWinMain.cpp")
+  set(PLATFORM_REPORT_MAIN_CPP "windows/SaveReport_wWinMain.cpp")
 
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"

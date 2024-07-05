@@ -5,8 +5,8 @@
 
 #include <ShlObj.h>
 
-#include "APILayerStore_windows.hpp"
 #include "Linter.hpp"
+#include "windows/WindowsAPILayerStore.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 

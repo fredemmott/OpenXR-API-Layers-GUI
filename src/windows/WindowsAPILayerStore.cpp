@@ -1,7 +1,7 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
-#include "APILayerStore_windows.hpp"
+#include "WindowsAPILayerStore.hpp"
 
 #include <Windows.h>
 
