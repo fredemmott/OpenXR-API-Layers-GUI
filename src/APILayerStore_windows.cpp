@@ -16,6 +16,7 @@
 
 #include "APILayerStore.hpp"
 #include "Config.hpp"
+#include "windows/GetKnownFolderPath.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -186,20 +187,8 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
       return;
     }
 
-    wchar_t* folderPath {nullptr};
-    if (
-      SHGetKnownFolderPath(
-        FOLDERID_LocalAppData, KF_FLAG_DEFAULT, NULL, &folderPath)
-      != S_OK) {
-      return;
-    }
-
-    if (!folderPath) {
-      return;
-    }
-
-    const auto backupFolder
-      = std::filesystem::path(folderPath) / "OpenXR API Layers GUI" / "Backups";
+    const auto backupFolder = GetKnownFolderPath<FOLDERID_LocalAppData>()
+      / "OpenXR API Layers GUI" / "Backups";
     if (!std::filesystem::is_directory(backupFolder)) {
       std::filesystem::create_directories(backupFolder);
     }

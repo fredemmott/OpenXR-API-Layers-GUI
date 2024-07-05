@@ -1,12 +1,17 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
+#include <winrt/base.h>
+
 #include <fmt/core.h>
+
+#include <string>
 
 #include <ShlObj.h>
 
 #include "APILayerStore_windows.hpp"
 #include "Linter.hpp"
+#include "windows/GetKnownFolderPath.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -15,8 +20,6 @@ class ProgramFilesLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore* store,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
-    wchar_t* programFilesPath {nullptr};
-
     auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
     if (!winStore) {
 #ifndef NDEBUG
@@ -25,19 +28,11 @@ class ProgramFilesLinter final : public Linter {
       return {};
     }
 
-    if (
-      SHGetKnownFolderPath(
-        (winStore->GetRegistryBitness()
+    const auto programFiles
+      = (winStore->GetRegistryBitness()
          == WindowsAPILayerStore::RegistryBitness::Wow64_64)
-          ? FOLDERID_ProgramFilesX64
-          : FOLDERID_ProgramFilesX86,
-        0,
-        NULL,
-        &programFilesPath)
-      != S_OK) {
-      return {};
-    }
-    const std::filesystem::path programFiles {programFilesPath};
+      ? GetKnownFolderPath<FOLDERID_ProgramFilesX64>()
+      : GetKnownFolderPath<FOLDERID_ProgramFilesX86>();
 
     std::vector<std::shared_ptr<LintError>> errors;
     for (const auto& [layer, details]: layers) {

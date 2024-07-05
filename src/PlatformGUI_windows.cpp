@@ -18,6 +18,7 @@
 
 #include "Config.hpp"
 #include "GUI.hpp"
+#include "windows/GetKnownFolderPath.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers {
@@ -176,17 +177,7 @@ class PlatformGUI_Windows final : public PlatformGUI {
   }
 
   void SetupFonts(ImGuiIO* io) override {
-    wchar_t* fontsPathStr {nullptr};
-    if (
-      SHGetKnownFolderPath(FOLDERID_Fonts, KF_FLAG_DEFAULT, NULL, &fontsPathStr)
-      != S_OK) {
-      return;
-    }
-    if (!fontsPathStr) {
-      return;
-    }
-
-    std::filesystem::path fontsPath {fontsPathStr};
+    const auto fontsPath = GetKnownFolderPath<FOLDERID_Fonts>();
 
     io->Fonts->Clear();
     io->Fonts->AddFontFromFileTTF(
