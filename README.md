@@ -24,12 +24,11 @@ OpenXR Explorer v1.4 (latest as of 2024-04-04) and below show API layers in alph
 
 ## Getting Help
 
-If you have a problem with a specific layer, or aren't sure which order things
-should be in, contact the developers of the relevant layers.
+No help is available for this tool, as every previous request for help has been for help with a specific API layer or game, not the tool, and I am unable to offer support for other people's software.
 
-If you have a problem with *the tool*, not games or specific API layers, help
-may be available from the community in [my
-Discord](https://go.fredemmott.com/discord).
+- If you have a problem with a specific layer, or aren't sure which order things should be in, search for how to get help for the layers in question
+- If you have a problem with a game but don't know which layer is the problem, try disabling all layers. If that fixes it, enable them one at a time until you have problems, then look up how to get help for the layers. If you're stuck, try the forums, Discord, or Reddit for the gaame or headset you're trying to use - whichever is more relevant to the problem.
+- If the game or API layers are unsupported, you might want to try forums/Discord/reddit for the game or headset you're trying to use - whichever is more relevant to your problem. I do not support other people's software, even if it's no longer supported by the authors.
 
 ## Screenshots
 
