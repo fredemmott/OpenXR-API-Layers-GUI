@@ -67,12 +67,19 @@ jobs:
         working-directory: build
         run: |
           cmake --install . --config ${{matrix.build-type}} --prefix ${{runner.temp}}/install
-      - name: Upload Artifacts
+          cmake --install . --config ${{matrix.build-type}} --prefix ${{runner.temp}}/install-symbols --component DebugSymbols
+      - name: Upload Executable Artifacts
         uses: actions/upload-artifact@v4
         if: ${{ matrix.build-type != 'Debug' && matrix.os-arch != 'Win64' }}
         with:
           name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
           path: ${{runner.temp}}/install
+      - name: Upload Debug Symbol Artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.build-type != 'Debug' && matrix.os-arch != 'Win64' }}
+        with:
+          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}-DebugSymbols"
+          path: ${{runner.temp}}/install-symbols
     outputs:
       version: ${{steps.configure.outputs.version}}
     strategy:
