@@ -88,7 +88,11 @@ static std::string GenerateReportText(const APILayerStore* store) {
         });
 
     if (layerErrors.empty()) {
-      ret += "\n\tNo errors.";
+      if (layer.IsEnabled()) {
+        ret += "\n\tNo errors.";
+      } else {
+        ret += "\n\tNo errors, however most linters were skipped because the layer is disabled.";
+      }
     } else {
       ret += "\n\tErrors:";
       for (const auto& error: layerErrors) {

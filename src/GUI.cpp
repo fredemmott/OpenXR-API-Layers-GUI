@@ -315,7 +315,13 @@ void GUI::LayerSet::GUIErrorsTab() {
     if (selectedErrors.empty()) {
       ImGui::Separator();
       ImGui::BeginDisabled();
-      ImGui::Text("No warnings.");
+      if (mSelectedLayer->IsEnabled()) {
+        ImGui::Text("No warnings.");
+      } else {
+        ImGui::Text(
+          "No warnings, however most checks were skipped because the layer is "
+          "disabled.");
+      }
       ImGui::EndDisabled();
     } else {
       std::vector<std::shared_ptr<FixableLintError>> fixableErrors;
