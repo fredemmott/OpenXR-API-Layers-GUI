@@ -48,6 +48,7 @@ set(
 set(BUILD_VERSION_STRING "0.0.3.${VERSION_BUILD}")
 project(OpenXR-Layers-GUI VERSION ${BUILD_VERSION_STRING} LANGUAGES CXX C)
 
+message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Handy for CI
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${BUILD_VERSION_STRING}")
