@@ -39,7 +39,17 @@ WindowsAPILayerStore::WindowsAPILayerStore(
       break;
   }
   if (
-    RegOpenKeyExW(rootKey, SubKey, 0, samFlags, mKey.put()) != ERROR_SUCCESS) {
+    RegCreateKeyExW(
+      rootKey,
+      SubKey,
+      0,
+      nullptr,
+      REG_OPTION_NON_VOLATILE,
+      samFlags,
+      nullptr,
+      mKey.put(),
+      nullptr)
+    != ERROR_SUCCESS) {
 #ifndef NDEBUG
     __debugbreak();
 #endif
