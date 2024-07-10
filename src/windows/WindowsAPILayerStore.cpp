@@ -43,12 +43,12 @@ WindowsAPILayerStore::WindowsAPILayerStore(
       rootKey,
       SubKey,
       0,
-      NULL,
+      nullptr,
       REG_OPTION_NON_VOLATILE,
       samFlags,
-      NULL,
+      nullptr,
       mKey.put(),
-      NULL)
+      nullptr)
     != ERROR_SUCCESS) {
 #ifndef NDEBUG
     __debugbreak();
