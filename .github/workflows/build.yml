@@ -85,7 +85,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os-arch: [Win32, Win64]
+        os-arch: [Win64]
         build-type: [RelWithDebInfo, Debug]
         include:
           - os-arch: Win64
