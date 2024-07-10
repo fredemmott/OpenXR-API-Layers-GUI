@@ -190,3 +190,14 @@ install(
   TARGETS create-report
   DESTINATION "."
 )
+
+if (WIN32)
+  install(
+    FILES
+    "$<TARGET_PDB_FILE:create-report>"
+    "$<TARGET_PDB_FILE:gui>"
+    DESTINATION "."
+    COMPONENT "DebugSymbols"
+    EXCLUDE_FROM_ALL
+  )
+endif()
