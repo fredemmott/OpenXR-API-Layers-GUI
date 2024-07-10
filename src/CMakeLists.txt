@@ -142,11 +142,15 @@ if(WIN32)
     RuntimeObject
   )
 
-  target_link_options(
-    gui
-    PRIVATE
-    "/MANIFESTUAC:level='requireAdministrator'"
-  )
+  option(REQUIRE_ELEVATION "GUI will automatically elevate. Must run as admin to write to HKLM." ON)
+
+  if(REQUIRE_ELEVATION)
+    target_link_options(
+      gui
+      PRIVATE
+      "/MANIFESTUAC:level='requireAdministrator'"
+    )
+  endif()
 endif()
 
 target_sources(
