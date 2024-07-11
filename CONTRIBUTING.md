@@ -12,8 +12,6 @@ While in general this is a terrible idea, for this project, you may want to run 
 
 This is because the API layer community in general has decided to install their layers into `HKEY_LOCAL_MACHINE`, rather than `HKEY_CURRENT_USER`, which requires elevation to write to. Individual API layers can't really migrate to HKCU, because layer order is only defined (ish) within one registry hive, and layer ordering matters.
 
-Alternatively, you can pass `-DREQUIRE_ELEVATION=OFF` to CMake, which will disable the automatic elevation - in which case, you will need to test only with HKCU, or manually elevate.
-
 ## Building
 
 1. Clone the repository
