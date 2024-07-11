@@ -20,6 +20,8 @@ Alternatively, you can pass `-DREQUIRE_ELEVATION=OFF` to CMake, which will disab
 2. `git submodule update --init` (needed once)
 3. Open with Visual Studio Code and use the CMake extensions, or configure and build with separate `cmake` command
 
+You may want to set the `ENABLE_ASAN` CMake option to enable Address Sanitizer, which will automatically detect many common memory errors at runtime.
+
 See [the GitHub Actions configuration](../.github/workflows/ci.yml) for a full example.
 
 ## General Guidelines

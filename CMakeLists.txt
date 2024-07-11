@@ -6,6 +6,16 @@ cmake_minimum_required(VERSION 3.10)
 # Enable CMAKE_MSVC_RUNTIME_LIBRARY variable
 cmake_policy(SET CMP0091 NEW)
 
+option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
+
+if(ENABLE_ASAN)
+  list(
+    APPEND 
+    VCPKG_CXX_FLAGS
+    "$<IF:$<EQUAL:$<CXX_COMPILER_ID>,MSVC>,/,->fsanitize=address"
+  )
+endif()
+
 set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
 
 if("${VCPKG_TARGET_TRIPLET}" MATCHES "-static$")
@@ -59,5 +69,13 @@ option(USE_EMOJI "Use emoji for status symbols" ON)
 message(STATUS "Building OpenXR-Layers-GUI v${CMAKE_PROJECT_VERSION}")
 
 include(sign_target.cmake)
+
+if(ENABLE_ASAN)
+  list(
+    APPEND 
+    VCPKG_CXX_FLAGS
+    "$<IF:$<EQUAL:$<CXX_COMPILER_ID>,MSVC>,/,->fsanitize=address"
+  )
+endif()
 
 add_subdirectory("src")
