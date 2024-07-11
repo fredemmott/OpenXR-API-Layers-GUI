@@ -315,12 +315,23 @@ void GUI::LayerSet::GUIErrorsTab() {
     if (selectedErrors.empty()) {
       ImGui::Separator();
       ImGui::BeginDisabled();
-      if (mSelectedLayer->IsEnabled()) {
-        ImGui::Text("No warnings.");
+      if (mSelectedLayer) {
+        if (mSelectedLayer->IsEnabled()) {
+          ImGui::Text("No warnings.");
+        } else {
+          ImGui::Text(
+            "No warnings, however most checks were skipped because the layer "
+            "is disabled.");
+        }
       } else {
-        ImGui::Text(
-          "No warnings, however most checks were skipped because the layer is "
-          "disabled.");
+        // No layers selected
+        if (std::ranges::any_of(mLayers, &APILayer::IsEnabled)) {
+          ImGui::Text("No warnings in enabled layers.");
+        } else {
+          ImGui::Text(
+            "No warnings, however most checks were skipped because there are "
+            "no enabled layers.");
+        }
       }
       ImGui::EndDisabled();
     } else {
