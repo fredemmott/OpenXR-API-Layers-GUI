@@ -10,6 +10,26 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+static void SetStringOrNumber(
+  std::string& variable,
+  const nlohmann::json& json,
+  const auto& key) {
+  if (!json.contains(key)) {
+    return;
+  }
+  const auto value = json.at(key);
+
+  if (value.is_string()) {
+    variable = value;
+    return;
+  }
+
+  if (value.is_number_integer()) {
+    variable = fmt::to_string(value.get<uint32_t>());
+    return;
+  }
+}
+
 APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   if (!std::filesystem::exists(jsonPath)) {
     mState = State::NoJsonFile;
@@ -54,20 +74,16 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
     }
   }
 
+  mAPIVersion = layer.value("api_version", std::string {});
   mDescription = layer.value("description", std::string {});
+
   if (layer.contains("instance_extensions")) {
     auto extensions = layer.at("instance_extensions");
     if (extensions.is_array()) {
       for (const auto& extension: extensions) {
         std::string version;
-        if (extension.contains("extension_version")) {
-          auto it = extension.at("extension_version");
-          if (it.is_string()) {
-            version = it;
-          } else if (it.is_number_integer()) {
-            version = fmt::format("{}", it.get<uint32_t>());
-          }
-        }
+        SetStringOrNumber(version, extension, "extension_version");
+
         mExtensions.push_back(Extension {
           .mName = extension.value("name", std::string {}),
           .mVersion = version,
@@ -75,6 +91,8 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
       }
     }
   }
+
+  SetStringOrNumber(mImplementationVersion, layer, "implementation_version");
 
   mState = State::Loaded;
 }

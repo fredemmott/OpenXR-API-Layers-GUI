@@ -64,6 +64,15 @@ static std::string GenerateReportText(const APILayerStore* store) {
           += fmt::format("\n\tLibrary path: {}", details.mLibraryPath.string());
       }
 
+      if (!details.mImplementationVersion.empty()) {
+        ret += fmt::format(
+          "\n\tImplementation version: {}", details.mImplementationVersion);
+      }
+
+      if (!details.mAPIVersion.empty()) {
+        ret += fmt::format("\n\tOpenXR API version: {}", details.mAPIVersion);
+      }
+
       if (!details.mDescription.empty()) {
         ret += fmt::format("\n\tDescription: {}", details.mDescription);
       }

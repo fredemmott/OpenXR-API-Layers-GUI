@@ -475,6 +475,18 @@ void GUI::LayerSet::GUIDetailsTab() {
           ImGui::Text("%s", details.mName.c_str());
         }
 
+        if (!details.mImplementationVersion.empty()) {
+          ImGui::TableNextRow();
+          ImGui::TableNextColumn();
+          ImGui::Text("Version");
+          ImGui::TableNextColumn();
+          if (ImGui::Button("Copy##ImplementationVersion")) {
+            ImGui::SetClipboardText(details.mImplementationVersion.c_str());
+          }
+          ImGui::SameLine();
+          ImGui::Text("v%s", details.mImplementationVersion.c_str());
+        }
+
         if (!details.mDescription.empty()) {
           ImGui::TableNextRow();
           ImGui::TableNextColumn();
@@ -483,12 +495,20 @@ void GUI::LayerSet::GUIDetailsTab() {
           ImGui::Text("%s", details.mDescription.c_str());
         }
 
+        if (!details.mAPIVersion.empty()) {
+          ImGui::TableNextRow();
+          ImGui::TableNextColumn();
+          ImGui::Text("OpenXR API Version");
+          ImGui::TableNextColumn();
+          ImGui::Text("%s", details.mAPIVersion.c_str());
+        }
+
         if (!details.mFileFormatVersion.empty()) {
           ImGui::TableNextRow();
           ImGui::TableNextColumn();
           ImGui::Text("File Format Version");
           ImGui::TableNextColumn();
-          ImGui::Text("%s", details.mFileFormatVersion.c_str());
+          ImGui::Text("v%s", details.mFileFormatVersion.c_str());
         }
 
         if (!details.mExtensions.empty()) {
