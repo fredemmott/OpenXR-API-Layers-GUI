@@ -123,11 +123,12 @@ void GUI::Run() {
 
     if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
       for (auto& layerSet: layerSets) {
+        const auto name = layerSet.mStore->GetDisplayName();
         const auto label = layerSet.HasErrors()
-          ? fmt::format(
-              "{} {}", Config::GLYPH_ERROR, layerSet.mStore->GetDisplayName())
-          : layerSet.mStore->GetDisplayName();
-        if (ImGui::BeginTabItem(label.c_str())) {
+          ? fmt::format("{} {}", Config::GLYPH_ERROR, name)
+          : name;
+        const auto labelWithID = fmt::format("{}###layerSet-{}", label, name);
+        if (ImGui::BeginTabItem(labelWithID.c_str())) {
           layerSet.Draw();
           ImGui::EndTabItem();
         }
