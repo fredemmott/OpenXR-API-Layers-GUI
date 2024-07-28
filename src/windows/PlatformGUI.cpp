@@ -44,6 +44,13 @@ class PlatformGUI_Windows final : public PlatformGUI {
       ShowWindow(handle, SW_SHOW);
     }
 
+    // partial workaround for:
+    // - https://github.com/SFML/imgui-sfml/issues/206
+    // - https://github.com/SFML/imgui-sfml/issues/212
+    //
+    // remainder is in GUI.cpp
+    SetFocus(handle);
+
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     mWindow = handle;
     mDPIScaling

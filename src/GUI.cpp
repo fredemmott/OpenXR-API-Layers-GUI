@@ -72,6 +72,14 @@ void GUI::Run() {
 
   platform.SetWindow(mWindowHandle);
 
+  // partial workaround for:
+  // - https://github.com/SFML/imgui-sfml/issues/206
+  // - https://github.com/SFML/imgui-sfml/issues/212
+  //
+  // remainder is in windows/PlatformGUI.cpp
+  ImGui::SFML::ProcessEvent(window, {sf::Event::LostFocus});
+  ImGui::SFML::ProcessEvent(window, {sf::Event::GainedFocus});
+
   auto dpiScaling = platform.GetDPIScaling();
   window.setMinimumSize({
     MINIMUM_WINDOW_SIZE.x * dpiScaling,
