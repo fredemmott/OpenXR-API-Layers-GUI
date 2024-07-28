@@ -12,6 +12,7 @@
 
 #include <ShlObj.h>
 #include <ShlObj_core.h>
+#include <dwmapi.h>
 #include <imgui_freetype.h>
 #include <shellapi.h>
 #include <shtypes.h>
@@ -35,6 +36,14 @@ class PlatformGUI_Windows final : public PlatformGUI {
   }
 
   void SetWindow(sf::WindowHandle handle) override {
+    {
+      ShowWindow(handle, SW_HIDE);
+      BOOL darkMode = true;
+      DwmSetWindowAttribute(
+        handle, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
+      ShowWindow(handle, SW_SHOW);
+    }
+
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     mWindow = handle;
     mDPIScaling

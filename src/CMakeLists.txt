@@ -137,6 +137,7 @@ if(WIN32)
     WIL::WIL
     Comctl32
     WinTrust
+    Dwmapi
     # Missing dependency for CppWinRT vcpkg
     # https://github.com/microsoft/vcpkg/issues/15339
     RuntimeObject
@@ -147,6 +148,7 @@ if(WIN32)
     PRIVATE
     "/MANIFESTUAC:level='requireAdministrator'"
   )
+
 endif()
 
 target_sources(
