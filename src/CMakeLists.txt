@@ -209,12 +209,16 @@ if (WIN32)
     "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
     VERBATIM
   )
+  install(
+    FILES
+    "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
+    DESTINATION "."
+  )
 
   install(
     FILES
     "$<TARGET_PDB_FILE:create-report>"
     "$<TARGET_PDB_FILE:gui>"
-    "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
     DESTINATION "."
     COMPONENT "DebugSymbols"
     EXCLUDE_FROM_ALL
