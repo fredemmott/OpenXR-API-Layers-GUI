@@ -1,9 +1,8 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
-#include <Windows.h>
-
 #include <Unknwn.h>
+#include <Windows.h>
 
 #include <winrt/base.h>
 
@@ -36,6 +35,18 @@ class PlatformGUI_Windows final : public PlatformGUI {
   }
 
   void SetWindow(sf::WindowHandle handle) override {
+    {
+      static std::once_flag sOnce;
+
+      std::call_once(sOnce, []() {
+        static std::string sIniPath;
+        sIniPath = (GetKnownFolderPath<FOLDERID_LocalAppData>()
+                    / "OpenXR API Layers GUI" / "imgui.ini")
+                     .string();
+        ImGui::GetIO().IniFilename = sIniPath.c_str();
+      });
+    }
+
     {
       ShowWindow(handle, SW_HIDE);
       BOOL darkMode = true;

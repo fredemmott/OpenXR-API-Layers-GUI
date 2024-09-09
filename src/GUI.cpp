@@ -85,7 +85,6 @@ void GUI::Run() {
     MINIMUM_WINDOW_SIZE.x * dpiScaling,
     MINIMUM_WINDOW_SIZE.y * dpiScaling,
   });
-  ImGui::GetIO().IniFilename = "test";
   platform.SetupFonts(&ImGui::GetIO());
 
   sf::Clock deltaClock {};
