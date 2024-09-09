@@ -23,7 +23,10 @@ IncludeCategories:
   - Regex: '^<Windows\.h>$'
     Priority: 30
   - Regex: '^<Unknwn\.h>'
-    Priority: 31
+    Priority: 30
+  - Regex: '^<Psapi\.h>'
+    Priority: 30
+    SortPriority: 31
   - Regex: '^<winrt/.+'
     Priority: 32
     SortPriority: 32
