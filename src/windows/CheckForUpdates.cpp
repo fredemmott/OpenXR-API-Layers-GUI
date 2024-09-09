@@ -119,6 +119,19 @@ void CheckForUpdates() {
     PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION,
   };
 
+  // Process group, including temporary children
+  winrt::handle job { CreateJobObjectW(nullptr, nullptr) };
+  // Jobs are only signalled on timeout, not on completion, so...
+  winrt::handle jobCompletion {
+    CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1)
+  };
+  JOBOBJECT_ASSOCIATE_COMPLETION_PORT assoc {
+    .CompletionKey = job.get(),
+    .CompletionPort = jobCompletion.get(),
+  };
+  winrt::check_bool(SetInformationJobObject(job.get(),
+    JobObjectAssociateCompletionPortInformation, &assoc, sizeof(assoc)));
+
   auto launch = [&]<class... Args>(
                   std::wformat_string<Args...> commandLineFmt,
                   Args&&... commandLineFmtArgs) {
@@ -137,11 +150,13 @@ void CheckForUpdates() {
       nullptr,
       nullptr,
       /* inherit handles = */ true,
-      EXTENDED_STARTUPINFO_PRESENT,
+      EXTENDED_STARTUPINFO_PRESENT | CREATE_SUSPENDED,
       nullptr,
       directory.wstring().c_str(),
       &startupInfo.StartupInfo,
       &processInfo));
+    winrt::check_bool(AssignProcessToJobObject(job.get(), processInfo.hProcess));
+    ResumeThread(processInfo.hThread);
     WaitForSingleObject(processInfo.hProcess, INFINITE);
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);
@@ -152,6 +167,12 @@ void CheckForUpdates() {
     updater.wstring(),
     reinterpret_cast<uintptr_t>(thisProcessAsShell.get()),
     FredEmmott::OpenXRLayers::Config::BUILD_VERSION_W);
+
+  DWORD completionCode {};
+  ULONG_PTR completionKey {};
+  LPOVERLAPPED overlapped {};
+  while (GetQueuedCompletionStatus(jobCompletion.get(), &completionCode, &completionKey, &overlapped, INFINITE) && !(
+    completionKey == reinterpret_cast<ULONG_PTR>(job.get()) && completionCode == JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO)) {}
 }
 
 }
