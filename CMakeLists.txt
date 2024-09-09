@@ -78,4 +78,5 @@ if(ENABLE_ASAN)
   )
 endif()
 
+add_subdirectory("third-party")
 add_subdirectory("src")

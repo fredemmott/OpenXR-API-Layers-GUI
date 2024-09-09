@@ -4,15 +4,17 @@
 #include <Windows.h>
 
 #include "GUI.hpp"
+#include "CheckForUpdates.hpp"
 
 // Entrypoint for Windows
 //
-// See main.cpp for Linux and MacOS
+// See main.cpp for Linux and macOS
 int WINAPI wWinMain(
   [[maybe_unused]] HINSTANCE hInstance,
   [[maybe_unused]] HINSTANCE hPrevInstance,
   [[maybe_unused]] PWSTR pCmdLine,
   [[maybe_unused]] int nCmdShow) {
+  FredEmmott::OpenXRLayers::CheckForUpdates();
   FredEmmott::OpenXRLayers::GUI().Run();
   return 0;
 }

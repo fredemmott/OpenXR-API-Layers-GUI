@@ -99,6 +99,12 @@ if(WIN32)
   )
 
   target_sources(
+    lib
+    PRIVATE
+    windows/CheckForUpdates.cpp
+  )
+
+  target_sources(
     linters
     PRIVATE
     linters/windows/NotADWORDLinter.cpp
@@ -194,10 +200,21 @@ install(
 )
 
 if (WIN32)
+  set(UPDATER_FILENAME "fredemmott_OpenXR-API-Layers-GUI_Updater.exe")
+  add_custom_command(
+    TARGET gui POST_BUILD
+    COMMAND
+    "${CMAKE_COMMAND}" -E copy_if_different
+    "${UPDATER_EXE}"
+    "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
+    VERBATIM
+  )
+
   install(
     FILES
     "$<TARGET_PDB_FILE:create-report>"
     "$<TARGET_PDB_FILE:gui>"
+    "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
     DESTINATION "."
     COMPONENT "DebugSymbols"
     EXCLUDE_FROM_ALL
