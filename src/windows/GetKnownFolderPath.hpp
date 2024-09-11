@@ -28,6 +28,10 @@ auto GetKnownFolderPath() {
     }
 
     path = {std::wstring_view {buf}};
+    if (std::filesystem::exists(path)) {
+      path = std::filesystem::canonical(path);
+    }
+
     CoTaskMemFree(buf);
   });
 

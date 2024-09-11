@@ -28,11 +28,10 @@ class ProgramFilesLinter final : public Linter {
       return {};
     }
 
-    const auto programFiles
-      = (winStore->GetRegistryBitness()
-         == WindowsAPILayerStore::RegistryBitness::Wow64_64)
-      ? GetKnownFolderPath<FOLDERID_ProgramFilesX64>()
-      : GetKnownFolderPath<FOLDERID_ProgramFilesX86>();
+    const auto programFiles = std::array {
+      GetKnownFolderPath<FOLDERID_ProgramFilesX64>(),
+      GetKnownFolderPath<FOLDERID_ProgramFilesX86>(),
+    };
 
     std::vector<std::shared_ptr<LintError>> errors;
     for (const auto& [layer, details]: layers) {
@@ -45,15 +44,10 @@ class ProgramFilesLinter final : public Linter {
       }
 
       bool isProgramFiles = false;
-      auto path = details.mLibraryPath;
-      while (path.has_parent_path()) {
-        const auto parent = path.parent_path();
-        if (parent == path) {
-          break;
-        }
-        path = parent;
-
-        if (path == programFiles) {
+      for (auto&& base: programFiles) {
+        const auto mismatchAt
+          = std::ranges::mismatch(details.mLibraryPath, base);
+        if (mismatchAt.in2 == base.end()) {
           isProgramFiles = true;
           break;
         }
