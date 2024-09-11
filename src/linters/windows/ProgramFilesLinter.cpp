@@ -5,8 +5,6 @@
 
 #include <fmt/core.h>
 
-#include <string>
-
 #include <ShlObj.h>
 
 #include "Linter.hpp"
@@ -17,9 +15,9 @@ namespace FredEmmott::OpenXRLayers {
 
 // Warn about installations outside of program files
 class ProgramFilesLinter final : public Linter {
-  virtual std::vector<std::shared_ptr<LintError>> Lint(
+  std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore* store,
-    const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
+    const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) override {
     auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
     if (!winStore) {
 #ifndef NDEBUG
