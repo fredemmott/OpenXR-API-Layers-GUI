@@ -9,7 +9,7 @@ namespace FredEmmott::OpenXRLayers {
 // future.
 namespace Features {
 const char* Overlay = "an overlay";
-}
+}// namespace Features
 
 std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
   static std::unordered_map<std::string, KnownLayer> ret;
@@ -17,7 +17,7 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
     return ret;
   }
 
-  const std::vector<KnownLayer> list {
+  const KnownLayer list[] {
     {
       .mName = "XR_APILAYER_FREDEMMOTT_HandTrackedCockpitClicking",
       .mAbove = {
@@ -83,8 +83,8 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
     },
   };
 
-  for (const auto& layer: list) {
-    ret.emplace(layer.mName, std::move(layer));
+  for (auto&& layer: list) {
+    ret.emplace(layer.mName, layer);
   }
   return ret;
 }
