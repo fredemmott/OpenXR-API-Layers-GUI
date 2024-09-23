@@ -79,6 +79,10 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
       .mAbove = {
         // Unknown incompatibility issue:
         "XR_APILAYER_FREDEMMOTT_HandTrackedCockpitClicking",
+        // - https://gitlab.com/NobiWan/xrnecksafer/-/issues/15
+        // - https://gitlab.com/NobiWan/xrnecksafer/-/issues/16
+        // - Other developers have mentioned thread safety issues in XRNS that can cause crashes; I've not confirmed these
+        "XR_APILAYER_FREDEMMOTT_OpenKneeboard",
       },
     },
   };
