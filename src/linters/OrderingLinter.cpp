@@ -36,9 +36,9 @@ class OrderingLinter final : public Linter {
   }
 
  public:
-  virtual std::vector<std::shared_ptr<LintError>> Lint(
+  std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore*,
-    const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
+    const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) override {
     std::vector<std::shared_ptr<LintError>> errors;
 
     using ReqMap = std::unordered_map<
@@ -70,7 +70,7 @@ class OrderingLinter final : public Linter {
         }
       };
 
-      const auto meta = knownLayers.at(details.mName);
+      const auto& meta = knownLayers.at(details.mName);
       populate(consumesFromAbove, meta.mAbove);
       populate(consumesFromBelow, meta.mBelow);
       populate(conflicts, meta.mConflicts);
@@ -78,13 +78,14 @@ class OrderingLinter final : public Linter {
     }
 
     for (auto providerIt = layers.begin(); providerIt != layers.end();
-         providerIt++) {
+         ++providerIt) {
       auto [provider, providerDetails] = *providerIt;
       if (!provider.IsEnabled()) {
         continue;
       }
 
-      const auto provides = this->GetProvides(provider, providerDetails);
+      const auto provides
+        = OrderingLinter::GetProvides(provider, providerDetails);
 
       auto targetIt = providerIt;
       std::optional<
@@ -132,8 +133,7 @@ class OrderingLinter final : public Linter {
 
         // LINT RULE: Consumes from above
         if (consumesFromAbove.contains(feature)) {
-          const auto& consumers = consumesFromAbove.at(feature);
-          for (const auto& consumerPair: consumers) {
+          for (auto&& consumerPair: consumesFromAbove.at(feature)) {
             auto consumerIt = std::ranges::find(layers, consumerPair);
             if (consumerIt == layers.end()) {
               continue;
@@ -161,8 +161,7 @@ class OrderingLinter final : public Linter {
 
         // LINT RULE: consumes from below
         if (consumesFromBelow.contains(feature)) {
-          const auto& consumers = consumesFromBelow.at(feature);
-          for (const auto& consumerPair: consumers) {
+          for (auto&& consumerPair: consumesFromBelow.at(feature)) {
             auto consumerIt = std::ranges::find(layers, consumerPair);
             if (consumerIt == layers.end()) {
               continue;
@@ -228,6 +227,7 @@ class OrderingLinter final : public Linter {
   }
 };
 
-static OrderingLinter gInstance;
+// Unused, but we care about the constructor
+[[maybe_unused]] static OrderingLinter gInstance;
 
 }// namespace FredEmmott::OpenXRLayers

@@ -9,7 +9,6 @@
 #include <fmt/format.h>
 
 #include <ranges>
-#include <unordered_map>
 
 #include <imgui.h>
 
@@ -28,7 +27,7 @@ constexpr ImVec2 MINIMUM_WINDOW_SIZE {1024, 768};
 class MyWindow final : public sf::RenderWindow {
  public:
   using sf::RenderWindow::RenderWindow;
-  virtual ~MyWindow() = default;
+  ~MyWindow() override = default;
 
   void setMinimumSize(const ImVec2& value) {
     mMinimumSize = value;
@@ -36,7 +35,7 @@ class MyWindow final : public sf::RenderWindow {
   }
 
  protected:
-  virtual void onResize() override {
+  void onResize() override {
     auto size = this->getSize();
     auto newSize = size;
     if (size.x < mMinimumSize.x) {
@@ -62,7 +61,9 @@ void GUI::Run() {
   auto& platform = PlatformGUI::Get();
 
   MyWindow window {
-    sf::VideoMode(MINIMUM_WINDOW_SIZE.x, MINIMUM_WINDOW_SIZE.y),
+    sf::VideoMode(
+      static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.x),
+      static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.y)),
     fmt::format("OpenXR API Layers v{}", Config::BUILD_VERSION)};
   window.setFramerateLimit(60);
   if (!ImGui::SFML::Init(window)) {
@@ -91,12 +92,11 @@ void GUI::Run() {
 
   std::vector<LayerSet> layerSets;
   for (auto&& store: ReadWriteAPILayerStore::Get()) {
-    layerSets.push_back({std::move(store)});
+    layerSets.push_back({store});
   }
   while (window.isOpen()) {
     {
-      const auto changeInfo = platform.GetDPIChangeInfo();
-      if (changeInfo) {
+      if (const auto changeInfo = platform.GetDPIChangeInfo()) {
         window.setMinimumSize({0, 0});
         if (changeInfo->mRecommendedSize) {
           window.setSize(*changeInfo->mRecommendedSize);
@@ -124,7 +124,7 @@ void GUI::Run() {
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::Begin(
       "MainWindow",
-      0,
+      nullptr,
       ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
         | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
@@ -214,7 +214,7 @@ void GUI::LayerSet::GUILayersList() {
       if (ImGui::BeginDragDropTarget()) {
         if (
           const auto payload = ImGui::AcceptDragDropPayload("APILayerIndex")) {
-          auto sourceIndex = *reinterpret_cast<const size_t*>(payload->Data);
+          const auto sourceIndex = *static_cast<const size_t*>(payload->Data);
           const auto& source = mLayers.at(sourceIndex);
           DragDropReorder(source, layer);
         }
@@ -375,7 +375,7 @@ void GUI::LayerSet::GUIErrorsTab() {
         ImGui::SameLine();
         if (ImGui::Button("Fix Them!")) {
           auto nextLayers = mLayers;
-          for (auto& fixable: fixableErrors) {
+          for (auto&& fixable: fixableErrors) {
             nextLayers = fixable->Fix(nextLayers);
           }
           mStore->SetAPILayers(nextLayers);
@@ -388,7 +388,7 @@ void GUI::LayerSet::GUIErrorsTab() {
       ImGui::TableSetupColumn("RowNumber", ImGuiTableColumnFlags_WidthFixed);
       ImGui::TableSetupColumn("Description");
       ImGui::TableSetupColumn("Buttons", ImGuiTableColumnFlags_WidthFixed);
-      for (size_t i = 0; i < selectedErrors.size(); ++i) {
+      for (int i = 0; i < selectedErrors.size(); ++i) {
         const auto& error = selectedErrors.at(i);
         const auto desc = error->GetDescription();
 
@@ -469,7 +469,7 @@ void GUI::LayerSet::GUIDetailsTab() {
               ImGui::SetClipboardText(details.mLibraryPath.string().c_str());
             }
             ImGui::SameLine();
-            ImGui::Text("%s", details.mLibraryPath.string().c_str());
+            ImGui::Text("%s", text.c_str());
           }
         }
 
@@ -602,7 +602,7 @@ void GUI::LayerSet::AddLayersClicked() {
       it = paths.erase(it);
       continue;
     }
-    it++;
+    ++it;
   }
 
   if (paths.empty()) {
@@ -701,7 +701,7 @@ void GUI::LayerSet::DragDropReorder(
   targetIt = std::ranges::find(newLayers, target);
   assert(targetIt != newLayers.end());
   if (!insertBefore) {
-    targetIt++;
+    ++targetIt;
   }
   newLayers.insert(targetIt, source);
 

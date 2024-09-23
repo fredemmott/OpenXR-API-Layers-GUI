@@ -23,8 +23,8 @@ class LintError {
   LintError(const std::string& description, const PathSet& affectedLayers);
   virtual ~LintError() = default;
 
-  std::string GetDescription() const;
-  PathSet GetAffectedLayers() const;
+  [[nodiscard]] std::string GetDescription() const;
+  [[nodiscard]] PathSet GetAffectedLayers() const;
 
  private:
   std::string mDescription;
@@ -35,7 +35,7 @@ class LintError {
 class FixableLintError : public LintError {
  public:
   using LintError::LintError;
-  virtual ~FixableLintError() = default;
+  ~FixableLintError() override = default;
 
   virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) = 0;
 };
