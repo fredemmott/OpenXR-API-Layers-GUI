@@ -32,7 +32,6 @@ add_library(
   STATIC
   APILayerDetails.cpp
   GUI.cpp
-  KnownLayers.cpp
   SaveReport.cpp
   std23/ranges.hpp
   ConstexprString.hpp
@@ -48,6 +47,7 @@ add_library(
   linters/BadInstallationLinter.cpp
   linters/DuplicatesLinter.cpp
   linters/OrderingLinter.cpp
+  LayerRules.cpp
 )
 target_link_libraries(linters PUBLIC lib)
 target_include_directories(

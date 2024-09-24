@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "KnownLayers.hpp"
+#include "LayerRules.hpp"
 #include "Linter.hpp"
 #include "std23/ranges.hpp"
 
@@ -22,7 +22,7 @@ using LayerExtensions = std::unordered_map<
 static FacetMap ExpandFacets(
   const FacetMap& facets,
   const LayerExtensions& layers,
-  const std::vector<KnownLayer>& rules) {
+  const std::vector<LayerRules>& rules) {
   FacetMap next;
   for (auto&& [facet, trace]: facets) {
     FacetTrace nextTrace {facet};
@@ -63,8 +63,8 @@ static FacetMap ExpandFacets(
  *
  * The original Facets are retained in the trace.
  */
-static std::vector<KnownLayer> ExpandRules(
-  const std::vector<KnownLayer>& rules,
+static std::vector<LayerRules> ExpandRules(
+  const std::vector<LayerRules>& rules,
   const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
   LayerExtensions layerExtensions;
   for (auto&& [_, details]: layers) {
@@ -161,9 +161,7 @@ class OrderingLinter final : public Linter {
 
     std::vector<std::shared_ptr<LintError>> errors;
 
-    const auto rules = ExpandRules(
-      GetKnownLayers() | std::views::values | std23::ranges::to<std::vector>(),
-      layers);
+    const auto rules = ExpandRules(GetLayerRules(), layers);
 
     std::unordered_map<LayerID, size_t, Facet::Hash> layerIndices;
     for (auto&& [_, details]: layers) {
@@ -175,7 +173,7 @@ class OrderingLinter final : public Linter {
       const auto layerIndex = layerIndices.at(layerID);
 
       const auto rule
-        = std::ranges::find(rules, Facet {layerID}, &KnownLayer::mID);
+        = std::ranges::find(rules, Facet {layerID}, &LayerRules::mID);
       if (rule == rules.end()) {
         continue;
       }

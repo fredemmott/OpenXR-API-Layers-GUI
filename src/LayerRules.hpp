@@ -99,7 +99,7 @@ using ExtensionID = BasicFacetID<Facet::Kind::Extension, "provides {}"_tp>;
 using FacetTrace = std::vector<Facet>;
 using FacetMap = std::unordered_map<Facet, FacetTrace, Facet::Hash>;
 
-struct KnownLayer {
+struct LayerRules {
   const Facet mID;
   /* Features that should be below this layer.
    * A 'feature' can include:
@@ -131,6 +131,6 @@ struct KnownLayer {
   FacetMap mConflictsPerApp;
 };
 
-std::unordered_map<std::string, KnownLayer> GetKnownLayers();
+std::vector<LayerRules> GetLayerRules();
 
 }// namespace FredEmmott::OpenXRLayers

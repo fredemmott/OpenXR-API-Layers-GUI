@@ -20,7 +20,7 @@ This is because the API layer community in general has decided to install their 
 
 You may want to set the `ENABLE_ASAN` CMake option to enable Address Sanitizer, which will automatically detect many common memory errors at runtime.
 
-See [the GitHub Actions configuration](../.github/workflows/ci.yml) for a full example.
+See [the GitHub Actions configuration](.github/workflows/ci.yml) for a full example.
 
 ## General Guidelines
 
@@ -39,7 +39,8 @@ See [the GitHub Actions configuration](../.github/workflows/ci.yml) for a full e
 
 ### Layer Ordering Warnings
 
-Additional ordering checks can be added by describing the layer in [`KnownLayers.cpp`](../src/KnownLayers.cpp); the fields are documented in [`KnownLayers.hpp`](../src/KnownLayers.hpp).
+Additional ordering checks can be added by describing the layer in [`LayerRules.cpp`](src/LayerRules.cpp); the fields
+are documented in [`LayerRules.hpp`](src/LayerRules.hpp).
 
 ### Other Warnings
 

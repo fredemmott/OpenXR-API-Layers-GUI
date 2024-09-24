@@ -1,7 +1,7 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
-#include "KnownLayers.hpp"
+#include "LayerRules.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -42,7 +42,6 @@ struct Literals {
     mRet = {{Facet {args}, {}}...};
   }
 
-  // ReSharper disable once CppNonExplicitConversionOperator
   operator FacetMap() const {// NOLINT(*-explicit-constructor)
     return mRet;
   }
@@ -52,13 +51,8 @@ struct Literals {
 };
 }// namespace
 
-std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
-  static std::unordered_map<std::string, KnownLayer> ret;
-  if (!ret.empty()) {
-    return ret;
-  }
-
-  const KnownLayer list[] {
+std::vector<LayerRules> GetLayerRules() {
+  return {
     {
       .mID = XR_APILAYER_FREDEMMOTT_HandTrackedCockpitClicking,
       .mAbove = Literals {
@@ -127,11 +121,6 @@ std::unordered_map<std::string, KnownLayer> GetKnownLayers() {
       },
     },
   };
-
-  for (auto&& layer: list) {
-    ret.emplace(layer.mID.GetID(), layer);
-  }
-  return ret;
 }
 
 }// namespace FredEmmott::OpenXRLayers
