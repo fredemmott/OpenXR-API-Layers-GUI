@@ -25,7 +25,7 @@ static void SetStringOrNumber(
   }
 
   if (value.is_number_integer()) {
-    variable = fmt::to_string(value.get<uint32_t>());
+    variable = fmt::to_string(value.template get<uint32_t>());
     return;
   }
 }
