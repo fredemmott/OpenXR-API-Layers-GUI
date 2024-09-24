@@ -34,6 +34,7 @@ add_library(
   GUI.cpp
   KnownLayers.cpp
   SaveReport.cpp
+  std23/ranges.hpp
 )
 
 # Using an OBJECT library instead of `STATIC`, because otherwise
