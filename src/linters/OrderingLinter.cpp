@@ -34,7 +34,7 @@ static FacetMap ExpandFacets(
           if (std23::ranges::contains(extensions, ExtensionID {facet})) {
             auto nextTrace = trace;
             nextTrace.push_front({layer, facet});
-            next.emplace(layer, trace);
+            next.emplace(layer, nextTrace);
           }
         }
         break;
