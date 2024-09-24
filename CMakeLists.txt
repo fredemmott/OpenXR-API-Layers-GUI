@@ -55,7 +55,7 @@ set(
   "Identifier for the current build, e.g. OS, architecture, HKLM vs HKCU"
 )
 
-set(BUILD_VERSION_STRING "2024.09.09.${VERSION_BUILD}")
+set(BUILD_VERSION_STRING "2024.09.24.${VERSION_BUILD}")
 project(OpenXR-Layers-GUI VERSION ${BUILD_VERSION_STRING} LANGUAGES CXX C)
 
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID}")
