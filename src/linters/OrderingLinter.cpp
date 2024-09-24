@@ -278,8 +278,7 @@ class OrderingLinter final : public Linter {
         errors.push_back(std::make_shared<LintError>(
           fmt::format(
             "{} ({}) and {} ({}) are incompatible; make sure that games using "
-            "{} are disabled in {}"
-            "disable one.",
+            "{} are disabled in {}.",
             details.mName,
             layer.mJSONPath.string(),
             otherDetails.mName,
