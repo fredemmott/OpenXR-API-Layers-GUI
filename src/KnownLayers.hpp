@@ -1,40 +1,16 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
-
 #pragma once
 
 #include <cassert>
 #include <format>
 #include <string>
 #include <unordered_map>
-#include <variant>
+
+#include "ConstexprString.hpp"
+#include "StringTemplateParameter.hpp"
 
 namespace FredEmmott::OpenXRLayers {
-
-class ConstexprString {
- public:
-  ConstexprString() = delete;
-  constexpr ConstexprString(std::string_view init) {
-    if (std::is_constant_evaluated()) {
-      mStorage = init;
-    } else {
-      mStorage = std::string {init};
-    }
-  }
-
-  [[nodiscard]] constexpr std::string_view Get() const noexcept {
-    if (std::holds_alternative<std::string_view>(mStorage)) {
-      return std::get<std::string_view>(mStorage);
-    }
-    return std::get<std::string>(mStorage);
-  }
-
-  constexpr bool operator==(const ConstexprString& other) const noexcept
-    = default;
-
- private:
-  std::variant<std::string, std::string_view> mStorage;
-};
 
 class Facet {
  public:
@@ -85,26 +61,6 @@ class Facet {
   ConstexprString mDescription;
 };
 
-template <size_t N>
-struct StringTemplateParameter {
-  StringTemplateParameter() = delete;
-  // ReSharper disable once CppNonExplicitConvertingConstructor
-  consteval StringTemplateParameter(char const (&init)[N]) {
-    std::ranges::copy(init, value);
-  }
-
-  char value[N] {};
-};
-
-template <>
-struct StringTemplateParameter<0> {};
-
-// Compile-time literal string suffix
-template <StringTemplateParameter T>
-consteval auto operator""_tp() {
-  return T;
-}
-
 template <Facet::Kind TKind, auto TDescriptionFormat = "{}"_tp>
 class BasicFacetID {
  public:
@@ -139,13 +95,6 @@ class BasicFacetID {
 
 using LayerID = BasicFacetID<Facet::Kind::Layer>;
 using ExtensionID = BasicFacetID<Facet::Kind::Extension, "provides {}"_tp>;
-
-namespace Facets {
-constexpr Facet CompositionLayers {
-  "#compositionLayers",
-  "provides an overlay",
-};
-}// namespace Facets
 
 using FacetTrace = std::vector<Facet>;
 using FacetMap = std::unordered_map<Facet, FacetTrace, Facet::Hash>;

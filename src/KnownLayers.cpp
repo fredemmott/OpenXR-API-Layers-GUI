@@ -27,6 +27,13 @@ DEFINE_EXTENSION_ID(XR_VARJO_foveated_rendering)
 #undef DEFINE_EXTENSION_ID
 }// namespace ExtensionIDs
 
+namespace Facets {
+constexpr Facet CompositionLayers {
+  "#compositionLayers",
+  "provides an overlay",
+};
+}// namespace Facets
+
 namespace {
 struct Literals {
   Literals() = delete;

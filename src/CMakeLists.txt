@@ -35,6 +35,8 @@ add_library(
   KnownLayers.cpp
   SaveReport.cpp
   std23/ranges.hpp
+  ConstexprString.hpp
+  StringTemplateParameter.hpp
 )
 
 # Using an OBJECT library instead of `STATIC`, because otherwise
