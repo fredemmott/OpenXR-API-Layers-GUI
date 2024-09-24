@@ -165,16 +165,6 @@ class OrderingLinter final : public Linter {
       GetKnownLayers() | std::views::values | std23::ranges::to<std::vector>(),
       layers);
 
-    using ReqMap = std::unordered_map<
-      std::string,
-      std::vector<std::tuple<APILayer, APILayerDetails>>>;
-    ReqMap consumesFromBelow;
-    ReqMap consumesFromAbove;
-    ReqMap conflicts;
-    ReqMap conflictsPerApp;
-
-    const auto knownLayers = GetKnownLayers();
-
     std::unordered_map<LayerID, size_t, Facet::Hash> layerIndices;
     for (auto&& [_, details]: layers) {
       layerIndices.emplace(LayerID {details.mName}, layerIndices.size());
@@ -191,163 +181,81 @@ class OrderingLinter final : public Linter {
       }
       using Position = OrderingLintError::Position;
 
+      // LINT RULE: Above
       for (auto&& [other, trace]: rule->mAbove) {
         const auto it = layerIndices.find(LayerID {other});
         if (it == layerIndices.end()) {
           continue;
         }
 
-        if (it->second < layerIndex) {
-          errors.push_back(MakeOrderingLintError(
-            {layer, details}, Position::Above, layers.at(it->second), trace));
+        if (it->second > layerIndex) {
+          continue;
         }
+        errors.push_back(MakeOrderingLintError(
+          {layer, details}, Position::Above, layers.at(it->second), trace));
       }
 
+      // LINT RULE: Below
       for (auto&& [facet, trace]: rule->mBelow) {
         const auto it = layerIndices.find(LayerID {facet});
         if (it == layerIndices.end()) {
           continue;
         }
 
-        if (it->second > layerIndex) {
-          errors.push_back(MakeOrderingLintError(
-            {layer, details}, Position::Below, layers.at(it->second), trace));
+        if (it->second < layerIndex) {
+          continue;
         }
+
+        errors.push_back(MakeOrderingLintError(
+          {layer, details}, Position::Below, layers.at(it->second), trace));
       }
 
-      std::optional<
-        std::tuple<OrderingLintError::Position, APILayer, APILayerDetails>>
-        move;
-      std::string conflictFeature;
-      std::unordered_map<std::string, PathSet> affectedLayersByFeature;
-
-#ifdef FIXME_IMPLEMENT_CONFLICTS
-      for (const auto& feature: provides) {
-        // LINT RULE: Hard conflicts
-        if (conflicts.contains(feature)) {
-          for (const auto& [other, otherDetails]: conflicts.at(feature)) {
-            if (!(provider.IsEnabled() && other.IsEnabled())) {
-              continue;
-            }
-            errors.push_back(std::make_shared<LintError>(
-              fmt::format(
-                "{} ({}) and {} ({}) are incompatible; you must remove or "
-                "disable one.",
-                providerDetails.mName,
-                provider.mJSONPath.string(),
-                otherDetails.mName,
-                other.mJSONPath.string()),
-              PathSet {provider.mJSONPath, other.mJSONPath}));
-          }
+      // LINT RULE: Conflicts
+      for (const auto& facet: rule->mConflicts | std::views::keys) {
+        const auto otherIt
+          = std::ranges::find(layers, facet.GetID(), [](const auto& it) {
+              return std::get<1>(it).mName;
+            });
+        if (otherIt == layers.end()) {
+          continue;
         }
 
-        if (conflictsPerApp.contains(feature)) {
-          for (const auto& [other, otherDetails]: conflictsPerApp.at(feature)) {
-            if (!(provider.IsEnabled() && other.IsEnabled())) {
-              continue;
-            }
-            errors.push_back(std::make_shared<LintError>(
-              fmt::format(
-                "Make sure that games using {} ({}) are disabled in {} ({})",
-                providerDetails.mName,
-                provider.mJSONPath.string(),
-                otherDetails.mName,
-                other.mJSONPath.string()),
-              PathSet {provider.mJSONPath, other.mJSONPath}));
-          }
-        }
-
-        // LINT RULE: Consumes from above
-        if (consumesFromAbove.contains(feature)) {
-          for (auto&& consumerPair: consumesFromAbove.at(feature)) {
-            auto consumerIt = std::ranges::find(layers, consumerPair);
-            if (consumerIt == layers.end()) {
-              continue;
-            }
-
-            if (consumerIt <= providerIt) {
-              continue;
-            }
-            const auto& [consumer, consumerDetails] = consumerPair;
-            if (affectedLayersByFeature.contains(feature)) {
-              affectedLayersByFeature.at(feature).emplace(consumer.mJSONPath);
-            } else {
-              affectedLayersByFeature[feature] = {consumer.mJSONPath};
-            }
-
-            if (consumerIt <= targetIt) {
-              continue;
-            }
-            targetIt = consumerIt;
-            conflictFeature = feature;
-
-            move = {Position::Below, consumer, consumerDetails};
-          }
-        }
-
-        // LINT RULE: consumes from below
-        if (consumesFromBelow.contains(feature)) {
-          for (auto&& consumerPair: consumesFromBelow.at(feature)) {
-            auto consumerIt = std::ranges::find(layers, consumerPair);
-            if (consumerIt == layers.end()) {
-              continue;
-            }
-
-            if (consumerIt >= providerIt) {
-              continue;
-            }
-
-            const auto& [consumer, consumerDetails] = consumerPair;
-            if (affectedLayersByFeature.contains(feature)) {
-              affectedLayersByFeature.at(feature).emplace(consumer.mJSONPath);
-            } else {
-              affectedLayersByFeature[feature] = {consumer.mJSONPath};
-            }
-
-            if (consumerIt >= targetIt) {
-              continue;
-            }
-            targetIt = consumerIt;
-            conflictFeature = feature;
-
-            move = {Position::Above, consumer, consumerDetails};
-          }
-        }
+        const auto& [other, otherDetails] = *otherIt;
+        errors.push_back(std::make_shared<LintError>(
+          fmt::format(
+            "{} ({}) and {} ({}) are incompatible; you must remove or "
+            "disable one.",
+            details.mName,
+            layer.mJSONPath.string(),
+            otherDetails.mName,
+            other.mJSONPath.string()),
+          PathSet {layer.mJSONPath, other.mJSONPath}));
       }
 
-      if (targetIt == providerIt) {
-        continue;
+      // LINT RULE: ConflictsPerApp
+      for (const auto& facet: rule->mConflictsPerApp | std::views::keys) {
+        const auto otherIt
+          = std::ranges::find(layers, facet.GetID(), [](const auto& it) {
+              return std::get<1>(it).mName;
+            });
+        if (otherIt == layers.end()) {
+          continue;
+        }
+
+        const auto& [other, otherDetails] = *otherIt;
+        errors.push_back(std::make_shared<LintError>(
+          fmt::format(
+            "{} ({}) and {} ({}) are incompatible; make sure that games using "
+            "{} are disabled in {}"
+            "disable one.",
+            details.mName,
+            layer.mJSONPath.string(),
+            otherDetails.mName,
+            other.mJSONPath.string(),
+            details.mName,
+            otherDetails.mName),
+          PathSet {layer.mJSONPath, other.mJSONPath}));
       }
-
-      assert(move);
-      assert(!conflictFeature.empty());
-      assert(affectedLayersByFeature.contains(conflictFeature));
-
-      auto affected = affectedLayersByFeature.at(conflictFeature);
-      affected.emplace(provider.mJSONPath);
-
-      const auto& [position, relativeTo, relativeToDetails] = *move;
-
-      const auto errorString = (providerDetails.mName == conflictFeature)
-        ? fmt::format(
-            "{} ({}) must be {} {} ({})",
-            providerDetails.mName,
-            provider.mJSONPath.string(),
-            (position == Position::Above ? "above" : "below"),
-            relativeToDetails.mName,
-            relativeTo.mJSONPath.string())
-        : fmt::format(
-            "Because {} ({}) provides {}, it must be {} {} ({})",
-            providerDetails.mName,
-            provider.mJSONPath.string(),
-            conflictFeature,
-            (position == Position::Above ? "above" : "below"),
-            relativeToDetails.mName,
-            relativeTo.mJSONPath.string());
-
-      errors.push_back(std::make_shared<OrderingLintError>(
-        errorString, provider.mJSONPath, position, relativeTo.mJSONPath));
-#endif
     }
 
     return errors;
