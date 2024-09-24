@@ -28,10 +28,13 @@ DEFINE_EXTENSION_ID(XR_VARJO_foveated_rendering)
 }// namespace ExtensionIDs
 
 namespace Facets {
-constexpr Facet CompositionLayers {
-  "#compositionLayers",
-  "provides an overlay",
-};
+#define DEFINE_FACET(name, description) \
+  static constexpr Facet name {"#" #name, description};
+DEFINE_FACET(CompositionLayers, "provides an overlay")
+DEFINE_FACET(TransformsPoses, "modifies poses")
+DEFINE_FACET(UsesGameWorldPoses, "uses poses")
+#undef DEFINE_FACET
+
 }// namespace Facets
 
 namespace {
@@ -54,6 +57,12 @@ struct Literals {
 std::vector<LayerRules> GetLayerRules() {
   return {
     {
+      .mID = Facets::TransformsPoses,
+      .mBelow = Literals {
+        Facets::UsesGameWorldPoses,
+      },
+    },
+    {
       .mID = XR_APILAYER_FREDEMMOTT_HandTrackedCockpitClicking,
       .mAbove = Literals {
         XR_EXT_hand_tracking,
@@ -63,6 +72,7 @@ std::vector<LayerRules> GetLayerRules() {
       .mID = XR_APILAYER_FREDEMMOTT_OpenKneeboard,
       .mFacets = Literals {
         Facets::CompositionLayers,
+        Facets::UsesGameWorldPoses,
       },
     },
     {
@@ -92,6 +102,9 @@ std::vector<LayerRules> GetLayerRules() {
       .mAbove = Literals {
         // Unknown incompatibility issue:
         XR_APILAYER_FREDEMMOTT_HandTrackedCockpitClicking,
+      },
+      .mFacets = Literals {
+        Facets::TransformsPoses,
       },
     },
     {
