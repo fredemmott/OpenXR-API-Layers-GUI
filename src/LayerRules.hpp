@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cassert>
+#include <deque>
 #include <format>
 #include <string>
 #include <unordered_map>
@@ -96,7 +97,14 @@ class BasicFacetID {
 using LayerID = BasicFacetID<Facet::Kind::Layer>;
 using ExtensionID = BasicFacetID<Facet::Kind::Extension, "provides {}"_tp>;
 
-using FacetTrace = std::vector<Facet>;
+struct FacetTraceEntry {
+  Facet mWhat;
+  Facet mWhy;
+  constexpr bool operator==(const FacetTraceEntry&) const noexcept = default;
+};
+
+// Really want a stack, but std::stack isn't iterable
+using FacetTrace = std::deque<FacetTraceEntry>;
 using FacetMap = std::unordered_map<Facet, FacetTrace, Facet::Hash>;
 
 struct LayerRules {

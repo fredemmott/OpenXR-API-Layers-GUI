@@ -25,9 +25,6 @@ static FacetMap ExpandFacets(
   const std::vector<LayerRules>& rules) {
   FacetMap next;
   for (auto&& [facet, trace]: facets) {
-    FacetTrace nextTrace {facet};
-    std::ranges::copy(trace, std::back_inserter(nextTrace));
-
     switch (facet.GetKind()) {
       case Facet::Kind::Layer:
         next.emplace(facet, trace);
@@ -35,13 +32,17 @@ static FacetMap ExpandFacets(
       case Facet::Kind::Extension:
         for (auto&& [layer, extensions]: layers) {
           if (std23::ranges::contains(extensions, ExtensionID {facet})) {
-            next.emplace(layer, nextTrace);
+            auto nextTrace = trace;
+            nextTrace.push_front({layer, facet});
+            next.emplace(layer, trace);
           }
         }
         break;
       case Facet::Kind::Explicit:
         for (auto&& rule: rules) {
           if (std23::ranges::contains(rule.mFacets | std::views::keys, facet)) {
+            auto nextTrace = trace;
+            nextTrace.push_front({rule.mID, facet});
             next.emplace(rule.mID, nextTrace);
           }
         }
@@ -57,6 +58,35 @@ static FacetMap ExpandFacets(
   }
 
   return ExpandFacets(next, layers, rules);
+}
+
+static FacetMap ExpandFacets(
+  const LayerRules& rule,
+  auto proj,
+  const LayerExtensions& layers,
+  const std::vector<LayerRules>& rules) {
+  FacetMap toExpand = std::invoke(proj, rule);
+
+  for (auto&& mixin: rule.mFacets | std::views::keys) {
+    auto mixinIt = std::ranges::find(rules, mixin, &LayerRules::mID);
+    if (mixinIt == rules.end()) {
+      continue;
+    }
+    const FacetMap& mixinValues = std::invoke(proj, *mixinIt);
+    if (mixinValues.empty()) {
+      continue;
+    }
+
+    for (auto& value: mixinValues | std::views::keys) {
+      toExpand.emplace(
+        value,
+        FacetTrace {
+          {rule.mID, mixin},
+        });
+    }
+  }
+
+  return ExpandFacets(toExpand, layers, rules);
 }
 
 /** Replace Extension and Explicit facets with the Layers.
@@ -79,15 +109,15 @@ static std::vector<LayerRules> ExpandRules(
                return it.mID.GetKind() == Facet::Kind::Layer;
              })
     | std23::ranges::to<std::vector>();
-  auto expandFacets = [&](auto& facets) {
-    facets = ExpandFacets(facets, layerExtensions, rules);
+  auto expandFacets = [&](LayerRules& it, auto proj) {
+    FacetMap& facets = std::invoke(proj, it);
+    facets = ExpandFacets(it, proj, layerExtensions, rules);
   };
   for (auto& it: ret) {
-    expandFacets(it.mFacets);
-    expandFacets(it.mAbove);
-    expandFacets(it.mBelow);
-    expandFacets(it.mConflicts);
-    expandFacets(it.mConflictsPerApp);
+    expandFacets(it, &LayerRules::mAbove);
+    expandFacets(it, &LayerRules::mBelow);
+    expandFacets(it, &LayerRules::mConflicts);
+    expandFacets(it, &LayerRules::mConflictsPerApp);
   }
   return ret;
 }
@@ -98,17 +128,21 @@ static std::string ExplainTrace(const FacetTrace& trace) {
   }
 
   if (trace.size() == 1) {
-    return std::format("because it {}", trace.front().GetDescription());
+    return std::format("because it {}", trace.front().mWhy.GetDescription());
   } else {
     std::string traceStr;
-    for (auto&& it: trace) {
-      if (traceStr.empty()) {
-        traceStr += " ➡️ ";
+    const auto reverseTrace = trace | std::views::reverse;
+    for (auto it = reverseTrace.begin(); it != reverseTrace.end(); ++it) {
+      if (it != reverseTrace.begin()) {
+        traceStr
+          += (std::ranges::next(it) == reverseTrace.end()) ? ", and " : ", ";
       }
-      traceStr += it.GetDescription();
+
+      const auto& [what, why] = *it;
+      traceStr
+        += std::format("{} {}", what.GetDescription(), why.GetDescription());
     }
-    return std::format(
-      "because it {} ({})", trace.back().GetDescription(), traceStr);
+    return std::format("because {}", traceStr);
   }
 }
 
