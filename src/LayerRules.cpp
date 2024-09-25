@@ -130,7 +130,7 @@ std::vector<LayerRules> GetLayerRules() {
         // - https://gitlab.com/NobiWan/xrnecksafer/-/issues/15
         // - https://gitlab.com/NobiWan/xrnecksafer/-/issues/16
         // - Other developers have mentioned thread safety issues in XRNS that can cause crashes; I've not confirmed these
-        XR_APILAYER_FREDEMMOTT_OpenKneeboard,
+        Facets::CompositionLayers,
       },
     },
   };
