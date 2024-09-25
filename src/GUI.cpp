@@ -122,6 +122,9 @@ void GUI::Run() {
     auto viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
+
+    platform.BeginFrame();
+
     ImGui::Begin(
       "MainWindow",
       nullptr,

@@ -16,6 +16,7 @@
 #include <shellapi.h>
 #include <shtypes.h>
 
+#include "CheckForUpdates.hpp"
 #include "Config.hpp"
 #include "GUI.hpp"
 #include "windows/GetKnownFolderPath.hpp"
@@ -28,10 +29,19 @@ class PlatformGUI_Windows final : public PlatformGUI {
   HWND mWindow {};
   float mDPIScaling {};
   std::optional<DPIChangeInfo> mDPIChangeInfo;
+  AutoUpdateProcess mUpdater {CheckForUpdates()};
+
+  size_t mFrameCounter = 0;
 
  public:
   PlatformGUI_Windows() {
     winrt::init_apartment();
+  }
+
+  void BeginFrame() override {
+    if ((++mFrameCounter % 60) == 0) {
+      mUpdater.ActivateWindowIfVisible();
+    }
   }
 
   void SetWindow(sf::WindowHandle handle) override {

@@ -4,7 +4,6 @@
 #include <Windows.h>
 
 #include "GUI.hpp"
-#include "CheckForUpdates.hpp"
 
 // Entrypoint for Windows
 //
@@ -14,7 +13,6 @@ int WINAPI wWinMain(
   [[maybe_unused]] HINSTANCE hPrevInstance,
   [[maybe_unused]] PWSTR pCmdLine,
   [[maybe_unused]] int nCmdShow) {
-  FredEmmott::OpenXRLayers::CheckForUpdates();
   FredEmmott::OpenXRLayers::GUI().Run();
   return 0;
 }

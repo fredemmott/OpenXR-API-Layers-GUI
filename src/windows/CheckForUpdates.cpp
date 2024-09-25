@@ -62,7 +62,7 @@ class HandleInOtherProcess {
 
 namespace FredEmmott::OpenXRLayers {
 
-void CheckForUpdates() {
+AutoUpdateProcess CheckForUpdates() {
   wchar_t exePathStr[32767];
   const auto exePathStrLength = GetModuleFileNameExW(
     GetCurrentProcess(), nullptr, exePathStr, std::size(exePathStr));
@@ -77,7 +77,7 @@ void CheckForUpdates() {
       std::format(
         L"Skipping auto-update because `{}` does not exist", updater.wstring())
         .c_str());
-    return;
+    return {};
   }
 
   // - We run elevated as the entire point of this program is to write to HKLM
@@ -132,7 +132,7 @@ void CheckForUpdates() {
   winrt::check_bool(SetInformationJobObject(job.get(),
     JobObjectAssociateCompletionPortInformation, &assoc, sizeof(assoc)));
 
-  auto launch = [&]<class... Args>(
+  auto launch = [&]<class... Args> /* C++23 :'( [[nodiscard]] */ (
                   std::wformat_string<Args...> commandLineFmt,
                   Args&&... commandLineFmtArgs) {
     auto commandLine
@@ -155,24 +155,88 @@ void CheckForUpdates() {
       directory.wstring().c_str(),
       &startupInfo.StartupInfo,
       &processInfo));
-    winrt::check_bool(AssignProcessToJobObject(job.get(), processInfo.hProcess));
+    winrt::check_bool(
+      AssignProcessToJobObject(job.get(), processInfo.hProcess));
     ResumeThread(processInfo.hThread);
-    WaitForSingleObject(processInfo.hProcess, INFINITE);
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);
   };
 
   launch(
-    L"{} --channel=live --terminate-process-before-update={} --local-version={} --silent",
+    L"{} --channel=live --terminate-process-before-update={} "
+    L"--local-version={} --silent",
     updater.wstring(),
     reinterpret_cast<uintptr_t>(thisProcessAsShell.get()),
     FredEmmott::OpenXRLayers::Config::BUILD_VERSION_W);
 
+  return {std::move(job), std::move(jobCompletion)};
+}
+
+AutoUpdateProcess::AutoUpdateProcess(
+  winrt::handle job,
+  winrt::handle jobCompletion)
+  : mJob(std::move(job)), mJobCompletion(std::move(jobCompletion)) {
+}
+
+void AutoUpdateProcess::ActivateWindowIfVisible() {
+  if (mHaveActivatedWindow || !mJob) {
+    return;
+  }
+
+  if (!IsRunning()) {
+    *this = {};
+    return;
+  }
+
+  EnumWindows(
+    [](HWND hwnd, LPARAM param) -> BOOL CALLBACK {
+      auto& self = *std::bit_cast<decltype(this)>(param);
+
+      DWORD processId {};
+      if (!GetWindowThreadProcessId(hwnd, &processId)) {
+        return TRUE;
+      }
+
+      const winrt::handle process {
+        OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId)};
+      if (!process) {
+        return TRUE;
+      }
+
+      BOOL isInJob {FALSE};
+      if (!(IsProcessInJob(process.get(), self.mJob.get(), &isInJob)
+            && isInJob)) {
+        return TRUE;
+      }
+
+      SetForegroundWindow(hwnd);
+      self.mHaveActivatedWindow = true;
+
+      return FALSE;
+    },
+    std::bit_cast<LPARAM>(this));
+}
+
+bool AutoUpdateProcess::IsRunning() const {
+  if (!mJob) {
+    return false;
+  };
+
   DWORD completionCode {};
   ULONG_PTR completionKey {};
   LPOVERLAPPED overlapped {};
-  while (GetQueuedCompletionStatus(jobCompletion.get(), &completionCode, &completionKey, &overlapped, INFINITE) && !(
-    completionKey == reinterpret_cast<ULONG_PTR>(job.get()) && completionCode == JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO)) {}
+  if (!GetQueuedCompletionStatus(
+        mJobCompletion.get(),
+        &completionCode,
+        &completionKey,
+        &overlapped,
+        NULL)) {
+    return false;
+  }
+
+  return !(
+    completionKey == reinterpret_cast<ULONG_PTR>(mJob.get())
+    && completionCode == JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO);
 }
 
-}
+}// namespace FredEmmott::OpenXRLayers

@@ -17,7 +17,8 @@ int WINAPI wWinMain(
   [[maybe_unused]] HINSTANCE hPrevInstance,
   [[maybe_unused]] PWSTR pCmdLine,
   [[maybe_unused]] int nCmdShow) {
-  CheckForUpdates();
+  { [[maybe_unused]] auto fireAndForget = CheckForUpdates(); }
+
   // Make the file picker high-DPI if supported
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 

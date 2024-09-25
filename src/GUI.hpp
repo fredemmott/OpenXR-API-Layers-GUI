@@ -31,6 +31,8 @@ class PlatformGUI {
   static PlatformGUI& Get();
   virtual ~PlatformGUI() = default;
 
+  virtual void BeginFrame() = 0;
+
   virtual void SetWindow(sf::WindowHandle) = 0;
 
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
