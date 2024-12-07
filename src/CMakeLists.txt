@@ -111,6 +111,7 @@ if(WIN32)
     linters
     PRIVATE
     linters/windows/NotADWORDLinter.cpp
+    linters/windows/OpenXRToolkitLinter.cpp
     linters/windows/OutdatedOpenKneeboardLinter.cpp
     linters/windows/ProgramFilesLinter.cpp
     linters/windows/UnsignedDllLinter.cpp
