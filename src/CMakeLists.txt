@@ -36,6 +36,8 @@ add_library(
   std23/ranges.hpp
   ConstexprString.hpp
   StringTemplateParameter.hpp
+  GetActiveRuntimePath.hpp
+  windows/GetActiveRuntimePath.cpp
 )
 
 # Using an OBJECT library instead of `STATIC`, because otherwise
@@ -105,6 +107,7 @@ if(WIN32)
     lib
     PRIVATE
     windows/CheckForUpdates.cpp
+    windows/GetActiveRuntimePath.cpp
   )
 
   target_sources(

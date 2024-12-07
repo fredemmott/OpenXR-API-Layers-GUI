@@ -12,6 +12,7 @@
 
 #include "APILayerStore.hpp"
 #include "Config.hpp"
+#include "GetActiveRuntimePath.hpp"
 #include "Linter.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -120,6 +121,14 @@ void SaveReport(const std::filesystem::path& path) {
     Config::BUILD_VERSION,
     std::chrono::zoned_time(
       std::chrono::current_zone(), std::chrono::system_clock::now()));
+
+  const auto runtime = GetActiveRuntimePath();
+  if (runtime.empty()) {
+    text
+      += std::format("\n\n{} NO ACTIVE RUNTIME FOUND\n", Config::GLYPH_ERROR);
+  } else {
+    text += std::format("\n\nActive runtime: {}\n", runtime.string());
+  }
 
   for (const auto store: APILayerStore::Get()) {
     text += GenerateReportText(store);
