@@ -16,6 +16,7 @@ DEFINE_LAYER_ID(XR_APILAYER_MBUCCHIA_vulkan_d3d12_interop)
 DEFINE_LAYER_ID(XR_APILAYER_NOVENDOR_motion_compensation)
 DEFINE_LAYER_ID(XR_APILAYER_NOVENDOR_OBSMirror)
 DEFINE_LAYER_ID(XR_APILAYER_NOVENDOR_XRNeckSafer)
+DEFINE_LAYER_ID(XR_APILAYER_app_racelab_Overlay)
 #undef DEFINE_LAYER_ID
 }// namespace LayerIDs
 
@@ -70,6 +71,13 @@ std::vector<LayerRules> GetLayerRules() {
     },
     {
       .mID = XR_APILAYER_FREDEMMOTT_OpenKneeboard,
+      .mFacets = Literals {
+        Facets::CompositionLayers,
+        Facets::UsesGameWorldPoses,
+      },
+    },
+    {
+      .mID = XR_APILAYER_app_racelab_Overlay,
       .mFacets = Literals {
         Facets::CompositionLayers,
         Facets::UsesGameWorldPoses,
