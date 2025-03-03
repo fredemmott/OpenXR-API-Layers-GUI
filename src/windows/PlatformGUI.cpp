@@ -62,6 +62,9 @@ class PlatformGUI_Windows final : public PlatformGUI {
       BOOL darkMode = true;
       DwmSetWindowAttribute(
         handle, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
+      DWM_SYSTEMBACKDROP_TYPE backdropType {DWMSBT_MAINWINDOW};
+      DwmSetWindowAttribute(
+        handle, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
       ShowWindow(handle, SW_SHOW);
     }
 
