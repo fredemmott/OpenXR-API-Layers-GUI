@@ -104,6 +104,28 @@ std::vector<APILayer> OrderingLintError::Fix(
   return newLayers;
 }
 
+KnownBadLayerLintError::KnownBadLayerLintError(
+  const std::string& description,
+  const std::filesystem::path& layer)
+  : FixableLintError(description, {layer}) {
+}
+
+std::vector<APILayer> KnownBadLayerLintError::Fix(
+  const std::vector<APILayer>& allLayers) {
+  const auto affected = this->GetAffectedLayers();
+  assert(affected.size() == 1);
+  const auto& path = *affected.begin();
+
+  auto newLayers = allLayers;
+  auto it = std::ranges::find_if(
+    newLayers, [&path](const auto& layer) { return layer.mJSONPath == path; });
+
+  if (it != newLayers.end()) {
+    it->mValue = APILayer::Value::Disabled;
+  }
+  return newLayers;
+}
+
 InvalidLayerLintError::InvalidLayerLintError(
   const std::string& description,
   const std::filesystem::path& layer)

@@ -29,11 +29,11 @@ class OpenXRToolkitLinter final : public Linter {
       if (details.mName != "XR_APILAYER_MBUCCHIA_toolkit") {
         continue;
       }
-      errors.push_back(std::make_shared<LintError>(
+      errors.push_back(std::make_shared<KnownBadLayerLintError>(
         "OpenXR Toolkit is unsupported, and is known to cause crashes and "
         "other issues in modern games; you should disable it if you encounter "
         "problems.",
-        PathSet { layer.mJSONPath }));
+        layer.mJSONPath));
     }
     return errors;
   }

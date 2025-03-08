@@ -64,7 +64,18 @@ class OrderingLintError final : public FixableLintError {
   std::filesystem::path mRelativeTo;
 };
 
-// A lint error that is fixed by removing the layer
+/// A lint error that is fixed by disabling the layer
+class KnownBadLayerLintError final : public FixableLintError {
+  public:
+    KnownBadLayerLintError(
+      const std::string& description,
+      const std::filesystem::path& layer);
+
+  ~KnownBadLayerLintError() override = default;
+  std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
+};
+
+/// A lint error that is fixed by removing the layer
 class InvalidLayerLintError final : public FixableLintError {
  public:
   InvalidLayerLintError(
