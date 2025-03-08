@@ -118,6 +118,7 @@ if(WIN32)
     linters/windows/OutdatedOpenKneeboardLinter.cpp
     linters/windows/ProgramFilesLinter.cpp
     linters/windows/UnsignedDllLinter.cpp
+    linters/windows/XRNeckSaferLinter.cpp
   )
 
   target_sources(
