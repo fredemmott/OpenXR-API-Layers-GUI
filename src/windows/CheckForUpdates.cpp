@@ -1,6 +1,8 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
+#include "CheckForUpdates.hpp"
+
 #include <Windows.h>
 #include <Psapi.h>
 
@@ -11,8 +13,6 @@
 #include <memory>
 
 #include "Config.hpp"
-
-#include "CheckForUpdates.hpp"
 
 namespace {
 class HandleInOtherProcess {
@@ -52,7 +52,9 @@ class HandleInOtherProcess {
   }
 
   [[nodiscard]]
-  HANDLE get() const noexcept { return mHandleInTargetProcess; }
+  HANDLE get() const noexcept {
+    return mHandleInTargetProcess;
+  }
 
  private:
   HANDLE mTargetProcess {nullptr};
@@ -70,7 +72,8 @@ AutoUpdateProcess CheckForUpdates() {
     std::wstring_view {exePathStr, exePathStrLength}};
   const auto directory = thisExe.parent_path();
 
-  const auto updater = directory / L"fredemmott_OpenXR-API-Layers-GUI_Updater.exe";
+  const auto updater
+    = directory / L"fredemmott_OpenXR-API-Layers-GUI_Updater.exe";
 
   if (!std::filesystem::exists(updater)) {
     OutputDebugStringW(
@@ -115,26 +118,29 @@ AutoUpdateProcess CheckForUpdates() {
   // need to duplicate the handle to the shell too, rather than the current
   // process.
   HandleInOtherProcess thisProcessAsShell {
-    GetCurrentProcess(),shellProcessRaw,
+    GetCurrentProcess(),
+    shellProcessRaw,
     PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION,
   };
 
   // Process group, including temporary children
-  winrt::handle job { CreateJobObjectW(nullptr, nullptr) };
+  winrt::handle job {CreateJobObjectW(nullptr, nullptr)};
   // Jobs are only signalled on timeout, not on completion, so...
   winrt::handle jobCompletion {
-    CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1)
-  };
+    CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1)};
   JOBOBJECT_ASSOCIATE_COMPLETION_PORT assoc {
     .CompletionKey = job.get(),
     .CompletionPort = jobCompletion.get(),
   };
-  winrt::check_bool(SetInformationJobObject(job.get(),
-    JobObjectAssociateCompletionPortInformation, &assoc, sizeof(assoc)));
+  winrt::check_bool(SetInformationJobObject(
+    job.get(),
+    JobObjectAssociateCompletionPortInformation,
+    &assoc,
+    sizeof(assoc)));
 
-  auto launch = [&]<class... Args> /* C++23 :'( [[nodiscard]] */ (
-                  std::wformat_string<Args...> commandLineFmt,
-                  Args&&... commandLineFmtArgs) {
+  const auto launch = [&]<class... Args> /* C++23 :'( [[nodiscard]] */ (
+                        std::wformat_string<Args...> commandLineFmt,
+                        Args&&... commandLineFmtArgs) -> HRESULT {
     auto commandLine
       = std::format(commandLineFmt, std::forward<Args>(commandLineFmtArgs)...);
 
@@ -144,30 +150,40 @@ AutoUpdateProcess CheckForUpdates() {
     };
     PROCESS_INFORMATION processInfo {};
 
-    winrt::check_bool(CreateProcessW(
-      updater.wstring().c_str(),
-      commandLine.data(),
-      nullptr,
-      nullptr,
-      /* inherit handles = */ true,
-      EXTENDED_STARTUPINFO_PRESENT | CREATE_SUSPENDED,
-      nullptr,
-      directory.wstring().c_str(),
-      &startupInfo.StartupInfo,
-      &processInfo));
+    if (!CreateProcessW(
+          updater.wstring().c_str(),
+          commandLine.data(),
+          nullptr,
+          nullptr,
+          /* inherit handles = */ true,
+          EXTENDED_STARTUPINFO_PRESENT | CREATE_SUSPENDED,
+          nullptr,
+          directory.wstring().c_str(),
+          &startupInfo.StartupInfo,
+          &processInfo)) {
+      const auto hr = HRESULT_FROM_WIN32(GetLastError());
+      const auto error = std::format(
+        L"Updater CreateProcessW() failed with {:#018x}",
+        static_cast<uint32_t>(hr));
+      OutputDebugStringW(error.c_str());
+      return hr;
+    }
     winrt::check_bool(
       AssignProcessToJobObject(job.get(), processInfo.hProcess));
     ResumeThread(processInfo.hThread);
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);
+    return S_OK;
   };
 
-  launch(
-    L"{} --channel=live --terminate-process-before-update={} "
-    L"--local-version={} --silent",
-    updater.wstring(),
-    reinterpret_cast<uintptr_t>(thisProcessAsShell.get()),
-    FredEmmott::OpenXRLayers::Config::BUILD_VERSION_W);
+  if (FAILED(launch(
+        L"{} --channel=live --terminate-process-before-update={} "
+        L"--local-version={} --silent",
+        updater.wstring(),
+        reinterpret_cast<uintptr_t>(thisProcessAsShell.get()),
+        FredEmmott::OpenXRLayers::Config::BUILD_VERSION_W))) {
+    return {};
+  }
 
   return {std::move(job), std::move(jobCompletion)};
 }
@@ -175,8 +191,8 @@ AutoUpdateProcess CheckForUpdates() {
 AutoUpdateProcess::AutoUpdateProcess(
   winrt::handle job,
   winrt::handle jobCompletion)
-  : mJob(std::move(job)), mJobCompletion(std::move(jobCompletion)) {
-}
+  : mJob(std::move(job)),
+    mJobCompletion(std::move(jobCompletion)) {}
 
 void AutoUpdateProcess::ActivateWindowIfVisible() {
   if (mHaveActivatedWindow || !mJob) {
