@@ -1,18 +1,19 @@
 BasedOnStyle: Google
 AlignAfterOpenBracket: AlwaysBreak
-AlignConsecutiveDeclarations: 'None'
-AlignOperands: false
+AlignConsecutiveDeclarations: None
+AlignEscapedNewlines: DontAlign
+AlignOperands: DontAlign
 AlignTrailingComments: false
 AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: 'Never'
-AllowShortFunctionsOnASingleLine: 'None'
-AllowShortIfStatementsOnASingleLine: 'false'
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 BinPackArguments: false
-BinPackParameters: false
-BreakBeforeBinaryOperators: true
+BinPackParameters: OnePerLine
+BreakBeforeBinaryOperators: All
 ColumnLimit: 80
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
+PackConstructorInitializers: CurrentLine
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 DeriveLineEnding: false
@@ -46,7 +47,6 @@ IncludeCategories:
   - Regex: '^<[a-z0-9_]+\.h>$'
     Priority: 43
 IndentWidth: 2
-LineEnding: 'LF'
 MaxEmptyLinesToKeep: 1
 PointerAlignment: Left
 ReflowComments: true
@@ -56,4 +56,6 @@ SpaceBeforeRangeBasedForLoopColon: false
 SpacesBeforeTrailingComments: 0
 Standard: c++20
 TabWidth: 2
+LineEnding: LF
+UseCRLF: false
 UseTab: Never
