@@ -10,7 +10,7 @@ jobs:
     name: build/${{matrix.os-arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.runs-on}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
       - name: Make build directory
