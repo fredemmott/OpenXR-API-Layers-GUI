@@ -25,7 +25,6 @@ jobs:
           $args = @()
 
           cmake .. `
-            -A ${{matrix.cmake-arch}} `
             --preset "${{matrix.build-type}}" `
             @args
           
@@ -64,5 +63,4 @@ jobs:
         include:
           - os-arch: Win64
             runs-on: windows-latest
-            cmake-arch: x64
             vcpkg-arch: x64-windows-static
