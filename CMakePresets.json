@@ -1,0 +1,50 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables":{
+        "CMAKE_TOOLCHAIN_FILE": "third-party/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "CMAKE_CXX_FLAGS": "-D_WIN32_WINNT=_WIN32_WINNT_WIN10 -DNTDDI_VERSION=NTDDI_WIN10"
+      }
+    },
+    {
+      "name": "clang-cl",
+      "hidden": true,
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_MT": "mt",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      }
+    },
+    {
+      "name": "Debug - default",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Debug - clang-cl",
+      "inherits": "clang-cl",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Release",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    }
+  ]
+}

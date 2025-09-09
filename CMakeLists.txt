@@ -16,8 +16,6 @@ if(ENABLE_ASAN)
   )
 endif()
 
-set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
-
 if("${VCPKG_TARGET_TRIPLET}" MATCHES "-static$")
   # https://github.com/microsoft/WindowsAppSDK/blob/main/docs/Coding-Guidelines/HybridCRT.md
   set(
@@ -30,11 +28,11 @@ if("${VCPKG_TARGET_TRIPLET}" MATCHES "-static$")
   )
 endif()
 
-set(
-  CMAKE_TOOLCHAIN_FILE
-  "${CMAKE_CURRENT_SOURCE_DIR}/third-party/vcpkg/scripts/buildsystems/vcpkg.cmake"
-  CACHE STRING "Vcpkg toolchain file"
-)
+
+if (CMAKE_TOOLCHAIN_FILE)
+  # Mostly showing this to avoid a bogus unused variable warning, but might be useful *shrug*
+  message(STATUS "Using CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+endif ()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
