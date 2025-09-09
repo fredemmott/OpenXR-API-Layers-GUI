@@ -62,15 +62,15 @@ void GUI::Run() {
 
   MyWindow window {
     sf::VideoMode(
-      static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.x),
-      static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.y)),
+      {static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.x),
+      static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.y)}
+      ),
     fmt::format("OpenXR API Layers v{}", Config::BUILD_VERSION)};
   window.setFramerateLimit(60);
   if (!ImGui::SFML::Init(window)) {
     return;
   }
-  mWindowHandle = window.getSystemHandle();
-
+  mWindowHandle = window.getNativeHandle();
   platform.SetWindow(mWindowHandle);
 
   // partial workaround for:
@@ -78,8 +78,8 @@ void GUI::Run() {
   // - https://github.com/SFML/imgui-sfml/issues/212
   //
   // remainder is in windows/PlatformGUI.cpp
-  ImGui::SFML::ProcessEvent(window, {sf::Event::LostFocus});
-  ImGui::SFML::ProcessEvent(window, {sf::Event::GainedFocus});
+  ImGui::SFML::ProcessEvent(window, sf::Event::FocusLost {});
+  ImGui::SFML::ProcessEvent(window, sf::Event::FocusGained {});
 
   auto dpiScaling = platform.GetDPIScaling();
   window.setMinimumSize({
@@ -109,10 +109,9 @@ void GUI::Run() {
       }
     }
 
-    sf::Event event {};
-    while (window.pollEvent(event)) {
-      ImGui::SFML::ProcessEvent(window, event);
-      if (event.type == sf::Event::Closed) {
+    while (const auto event = window.pollEvent()) {
+      ImGui::SFML::ProcessEvent(window, *event);
+      if (event->is<sf::Event::Closed>()) {
         window.close();
       }
     }
