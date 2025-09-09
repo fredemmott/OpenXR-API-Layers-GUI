@@ -77,6 +77,10 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   mAPIVersion = layer.value("api_version", std::string {});
   mDescription = layer.value("description", std::string {});
 
+  if (layer.contains("disable_environment")) {
+    mDisableEnvironment = layer.at("disable_environment");
+  }
+
   if (layer.contains("instance_extensions")) {
     auto extensions = layer.at("instance_extensions");
     if (extensions.is_array()) {

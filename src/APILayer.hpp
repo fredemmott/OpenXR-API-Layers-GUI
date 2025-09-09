@@ -57,6 +57,7 @@ struct APILayerDetails {
   std::string mDescription;
   std::string mAPIVersion;
   std::string mImplementationVersion;
+  std::string mDisableEnvironment;
   std::vector<Extension> mExtensions;
 
   bool operator==(const APILayerDetails&) const noexcept = default;

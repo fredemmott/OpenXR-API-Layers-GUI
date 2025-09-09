@@ -46,10 +46,12 @@ add_library(
   linters
   OBJECT
   Linter.cpp
+  LayerRules.cpp
   linters/BadInstallationLinter.cpp
   linters/DuplicatesLinter.cpp
   linters/OrderingLinter.cpp
-  LayerRules.cpp
+  linters/DisabledByEnvironmentLinter.cpp
+
 )
 target_link_libraries(linters PUBLIC lib)
 target_include_directories(
