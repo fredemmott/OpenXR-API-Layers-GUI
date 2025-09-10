@@ -10,6 +10,18 @@ jobs:
     name: build/${{matrix.os-arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.runs-on}}
     steps:
+      - name: Set up visual studio environment
+        shell: pwsh
+        run: |
+          $VSRoot = $(
+            vswhere `
+              -latest `
+              -products * `
+              -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+              -property installationPath)
+          cmd /c "`"${VSRoot}/VC/Auxiliary/Build/vcvarsall.bat`" x64&set" `
+            | Where-Object { $_ -like '*=*' } `
+            | Out-File -Encoding utf8 -Append $Env:GITHUB_ENV
       - uses: actions/checkout@v5
         with:
           submodules: true
