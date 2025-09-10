@@ -78,7 +78,7 @@ install(
   TARGETS gui
   DESTINATION "."
 )
-sign_target(gui)
+
 # Used by version.in.rc
 set(OUTPUT_NAME "OpenXR-API-Layers-GUI")
 set_target_properties(
@@ -203,7 +203,6 @@ set_target_properties(
   PROPERTIES
   OUTPUT_NAME "${OUTPUT_NAME}"
 )
-sign_target(create-report)
 install(
   TARGETS create-report
   DESTINATION "."

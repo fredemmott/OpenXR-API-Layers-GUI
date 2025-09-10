@@ -66,8 +66,6 @@ option(USE_EMOJI "Use emoji for status symbols" ON)
 
 message(STATUS "Building OpenXR-Layers-GUI v${CMAKE_PROJECT_VERSION}")
 
-include(sign_target.cmake)
-
 if(ENABLE_ASAN)
   list(
     APPEND 
