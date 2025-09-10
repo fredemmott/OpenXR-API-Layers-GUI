@@ -44,15 +44,6 @@ else()
   set(VERSION_BUILD 0)
 endif()
 
-
-set(
-  BUILD_TARGET_ID
-  "${BUILD_TARGET_ID}"
-  CACHE
-  STRING
-  "Identifier for the current build, e.g. OS, architecture, HKLM vs HKCU"
-)
-
 set(BUILD_VERSION_STRING "2025.03.08.${VERSION_BUILD}")
 project(OpenXR-Layers-GUI VERSION ${BUILD_VERSION_STRING} LANGUAGES CXX C)
 
