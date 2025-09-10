@@ -48,6 +48,7 @@ set(BUILD_VERSION_STRING "2025.03.08.${VERSION_BUILD}")
 project(OpenXR-Layers-GUI VERSION ${BUILD_VERSION_STRING} LANGUAGES CXX C)
 
 include(cmake/smol-binaries.cmake)
+include(cmake/sourcelink.cmake)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/bin")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/pdb")
@@ -58,7 +59,6 @@ message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID}")
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${BUILD_VERSION_STRING}")
 
 option(USE_EMOJI "Use emoji for status symbols" ON)
-
 
 message(STATUS "Building OpenXR-Layers-GUI v${CMAKE_PROJECT_VERSION}")
 

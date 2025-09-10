@@ -38,9 +38,10 @@ jobs:
 
           cmake .. `
             --preset "${{matrix.build-type}}" `
+            "-DSOURCELINK=https://raw.githubusercontent.com/${{github.repository}}/${{github.sha}}" `
             @args
           
-            Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content version.txt)"
+          Add-Content $Env:GITHUB_OUTPUT "version=$(Get-Content version.txt)"
         shell: pwsh
       - name: Compile
         working-directory: build
