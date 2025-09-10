@@ -74,10 +74,6 @@ add_executable(
   WIN32
   "${CMAKE_SOURCE_DIR}/icon/icon.rc"
 )
-install(
-  TARGETS gui
-  DESTINATION "."
-)
 
 # Used by version.in.rc
 set(OUTPUT_NAME "OpenXR-API-Layers-GUI")
@@ -203,10 +199,6 @@ set_target_properties(
   PROPERTIES
   OUTPUT_NAME "${OUTPUT_NAME}"
 )
-install(
-  TARGETS create-report
-  DESTINATION "."
-)
 
 if (WIN32)
   set(UPDATER_FILENAME "fredemmott_OpenXR-API-Layers-GUI_Updater.exe")
@@ -217,19 +209,5 @@ if (WIN32)
     "${UPDATER_EXE}"
     "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
     VERBATIM
-  )
-  install(
-    FILES
-    "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
-    DESTINATION "."
-  )
-
-  install(
-    FILES
-    "$<TARGET_PDB_FILE:create-report>"
-    "$<TARGET_PDB_FILE:gui>"
-    DESTINATION "."
-    COMPONENT "DebugSymbols"
-    EXCLUDE_FROM_ALL
   )
 endif()
