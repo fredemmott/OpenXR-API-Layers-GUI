@@ -3,8 +3,9 @@ if (NOT SOURCELINK)
   return()
 endif ()
 
-if (NOT MSVC)
-  message(FATAL_ERROR "SOURCELINK was specified, but not using MSVC")
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  message(WARNING "SOURCELINK was specified, but not using MSVC-compatible compiler ID")
+  return()
 endif ()
 
 message(STATUS "Using SOURCELINK: ${SOURCELINK}")
