@@ -3,7 +3,7 @@ if (NOT SOURCELINK)
   return()
 endif ()
 
-if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+if (NOT MSVC)
   message(FATAL_ERROR "SOURCELINK was specified, but not using MSVC")
 endif ()
 
