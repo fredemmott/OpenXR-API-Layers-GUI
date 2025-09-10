@@ -3,9 +3,6 @@
 
 #include "GUI.hpp"
 
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Clock.hpp>
-#include <SFML/Window/Event.hpp>
 #include <fmt/format.h>
 
 #include <ranges>
@@ -17,155 +14,58 @@
 #include "Config.hpp"
 #include "Linter.hpp"
 #include "SaveReport.hpp"
-#include <imgui-SFML.h>
 
 namespace FredEmmott::OpenXRLayers {
 
-namespace {
-constexpr ImVec2 MINIMUM_WINDOW_SIZE {1024, 768};
+void GUI::DrawFrame() {
+  ImGui::Begin(
+    "MainWindow",
+    nullptr,
+    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+      | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings
+      | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
+      | ImGuiWindowFlags_NoScrollWithMouse);
 
-class MyWindow final : public sf::RenderWindow {
- public:
-  using sf::RenderWindow::RenderWindow;
-  ~MyWindow() override = default;
+  if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
+    for (auto&& layerSet: mLayerSets) {
+      const auto name = layerSet.mStore->GetDisplayName();
+      const auto label = layerSet.HasErrors()
+        ? fmt::format("{} {}", Config::GLYPH_ERROR, name)
+        : name;
+      const auto labelWithID = fmt::format("{}###layerSet-{}", label, name);
+      if (ImGui::BeginTabItem(labelWithID.c_str())) {
+        layerSet.Draw();
+        ImGui::EndTabItem();
+      }
+    }
 
-  void setMinimumSize(const ImVec2& value) {
-    mMinimumSize = value;
-    this->onResize();
+    if (ImGui::BeginTabItem("About")) {
+      ImGui::TextWrapped(
+        "OpenXR API Layers GUI v%s\n\n---\n\n%s",
+        Config::BUILD_VERSION,
+        Config::LICENSE_TEXT);
+      ImGui::EndTabItem();
+    }
+
+    if (ImGui::TabItemButton("Save Report...", ImGuiTabItemFlags_Trailing)) {
+      this->Export();
+    }
+
+    ImGui::EndTabBar();
   }
 
- protected:
-  void onResize() override {
-    auto size = this->getSize();
-    auto newSize = size;
-    if (size.x < mMinimumSize.x) {
-      newSize.x = static_cast<unsigned int>(mMinimumSize.x);
-    }
-    if (size.y < mMinimumSize.y) {
-      newSize.y = static_cast<unsigned int>(mMinimumSize.y);
-    }
+  ImGui::End();
+}
 
-    if (size == newSize) {
-      return;
-    }
-
-    this->setSize(newSize);
+GUI::GUI() {
+  for (auto&& store: ReadWriteAPILayerStore::Get()) {
+    mLayerSets.push_back({store});
   }
-
- private:
-  ImVec2 mMinimumSize {MINIMUM_WINDOW_SIZE};
-};
-}// namespace
+}
 
 void GUI::Run() {
   auto& platform = PlatformGUI::Get();
-
-  MyWindow window {
-    sf::VideoMode(
-      {static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.x),
-      static_cast<unsigned int>(MINIMUM_WINDOW_SIZE.y)}
-      ),
-    fmt::format("OpenXR API Layers v{}", Config::BUILD_VERSION)};
-  window.setFramerateLimit(60);
-  if (!ImGui::SFML::Init(window)) {
-    return;
-  }
-  mWindowHandle = window.getNativeHandle();
-  platform.SetWindow(mWindowHandle);
-
-  // partial workaround for:
-  // - https://github.com/SFML/imgui-sfml/issues/206
-  // - https://github.com/SFML/imgui-sfml/issues/212
-  //
-  // remainder is in windows/PlatformGUI.cpp
-  ImGui::SFML::ProcessEvent(window, sf::Event::FocusLost {});
-  ImGui::SFML::ProcessEvent(window, sf::Event::FocusGained {});
-
-  auto dpiScaling = platform.GetDPIScaling();
-  window.setMinimumSize({
-    MINIMUM_WINDOW_SIZE.x * dpiScaling,
-    MINIMUM_WINDOW_SIZE.y * dpiScaling,
-  });
-  platform.SetupFonts(&ImGui::GetIO());
-
-  sf::Clock deltaClock {};
-
-  std::vector<LayerSet> layerSets;
-  for (auto&& store: ReadWriteAPILayerStore::Get()) {
-    layerSets.push_back({store});
-  }
-  while (window.isOpen()) {
-    {
-      if (const auto changeInfo = platform.GetDPIChangeInfo()) {
-        window.setMinimumSize({0, 0});
-        if (changeInfo->mRecommendedSize) {
-          window.setSize(*changeInfo->mRecommendedSize);
-        }
-        window.setMinimumSize({
-          MINIMUM_WINDOW_SIZE.x * changeInfo->mDPIScaling,
-          MINIMUM_WINDOW_SIZE.y * changeInfo->mDPIScaling,
-        });
-        platform.SetupFonts(&ImGui::GetIO());
-      }
-    }
-
-    while (const auto event = window.pollEvent()) {
-      ImGui::SFML::ProcessEvent(window, *event);
-      if (event->is<sf::Event::Closed>()) {
-        window.close();
-      }
-    }
-
-    ImGui::SFML::Update(window, deltaClock.restart());
-
-    auto viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-
-    platform.BeginFrame();
-
-    ImGui::Begin(
-      "MainWindow",
-      nullptr,
-      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
-        | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings
-        | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
-        | ImGuiWindowFlags_NoScrollWithMouse);
-
-    if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
-      for (auto& layerSet: layerSets) {
-        const auto name = layerSet.mStore->GetDisplayName();
-        const auto label = layerSet.HasErrors()
-          ? fmt::format("{} {}", Config::GLYPH_ERROR, name)
-          : name;
-        const auto labelWithID = fmt::format("{}###layerSet-{}", label, name);
-        if (ImGui::BeginTabItem(labelWithID.c_str())) {
-          layerSet.Draw();
-          ImGui::EndTabItem();
-        }
-      }
-
-      if (ImGui::BeginTabItem("About")) {
-        ImGui::TextWrapped(
-          "OpenXR API Layers GUI v%s\n\n---\n\n%s",
-          Config::BUILD_VERSION,
-          Config::LICENSE_TEXT);
-        ImGui::EndTabItem();
-      }
-
-      if (ImGui::TabItemButton("Save Report...", ImGuiTabItemFlags_Trailing)) {
-        this->Export();
-      }
-
-      ImGui::EndTabBar();
-    }
-
-    ImGui::End();
-
-    ImGui::SFML::Render(window);
-    window.display();
-  }
-  ImGui::SFML::Shutdown();
+  platform.Run(std::bind_front(&GUI::DrawFrame, this));
 }
 
 void GUI::LayerSet::GUILayersList() {
@@ -612,10 +512,11 @@ void GUI::LayerSet::AddLayersClicked() {
   }
   auto nextLayers = mLayers;
   for (const auto& path: paths) {
-    nextLayers.push_back(APILayer {
-      .mJSONPath = path,
-      .mValue = APILayer::Value::Enabled,
-    });
+    nextLayers.push_back(
+      APILayer {
+        .mJSONPath = path,
+        .mValue = APILayer::Value::Enabled,
+      });
   }
 
   bool changed = false;

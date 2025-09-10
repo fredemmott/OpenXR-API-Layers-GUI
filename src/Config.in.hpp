@@ -20,4 +20,9 @@ constexpr auto GLYPH_ERROR {USE_EMOJI ? "\u26a0" : "!"};
 
 constexpr auto LICENSE_TEXT {R"---LICENSE---(@LICENSE_TEXT@)---LICENSE---"};
 
+constexpr auto MINIMUM_WINDOW_WIDTH = 1024;
+constexpr auto MINIMUM_WINDOW_HEIGHT = 768;
+
+constexpr auto MAX_FPS = 60;
+
 }// namespace FredEmmott::OpenXRLayers::Config

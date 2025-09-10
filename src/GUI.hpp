@@ -4,8 +4,8 @@
 #pragma once
 
 #include <portability/filesystem.hpp>
-#include <sfml/Window.hpp>
 
+#include <functional>
 #include <ranges>
 #include <unordered_map>
 #include <vector>
@@ -31,15 +31,11 @@ class PlatformGUI {
   static PlatformGUI& Get();
   virtual ~PlatformGUI() = default;
 
-  virtual void BeginFrame() = 0;
-
-  virtual void SetWindow(sf::WindowHandle) = 0;
+  virtual void Run(std::function<void()> drawFrame) = 0;
 
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
-  virtual void SetupFonts(ImGuiIO*) = 0;
   virtual float GetDPIScaling() = 0;
-  virtual std::optional<DPIChangeInfo> GetDPIChangeInfo() = 0;
 
   // Use OS/environment equivalent to Explorer
   virtual void ShowFolderContainingFile(const std::filesystem::path&) = 0;
@@ -56,6 +52,7 @@ class PlatformGUI {
 // The actual app GUI
 class GUI final {
  public:
+  GUI();
   void Run();
 
  private:
@@ -94,9 +91,10 @@ class GUI final {
     void DragDropReorder(const APILayer& source, const APILayer& target);
   };
 
-  void Export();
+  std::vector<LayerSet> mLayerSets;
 
-  sf::WindowHandle mWindowHandle {};
+  void Export();
+  void DrawFrame();
 };
 
 }// namespace FredEmmott::OpenXRLayers

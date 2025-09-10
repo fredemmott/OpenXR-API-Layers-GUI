@@ -13,10 +13,11 @@
       "name": "imgui",
       "features": [
         "freetype",
-        "wchar32"
+        "wchar32",
+        "dx11-binding",
+        "win32-binding"
       ]
     },
-    "imgui-sfml",
     "nlohmann-json",
     "fmt"
   ]

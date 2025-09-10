@@ -2,21 +2,20 @@
 # SPDX-License-Identifier: ISC
 
 find_package(imgui CONFIG REQUIRED)
-find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 # Using fmt instead of fmt::format until MacOS/libc++ catch up
 find_package(fmt CONFIG REQUIRED)
 
-if(WIN32)
+if (WIN32)
   find_package(cppwinrt CONFIG REQUIRED)
   find_package(wil CONFIG REQUIRED)
-endif()
+endif ()
 
-if(USE_EMOJI)
+if (USE_EMOJI)
   set(USE_EMOJI_BOOL "true")
-else()
+else ()
   set(USE_EMOJI_BOOL "false")
-endif()
+endif ()
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE" LICENSE_TEXT)
 
@@ -64,9 +63,9 @@ target_include_directories(
 target_link_libraries(
   lib
   PUBLIC
-  ImGui-SFML::ImGui-SFML
   nlohmann_json::nlohmann_json
   fmt::fmt-header-only
+  imgui::imgui
 )
 
 add_executable(
@@ -89,7 +88,7 @@ set(PLATFORM_MAIN_CPP "main.cpp")
 set(PLATFORM_GUI_CPP "stubs/PlatformGUI.cpp")
 set(PLATFORM_REPORT_MAIN_CPP "SaveReport_main.cpp")
 
-if(WIN32)
+if (WIN32)
   set(PLATFORM_APILAYERS_CPP "windows/WindowsAPILayerStore.cpp")
   set(PLATFORM_GUI_CPP "windows/PlatformGUI.cpp")
   set(PLATFORM_MAIN_CPP "windows/wWinMain.cpp")
@@ -131,13 +130,15 @@ if(WIN32)
     PUBLIC
     "WIN32_LEAN_AND_MEAN"
     "NOMINMAX"
+    "UNICODE"
+    "_UNICODE"
   )
 
   target_compile_options(
     lib
     PUBLIC
     "/EHsc"
-    "/diagnostics:caret" 
+    "/diagnostics:caret"
     "/utf-8"
     "/await:strict"
   )
@@ -147,13 +148,21 @@ if(WIN32)
     PUBLIC
     Microsoft::CppWinRT
     WIL::WIL
-    Comctl32
-    WinTrust
-    Dwmapi
-    # Missing dependency for CppWinRT vcpkg
-    # https://github.com/microsoft/vcpkg/issues/15339
-    RuntimeObject
   )
+  set(
+    WINDOWS_SDK_LIBRARIES
+    Comctl32
+    D3d11
+    DwmApi
+    Dxgi
+    RuntimeObject
+    WinTrust
+  )
+  foreach (NAME IN LISTS WINDOWS_SDK_LIBRARIES)
+    set(LIB_PATH_VAR "${NAME}_PATH}")
+    find_library("${LIB_PATH_VAR}" NAMES "${NAME}" REQUIRED)
+    target_link_libraries(lib PUBLIC "${${LIB_PATH_VAR}}")
+  endforeach ()
 
   target_link_options(
     gui
@@ -161,7 +170,7 @@ if(WIN32)
     "/MANIFESTUAC:level='requireAdministrator'"
   )
 
-endif()
+endif ()
 
 target_sources(
   lib
@@ -182,7 +191,7 @@ configure_file(
   @ONLY
 )
 add_executable(
-  create-report 
+  create-report
   WIN32
   "${PLATFORM_REPORT_MAIN_CPP}"
   "${CMAKE_SOURCE_DIR}/icon/icon.rc"
@@ -210,4 +219,4 @@ if (WIN32)
     "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
     VERBATIM
   )
-endif()
+endif ()

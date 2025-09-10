@@ -6,13 +6,21 @@
 
 #include <winrt/base.h>
 
+#include <wil/com.h>
+#include <wil/resource.h>
+
+#include <bit>
 #include <chrono>
 #include <format>
 
 #include <ShlObj.h>
 #include <ShlObj_core.h>
+#include <d3d11.h>
 #include <dwmapi.h>
+#include <dxgi1_3.h>
 #include <imgui_freetype.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
 #include <shellapi.h>
 #include <shtypes.h>
 
@@ -20,266 +28,453 @@
 #include "Config.hpp"
 #include "GUI.hpp"
 #include "windows/GetKnownFolderPath.hpp"
-#include <imgui-SFML.h>
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
+  HWND hWnd,
+  UINT msg,
+  WPARAM wParam,
+  LPARAM lParam);
 
 namespace FredEmmott::OpenXRLayers {
 
 class PlatformGUI_Windows final : public PlatformGUI {
- private:
-  HWND mWindow {};
-  float mDPIScaling {};
-  std::optional<DPIChangeInfo> mDPIChangeInfo;
-  AutoUpdateProcess mUpdater {CheckForUpdates()};
-
-  size_t mFrameCounter = 0;
-
  public:
-  PlatformGUI_Windows() {
-    winrt::init_apartment();
-  }
+  void Run(std::function<void()> drawFrame) override;
 
-  void BeginFrame() override {
-    if ((++mFrameCounter % 60) == 0) {
-      mUpdater.ActivateWindowIfVisible();
-    }
-  }
-
-  void SetWindow(sf::WindowHandle handle) override {
-    {
-      static std::once_flag sOnce;
-
-      std::call_once(sOnce, []() {
-        static std::string sIniPath;
-        sIniPath = (GetKnownFolderPath<FOLDERID_LocalAppData>()
-                    / "OpenXR API Layers GUI" / "imgui.ini")
-                     .string();
-        ImGui::GetIO().IniFilename = sIniPath.c_str();
-      });
-    }
-
-    {
-      ShowWindow(handle, SW_HIDE);
-      BOOL darkMode = true;
-      DwmSetWindowAttribute(
-        handle, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
-      DWM_SYSTEMBACKDROP_TYPE backdropType {DWMSBT_MAINWINDOW};
-      DwmSetWindowAttribute(
-        handle, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
-      ShowWindow(handle, SW_SHOW);
-    }
-
-    // partial workaround for:
-    // - https://github.com/SFML/imgui-sfml/issues/206
-    // - https://github.com/SFML/imgui-sfml/issues/212
-    //
-    // remainder is in GUI.cpp
-    SetFocus(handle);
-
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    mWindow = handle;
-    mDPIScaling
-      = static_cast<float>(GetDpiForWindow(handle)) / USER_DEFAULT_SCREEN_DPI;
-    SetWindowSubclass(
-      mWindow,
-      static_cast<SUBCLASSPROC>(SubclassProc),
-      0,
-      reinterpret_cast<DWORD_PTR>(this));
-    auto icon = LoadIconA(GetModuleHandle(nullptr), "appIcon");
-    if (icon) {
-      SetClassLongPtr(mWindow, GCLP_HICON, reinterpret_cast<LONG_PTR>(icon));
-    }
-  }
-
-  std::optional<DPIChangeInfo> GetDPIChangeInfo() override {
-    auto ret = mDPIChangeInfo;
-    mDPIChangeInfo = {};
-    return ret;
-  }
-
-  std::optional<std::filesystem::path> GetExportFilePath() override {
-    auto picker = winrt::create_instance<IFileSaveDialog>(
-      CLSID_FileSaveDialog, CLSCTX_ALL);
-    {
-      FILEOPENDIALOGOPTIONS opts;
-      picker->GetOptions(&opts);
-      opts |= FOS_FORCEFILESYSTEM | FOS_ALLOWMULTISELECT;
-      picker->SetOptions(opts);
-    }
-
-    {
-      constexpr winrt::guid persistenceGuid {
-        0x4e4c8046,
-        0x231a,
-        0x4ffc,
-        {0x82, 0x01, 0x68, 0xe5, 0x17, 0x18, 0x58, 0xb0}};
-      picker->SetClientGuid(persistenceGuid);
-    }
-
-    picker->SetTitle(L"Export to File");
-
-    winrt::com_ptr<IShellFolder> desktopFolder;
-    winrt::check_hresult(SHGetDesktopFolder(desktopFolder.put()));
-    winrt::com_ptr<IShellItem> desktopItem;
-    winrt::check_hresult(SHGetItemFromObject(
-      desktopFolder.get(), IID_PPV_ARGS(desktopItem.put())));
-    picker->SetDefaultFolder(desktopItem.get());
-
-    COMDLG_FILTERSPEC filter {
-      .pszName = L"Plain Text",
-      .pszSpec = L"*.txt",
-    };
-    picker->SetFileTypes(1, &filter);
-
-    const auto filename = std::format(
-      L"OpenXR-API-Layers-{:%Y-%m-%d-%H-%M-%S}.txt",
-      std::chrono::zoned_time(
-        std::chrono::current_zone(),
-        std::chrono::time_point_cast<std::chrono::seconds>(
-          std::chrono::system_clock::now())));
-    picker->SetFileName(filename.c_str());
-
-    if (picker->Show(NULL) != S_OK) {
-      return {};
-    }
-
-    winrt::com_ptr<IShellItem> shellItem;
-    if (picker->GetResult(shellItem.put()) != S_OK) {
-      return {};
-    }
-
-    PWSTR buf {nullptr};
-    winrt::check_hresult(shellItem->GetDisplayName(SIGDN_FILESYSPATH, &buf));
-    const std::filesystem::path ret {std::wstring_view {buf}};
-    CoTaskMemFree(buf);
-
-    return ret;
-  }
-
-  std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override {
-    auto picker = winrt::create_instance<IFileOpenDialog>(
-      CLSID_FileOpenDialog, CLSCTX_ALL);
-
-    {
-      FILEOPENDIALOGOPTIONS opts;
-      picker->GetOptions(&opts);
-      opts |= FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST
-        | FOS_ALLOWMULTISELECT;
-      picker->SetOptions(opts);
-    }
-
-    {
-      constexpr winrt::guid persistenceGuid {
-        0xac83d7a5,
-        0xca3a,
-        0x45d3,
-        {0x90, 0xc2, 0x63, 0xf1, 0x4b, 0x79, 0x24, 0x44}};
-      picker->SetClientGuid(persistenceGuid);
-    }
-
-    picker->SetTitle(L"Add API Layers");
-
-    // Keep alive until we're done
-    COMDLG_FILTERSPEC filter {
-      .pszName = L"JSON files",
-      .pszSpec = L"*.json",
-    };
-    picker->SetFileTypes(1, &filter);
-
-    if (picker->Show(NULL) != S_OK) {
-      return {};
-    }
-
-    winrt::com_ptr<IShellItemArray> items;
-    winrt::check_hresult(picker->GetResults(items.put()));
-
-    if (!items) {
-      return {};
-    }
-
-    DWORD count {};
-    winrt::check_hresult(items->GetCount(&count));
-
-    std::vector<std::filesystem::path> ret;
-
-    for (DWORD i = 0; i < count; ++i) {
-      winrt::com_ptr<IShellItem> item;
-      winrt::check_hresult(items->GetItemAt(i, item.put()));
-      wchar_t* buf {nullptr};
-      winrt::check_hresult(item->GetDisplayName(SIGDN_FILESYSPATH, &buf));
-      if (!buf) {
-        continue;
-      }
-
-      ret.push_back({std::wstring_view {buf}});
-      CoTaskMemFree(buf);
-    }
-    return ret;
-  }
-
-  void SetupFonts(ImGuiIO* io) override {
-    const auto fontsPath = GetKnownFolderPath<FOLDERID_Fonts>();
-
-    io->Fonts->Clear();
-    io->Fonts->AddFontFromFileTTF(
-      (fontsPath / "segoeui.ttf").string().c_str(), 16.0f * mDPIScaling);
-
-    static ImWchar ranges[] = {0x1, 0x1ffff, 0};
-    static ImFontConfig config {};
-    config.OversampleH = config.OversampleV = 1;
-    config.MergeMode = true;
-    config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-
-    io->Fonts->AddFontFromFileTTF(
-      (fontsPath / "seguiemj.ttf").string().c_str(),
-      13.0f * mDPIScaling,
-      &config,
-      ranges);
-
-    { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
-  }
+  std::optional<std::filesystem::path> GetExportFilePath() override;
+  std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override;
 
   float GetDPIScaling() override {
     return mDPIScaling;
   }
+  void ShowFolderContainingFile(const std::filesystem::path& path) override;
 
-  void ShowFolderContainingFile(const std::filesystem::path& path) override {
-    const auto absolute = std::filesystem::absolute(path).wstring();
+ private:
+  wil::unique_hwnd mWindowHandle {};
+  float mDPIScaling {};
+  std::optional<DPIChangeInfo> mDPIChangeInfo;
+  AutoUpdateProcess mUpdater {CheckForUpdates()};
 
-    PIDLIST_ABSOLUTE pidl {nullptr};
-    winrt::check_hresult(SHParseDisplayName(
-      std::filesystem::absolute(path).wstring().c_str(),
-      nullptr,
-      &pidl,
-      0,
-      nullptr));
+  wil::com_ptr<ID3D11Device> mD3DDevice;
+  wil::com_ptr<ID3D11DeviceContext> mD3DContext;
+  wil::com_ptr<IDXGISwapChain1> mSwapChain;
+  wil::com_ptr<ID3D11Texture2D> mBackBuffer;
+  wil::com_ptr<ID3D11RenderTargetView> mRenderTargetView;
+  bool mWindowClosed = false;
 
-    SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+  size_t mFrameCounter = 0;
+  ImVec2 mWindowSize {
+    Config::MINIMUM_WINDOW_WIDTH,
+    Config::MINIMUM_WINDOW_HEIGHT,
+  };
 
-    CoTaskMemFree(pidl);
+  HWND CreateAppWindow();
+  void InitializeFonts(ImGuiIO* io);
+  void InitializeDirect3D();
+
+  void BeforeFrame();
+  void AfterFrame();
+
+  void Initialize();
+  void MainLoop(const std::function<void()>& drawFrame);
+  void Shutdown();
+
+  static LRESULT WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+  LRESULT
+  InstanceWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+};
+
+void PlatformGUI_Windows::InitializeDirect3D() {
+  const auto hwnd = mWindowHandle.get();
+  UINT d3dFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
+  UINT dxgiFlags = 0;
+#ifndef NDEBUG
+  d3dFlags |= D3D11_CREATE_DEVICE_DEBUG;
+  dxgiFlags |= DXGI_CREATE_FACTORY_DEBUG;
+#endif
+  winrt::check_hresult(D3D11CreateDevice(
+    nullptr,
+    D3D_DRIVER_TYPE_HARDWARE,
+    nullptr,
+    d3dFlags,
+    nullptr,
+    0,
+    D3D11_SDK_VERSION,
+    mD3DDevice.put(),
+    nullptr,
+    mD3DContext.put()));
+
+  wil::com_ptr<IDXGIFactory3> dxgiFactory;
+  winrt::check_hresult(
+    CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(dxgiFactory.put())));
+  constexpr DXGI_SWAP_CHAIN_DESC1 SwapChainDesc {
+    .Width = Config::MINIMUM_WINDOW_WIDTH,
+    .Height = Config::MINIMUM_WINDOW_HEIGHT,
+    .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+    .SampleDesc = {1, 0},
+    .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+    .BufferCount = 3,
+    .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
+    .AlphaMode = DXGI_ALPHA_MODE_IGNORE,
+  };
+  winrt::check_hresult(dxgiFactory->CreateSwapChainForHwnd(
+    mD3DDevice.get(),
+    hwnd,
+    &SwapChainDesc,
+    nullptr,
+    nullptr,
+    mSwapChain.put()));
+  winrt::check_hresult(
+    mSwapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer.put())));
+  winrt::check_hresult(mD3DDevice->CreateRenderTargetView(
+    mBackBuffer.get(), nullptr, mRenderTargetView.put()));
+}
+
+void PlatformGUI_Windows::Run(const std::function<void()> drawFrame) {
+  this->Initialize();
+  const auto shutdown = wil::scope_exit([this] { this->Shutdown(); });
+  this->MainLoop(drawFrame);
+}
+
+void PlatformGUI_Windows::MainLoop(const std::function<void()>& drawFrame) {
+  constexpr auto Interval
+    = std::chrono::microseconds(1000000 / Config::MAX_FPS);
+  while (true) {
+    const auto earliestNextFrame = std::chrono::steady_clock::now() + Interval;
+    MSG msg {};
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+      TranslateMessage(&msg);
+      DispatchMessageW(&msg);
+    }
+
+    if (mWindowClosed) {
+      return;
+    }
+
+    this->BeforeFrame();
+    drawFrame();
+    this->AfterFrame();
+
+    WaitMessage();
+    const auto sleepFor = earliestNextFrame - std::chrono::steady_clock::now();
+    if (sleepFor > std::chrono::steady_clock::duration::zero()) {
+      std::this_thread::sleep_for(
+        std::chrono::duration_cast<std::chrono::milliseconds>(sleepFor));
+    }
+  }
+}
+
+void PlatformGUI_Windows::Initialize() {
+  static std::string sIniPath;
+  sIniPath = (GetKnownFolderPath<FOLDERID_LocalAppData>()
+              / "OpenXR API Layers GUI" / "imgui.ini")
+               .string();
+
+  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+  winrt::init_apartment();
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGui::StyleColorsDark();
+
+  auto& io = ImGui::GetIO();
+  io.IniFilename = sIniPath.c_str();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+  const auto hwnd = this->CreateAppWindow();
+  if (!hwnd) {
+    return;
+  }
+  this->InitializeDirect3D();
+
+  ShowWindow(hwnd, SW_SHOW | SW_NORMAL);
+  ImGui_ImplWin32_Init(mWindowHandle.get());
+  ImGui_ImplDX11_Init(mD3DDevice.get(), mD3DContext.get());
+  this->InitializeFonts(&io);
+}
+
+void PlatformGUI_Windows::Shutdown() {
+  ImGui_ImplDX11_Shutdown();
+  ImGui_ImplWin32_Shutdown();
+  ImGui::DestroyContext();
+}
+
+void PlatformGUI_Windows::BeforeFrame() {
+  if ((++mFrameCounter % 60) == 0) {
+    mUpdater.ActivateWindowIfVisible();
   }
 
- protected:
-  static LRESULT CALLBACK SubclassProc(
-    HWND hWnd,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam,
-    UINT_PTR uIdSubclass,
-    DWORD_PTR dwRefData) {
-    return reinterpret_cast<PlatformGUI_Windows*>(dwRefData)->SubclassProc(
-      hWnd, uMsg, wParam, lParam, uIdSubclass);
+  const auto rtv = mRenderTargetView.get();
+  FLOAT clearColor[4] {0.f, 0.f, 0.f, 1.f};
+  mD3DContext->ClearRenderTargetView(rtv, clearColor);
+  mD3DContext->OMSetRenderTargets(1, &rtv, nullptr);
+
+  ImGui_ImplDX11_NewFrame();
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
+
+  ImGui::SetNextWindowPos({0, 0});
+  ImGui::SetNextWindowSize(mWindowSize);
+}
+
+void PlatformGUI_Windows::AfterFrame() {
+  ImGui::Render();
+  ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+  winrt::check_hresult(mSwapChain->Present(0, 0));
+}
+
+void PlatformGUI_Windows::ShowFolderContainingFile(
+  const std::filesystem::path& path) {
+  const auto absolute = std::filesystem::absolute(path).wstring();
+
+  wil::unique_any<PIDLIST_ABSOLUTE, decltype(&CoTaskMemFree), &CoTaskMemFree>
+    pidl;
+
+  winrt::check_hresult(SHParseDisplayName(
+    std::filesystem::absolute(path).wstring().c_str(),
+    nullptr,
+    pidl.put(),
+    0,
+    nullptr));
+
+  SHOpenFolderAndSelectItems(pidl.get(), 0, nullptr, 0);
+}
+
+HWND PlatformGUI_Windows::CreateAppWindow() {
+  static const auto WindowTitle
+    = std::format(L"OpenXR API Layers v{}", Config::BUILD_VERSION_W);
+  static const WNDCLASSEXW WindowClass {
+    .cbSize = sizeof(WNDCLASSEXW),
+    .lpfnWndProc = &PlatformGUI_Windows::WindowProc,
+    .hInstance = GetModuleHandle(nullptr),
+    .hIcon = LoadIconW(GetModuleHandle(nullptr), L"appIcon"),
+    .hCursor = LoadCursorW(nullptr, IDC_ARROW),
+    .lpszClassName = L"OpenXR-API-Layers-GUI",
+    .hIconSm = LoadIconW(GetModuleHandle(nullptr), L"appIcon"),
+  };
+
+  RegisterClassExW(&WindowClass);
+  mWindowHandle.reset(CreateWindowExW(
+    WS_EX_APPWINDOW | WS_EX_CLIENTEDGE,
+    WindowClass.lpszClassName,
+    WindowTitle.c_str(),
+    WS_OVERLAPPEDWINDOW & (~WS_MAXIMIZEBOX),
+    CW_USEDEFAULT,
+    CW_USEDEFAULT,
+    Config::MINIMUM_WINDOW_WIDTH,
+    Config::MINIMUM_WINDOW_HEIGHT,
+    nullptr,
+    nullptr,
+    WindowClass.hInstance,
+    this));
+  if (!mWindowHandle) {
+    return nullptr;
+  }
+  const auto handle = mWindowHandle.get();
+
+  {
+    BOOL darkMode = true;
+    DwmSetWindowAttribute(
+      handle, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
+    DWM_SYSTEMBACKDROP_TYPE backdropType {DWMSBT_MAINWINDOW};
+    DwmSetWindowAttribute(
+      handle, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
   }
 
-  LRESULT SubclassProc(
-    HWND hWnd,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam,
-    UINT_PTR uIdSubclass) {
-    if (uMsg == WM_DPICHANGED) {
+  mDPIScaling
+    = static_cast<float>(GetDpiForWindow(handle)) / USER_DEFAULT_SCREEN_DPI;
+
+  return handle;
+}
+
+std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
+  auto picker
+    = winrt::create_instance<IFileSaveDialog>(CLSID_FileSaveDialog, CLSCTX_ALL);
+  {
+    FILEOPENDIALOGOPTIONS opts;
+    picker->GetOptions(&opts);
+    opts |= FOS_FORCEFILESYSTEM | FOS_ALLOWMULTISELECT;
+    picker->SetOptions(opts);
+  }
+
+  {
+    constexpr winrt::guid persistenceGuid {
+      0x4e4c8046,
+      0x231a,
+      0x4ffc,
+      {0x82, 0x01, 0x68, 0xe5, 0x17, 0x18, 0x58, 0xb0}};
+    picker->SetClientGuid(persistenceGuid);
+  }
+
+  picker->SetTitle(L"Export to File");
+
+  winrt::com_ptr<IShellFolder> desktopFolder;
+  winrt::check_hresult(SHGetDesktopFolder(desktopFolder.put()));
+  winrt::com_ptr<IShellItem> desktopItem;
+  winrt::check_hresult(
+    SHGetItemFromObject(desktopFolder.get(), IID_PPV_ARGS(desktopItem.put())));
+  picker->SetDefaultFolder(desktopItem.get());
+
+  COMDLG_FILTERSPEC filter {
+    .pszName = L"Plain Text",
+    .pszSpec = L"*.txt",
+  };
+  picker->SetFileTypes(1, &filter);
+
+  const auto filename = std::format(
+    L"OpenXR-API-Layers-{:%Y-%m-%d-%H-%M-%S}.txt",
+    std::chrono::zoned_time(
+      std::chrono::current_zone(),
+      std::chrono::time_point_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now())));
+  picker->SetFileName(filename.c_str());
+
+  if (picker->Show(NULL) != S_OK) {
+    return {};
+  }
+
+  winrt::com_ptr<IShellItem> shellItem;
+  if (picker->GetResult(shellItem.put()) != S_OK) {
+    return {};
+  }
+
+  wil::unique_cotaskmem_string buf;
+  winrt::check_hresult(shellItem->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
+  return std::filesystem::path {std::wstring_view {buf.get()}};
+}
+std::vector<std::filesystem::path>
+PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
+  auto picker
+    = winrt::create_instance<IFileOpenDialog>(CLSID_FileOpenDialog, CLSCTX_ALL);
+
+  {
+    FILEOPENDIALOGOPTIONS opts;
+    picker->GetOptions(&opts);
+    opts |= FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST
+      | FOS_ALLOWMULTISELECT;
+    picker->SetOptions(opts);
+  }
+
+  {
+    constexpr winrt::guid persistenceGuid {
+      0xac83d7a5,
+      0xca3a,
+      0x45d3,
+      {0x90, 0xc2, 0x63, 0xf1, 0x4b, 0x79, 0x24, 0x44}};
+    picker->SetClientGuid(persistenceGuid);
+  }
+
+  picker->SetTitle(L"Add API Layers");
+
+  // Keep alive until we're done
+  COMDLG_FILTERSPEC filter {
+    .pszName = L"JSON files",
+    .pszSpec = L"*.json",
+  };
+  picker->SetFileTypes(1, &filter);
+
+  if (picker->Show(NULL) != S_OK) {
+    return {};
+  }
+
+  winrt::com_ptr<IShellItemArray> items;
+  winrt::check_hresult(picker->GetResults(items.put()));
+
+  if (!items) {
+    return {};
+  }
+
+  DWORD count {};
+  winrt::check_hresult(items->GetCount(&count));
+
+  std::vector<std::filesystem::path> ret;
+
+  for (DWORD i = 0; i < count; ++i) {
+    winrt::com_ptr<IShellItem> item;
+    winrt::check_hresult(items->GetItemAt(i, item.put()));
+    wil::unique_cotaskmem_string buf;
+    winrt::check_hresult(item->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
+    if (!buf) {
+      continue;
+    }
+
+    ret.emplace_back(std::wstring_view {buf.get()});
+  }
+  return ret;
+}
+
+void PlatformGUI_Windows::InitializeFonts(ImGuiIO* io) {
+  const auto fontsPath = GetKnownFolderPath<FOLDERID_Fonts>();
+
+  io->Fonts->Clear();
+  io->Fonts->AddFontFromFileTTF(
+    (fontsPath / "segoeui.ttf").string().c_str(), 16.0f * mDPIScaling);
+
+  static ImWchar ranges[] = {0x1, 0x1ffff, 0};
+  static ImFontConfig config {};
+  config.OversampleH = config.OversampleV = 1;
+  config.MergeMode = true;
+  config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+
+  io->Fonts->AddFontFromFileTTF(
+    (fontsPath / "seguiemj.ttf").string().c_str(),
+    13.0f * mDPIScaling,
+    &config,
+    ranges);
+}
+
+LRESULT PlatformGUI_Windows::WindowProc(
+  HWND hWnd,
+  const UINT uMsg,
+  const WPARAM wParam,
+  const LPARAM lParam) {
+  auto self = reinterpret_cast<PlatformGUI_Windows*>(
+    GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+
+  switch (uMsg) {
+    case WM_CREATE:
+    case WM_NCCREATE: {
+      const auto create = reinterpret_cast<CREATESTRUCT*>(lParam);
+      if (create->lpCreateParams) {
+        self = static_cast<PlatformGUI_Windows*>(create->lpCreateParams);
+        SetWindowLongPtrW(hWnd, GWLP_USERDATA, std::bit_cast<LONG_PTR>(self));
+      }
+      break;
+    }
+    case WM_GETMINMAXINFO: {
+      const auto dpi = static_cast<LONG>(GetDpiForWindow(hWnd));
+      const auto mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+      mmi->ptMinTrackSize = {
+        (Config::MINIMUM_WINDOW_WIDTH * dpi) / USER_DEFAULT_SCREEN_DPI,
+        (Config::MINIMUM_WINDOW_HEIGHT * dpi) / USER_DEFAULT_SCREEN_DPI,
+      };
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (self) {
+    return self->InstanceWindowProc(hWnd, uMsg, wParam, lParam);
+  }
+  return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+}
+
+LRESULT PlatformGUI_Windows::InstanceWindowProc(
+  HWND hWnd,
+  const UINT uMsg,
+  const WPARAM wParam,
+  const LPARAM lParam) {
+  if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
+    return true;
+  }
+
+  switch (uMsg) {
+    case WM_DPICHANGED: {
       mDPIScaling
         = static_cast<float>(HIWORD(wParam)) / USER_DEFAULT_SCREEN_DPI;
-      auto rect = reinterpret_cast<RECT*>(lParam);
+      const auto rect = reinterpret_cast<RECT*>(lParam);
       mDPIChangeInfo = DPIChangeInfo {
         .mDPIScaling = mDPIScaling,
         .mRecommendedSize = ImVec2 {
@@ -287,10 +482,34 @@ class PlatformGUI_Windows final : public PlatformGUI {
           static_cast<float>(rect->bottom - rect->top),
         },
       };
+      break;
     }
-    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    case WM_SIZE: {
+      DXGI_SWAP_CHAIN_DESC1 desc {};
+      winrt::check_hresult(mSwapChain->GetDesc1(&desc));
+
+      mBackBuffer.reset();
+      mRenderTargetView.reset();
+      const auto w = LOWORD(lParam);
+      const auto h = HIWORD(lParam);
+      winrt::check_hresult(
+        mSwapChain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, desc.Flags));
+      winrt::check_hresult(
+        mSwapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer.put())));
+      winrt::check_hresult(mD3DDevice->CreateRenderTargetView(
+        mBackBuffer.get(), nullptr, mRenderTargetView.put()));
+      mWindowSize = {static_cast<float>(w), static_cast<float>(h)};
+      break;
+    }
+    case WM_CLOSE:
+      mWindowClosed = true;
+      break;
+    default:
+      break;
   }
-};
+
+  return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+}
 
 PlatformGUI& PlatformGUI::Get() {
   static PlatformGUI_Windows sInstance {};
