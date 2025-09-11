@@ -92,7 +92,7 @@ AutoUpdateProcess CheckForUpdates() {
   const auto shellWindow = GetShellWindow();
   DWORD shellPid {};
   GetWindowThreadProcessId(shellWindow, &shellPid);
-  winrt::handle shellProcess {
+  wil::unique_process_handle shellProcess {
     OpenProcess(PROCESS_CREATE_PROCESS | PROCESS_DUP_HANDLE, FALSE, shellPid)};
 
   SIZE_T threadAttributesSize {};
@@ -124,9 +124,9 @@ AutoUpdateProcess CheckForUpdates() {
   };
 
   // Process group, including temporary children
-  winrt::handle job {CreateJobObjectW(nullptr, nullptr)};
+  wil::unique_handle job {CreateJobObjectW(nullptr, nullptr)};
   // Jobs are only signalled on timeout, not on completion, so...
-  winrt::handle jobCompletion {
+  wil::unique_handle jobCompletion {
     CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1)};
   JOBOBJECT_ASSOCIATE_COMPLETION_PORT assoc {
     .CompletionKey = job.get(),
@@ -189,8 +189,8 @@ AutoUpdateProcess CheckForUpdates() {
 }
 
 AutoUpdateProcess::AutoUpdateProcess(
-  winrt::handle job,
-  winrt::handle jobCompletion)
+  wil::unique_handle job,
+  wil::unique_handle jobCompletion)
   : mJob(std::move(job)),
     mJobCompletion(std::move(jobCompletion)) {}
 
@@ -205,7 +205,7 @@ void AutoUpdateProcess::ActivateWindowIfVisible() {
   }
 
   EnumWindows(
-    [](HWND hwnd, LPARAM param) -> BOOL CALLBACK {
+    [](HWND hwnd, LPARAM param) -> BOOL {
       auto& self = *std::bit_cast<decltype(this)>(param);
 
       DWORD processId {};
@@ -213,7 +213,7 @@ void AutoUpdateProcess::ActivateWindowIfVisible() {
         return TRUE;
       }
 
-      const winrt::handle process {
+      const wil::unique_process_handle process {
         OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId)};
       if (!process) {
         return TRUE;

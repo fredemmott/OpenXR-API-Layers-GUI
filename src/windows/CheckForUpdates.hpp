@@ -2,22 +2,22 @@
 // SPDX-License-Identifier: ISC
 #pragma once
 
-#include <winrt/base.h>
+#include <wil/resource.h>
 
 namespace FredEmmott::OpenXRLayers {
 
 class AutoUpdateProcess {
  public:
   AutoUpdateProcess() = default;
-  AutoUpdateProcess(winrt::handle job, winrt::handle jobCompletion);
+  AutoUpdateProcess(wil::unique_handle job, wil::unique_handle jobCompletion);
 
   void ActivateWindowIfVisible();
 
  private:
   [[nodiscard]] bool IsRunning() const;
 
-  winrt::handle mJob;
-  winrt::handle mJobCompletion;
+  wil::unique_handle mJob;
+  wil::unique_handle mJobCompletion;
 
   bool mHaveActivatedWindow = false;
 };

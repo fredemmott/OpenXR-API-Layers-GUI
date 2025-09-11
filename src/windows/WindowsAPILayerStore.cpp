@@ -28,7 +28,9 @@ WindowsAPILayerStore::WindowsAPILayerStore(
   RegistryBitness bitness,
   HKEY rootKey,
   REGSAM desiredAccess)
-  : mDisplayName(displayName), mRegistryBitness(bitness), mRootKey(rootKey) {
+  : mDisplayName(displayName),
+    mRegistryBitness(bitness),
+    mRootKey(rootKey) {
   REGSAM samFlags {desiredAccess};
   switch (bitness) {
     case RegistryBitness::Wow64_64:
@@ -56,7 +58,7 @@ WindowsAPILayerStore::WindowsAPILayerStore(
     mKey = {};
     return;
   }
-  mEvent.attach(CreateEvent(nullptr, false, false, nullptr));
+  mEvent.reset(CreateEvent(nullptr, false, false, nullptr));
   this->Poll();
 }
 
@@ -141,8 +143,7 @@ class ReadOnlyWindowsAPILayerStore final : public WindowsAPILayerStore {
     std::string_view displayName,
     RegistryBitness bitness,
     HKEY rootKey)
-    : WindowsAPILayerStore(displayName, bitness, rootKey, KEY_READ) {
-  }
+    : WindowsAPILayerStore(displayName, bitness, rootKey, KEY_READ) {}
 };
 
 class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
@@ -156,8 +157,7 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
         displayName,
         bitness,
         rootKey,
-        KEY_READ | KEY_WRITE) {
-  }
+        KEY_READ | KEY_WRITE) {}
 
   bool SetAPILayers(
     const std::vector<APILayer>& newLayers) const noexcept override {

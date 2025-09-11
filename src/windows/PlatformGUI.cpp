@@ -289,8 +289,8 @@ HWND PlatformGUI_Windows::CreateAppWindow() {
 }
 
 std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
-  auto picker
-    = winrt::create_instance<IFileSaveDialog>(CLSID_FileSaveDialog, CLSCTX_ALL);
+  const auto picker
+    = wil::CoCreateInstance<IFileSaveDialog>(CLSID_FileSaveDialog);
   {
     FILEOPENDIALOGOPTIONS opts;
     picker->GetOptions(&opts);
@@ -299,7 +299,7 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
   }
 
   {
-    constexpr winrt::guid persistenceGuid {
+    constexpr GUID persistenceGuid {
       0x4e4c8046,
       0x231a,
       0x4ffc,
@@ -309,9 +309,9 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
 
   picker->SetTitle(L"Export to File");
 
-  winrt::com_ptr<IShellFolder> desktopFolder;
+  wil::com_ptr<IShellFolder> desktopFolder;
   winrt::check_hresult(SHGetDesktopFolder(desktopFolder.put()));
-  winrt::com_ptr<IShellItem> desktopItem;
+  wil::com_ptr<IShellItem> desktopItem;
   winrt::check_hresult(
     SHGetItemFromObject(desktopFolder.get(), IID_PPV_ARGS(desktopItem.put())));
   picker->SetDefaultFolder(desktopItem.get());
@@ -334,7 +334,7 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
     return {};
   }
 
-  winrt::com_ptr<IShellItem> shellItem;
+  wil::com_ptr<IShellItem> shellItem;
   if (picker->GetResult(shellItem.put()) != S_OK) {
     return {};
   }
@@ -345,8 +345,8 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
 }
 std::vector<std::filesystem::path>
 PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
-  auto picker
-    = winrt::create_instance<IFileOpenDialog>(CLSID_FileOpenDialog, CLSCTX_ALL);
+  const auto picker
+    = wil::CoCreateInstance<IFileOpenDialog>(CLSID_FileOpenDialog);
 
   {
     FILEOPENDIALOGOPTIONS opts;
@@ -357,7 +357,7 @@ PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
   }
 
   {
-    constexpr winrt::guid persistenceGuid {
+    constexpr GUID persistenceGuid {
       0xac83d7a5,
       0xca3a,
       0x45d3,
@@ -378,7 +378,7 @@ PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
     return {};
   }
 
-  winrt::com_ptr<IShellItemArray> items;
+  wil::com_ptr<IShellItemArray> items;
   winrt::check_hresult(picker->GetResults(items.put()));
 
   if (!items) {
@@ -391,7 +391,7 @@ PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
   std::vector<std::filesystem::path> ret;
 
   for (DWORD i = 0; i < count; ++i) {
-    winrt::com_ptr<IShellItem> item;
+    wil::com_ptr<IShellItem> item;
     winrt::check_hresult(items->GetItemAt(i, item.put()));
     wil::unique_cotaskmem_string buf;
     winrt::check_hresult(item->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));

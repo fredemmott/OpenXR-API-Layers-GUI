@@ -43,7 +43,7 @@ class WindowsAPILayerStore : public virtual APILayerStore {
     REGSAM desiredAccess);
 
   wil::unique_hkey mKey {};
-  winrt::handle mEvent {};
+  wil::unique_event mEvent {};
 
  private:
   const std::string mDisplayName;
