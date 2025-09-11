@@ -19,6 +19,7 @@ namespace FredEmmott::OpenXRLayers {
 
 class APILayerStore;
 class ReadWriteAPILayerStore;
+struct LoaderData;
 
 struct DPIChangeInfo {
   float mDPIScaling {};

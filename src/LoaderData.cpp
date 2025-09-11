@@ -9,32 +9,42 @@
 #include <nlohmann/json.hpp>
 
 #include <iostream>
-
-#include "std23/utility.hpp"
+#include <utility>
 
 namespace FredEmmott::OpenXRLayers {
 
 namespace {
+int WideCharToUTF8(
+  wchar_t const* in,
+  const std::size_t inCharCount,
+  char* out,
+  const std::size_t outByteCount) {
+  return WideCharToMultiByte(
+    CP_UTF8,
+    0,
+    in,
+    static_cast<int>(inCharCount),
+    out,
+    static_cast<int>(outByteCount),
+    nullptr,
+    nullptr);
+}
+
 std::vector<std::string> GetEnvironmentVariableNames() {
   std::vector<std::string> ret;
   wil::unique_environstrings_ptr env {GetEnvironmentStringsW()};
+  std::string buf;
+
   for (auto it = env.get(); (it && *it); it += (wcslen(it) + 1)) {
     const auto nameEnd = std::wstring_view {it}.find(L'=');
     if (nameEnd == 0 || nameEnd == std::wstring_view::npos) {
       continue;
     }
-    const auto byteCount = WideCharToMultiByte(
-      CP_UTF8, 0, it, static_cast<int>(nameEnd), nullptr, 0, nullptr, nullptr);
-    std::string buf(byteCount + 1, '\0');
-    WideCharToMultiByte(
-      CP_UTF8,
-      0,
-      it,
-      static_cast<int>(nameEnd),
-      buf.data(),
-      byteCount + 1,
-      nullptr,
-      nullptr);
+
+    const auto byteCount = WideCharToUTF8(it, nameEnd, nullptr, 0);
+    buf.resize_and_overwrite(byteCount + 1, [=](auto p, const auto size) {
+      return WideCharToUTF8(it, nameEnd, p, size);
+    });
     ret.emplace_back(buf.data(), static_cast<std::size_t>(byteCount));
   }
   return ret;
@@ -75,8 +85,8 @@ LoaderData LoaderData::Get() {
 void to_json(nlohmann::json& j, const LoaderData& data) {
   j.update(
     nlohmann::json {
-      {"queryExtensionsResult", std23::to_underlying(data.mQueryLayersResult)},
-      {"queryLayersResult", std23::to_underlying(data.mQueryLayersResult)},
+      {"queryExtensionsResult", std::to_underlying(data.mQueryLayersResult)},
+      {"queryLayersResult", std::to_underlying(data.mQueryLayersResult)},
       {"enabledLayerNames", data.mEnabledLayerNames},
       {"environmentVariables",
        {

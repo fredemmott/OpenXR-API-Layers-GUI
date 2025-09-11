@@ -36,8 +36,6 @@ add_library(
   LoaderData.cpp LoaderData.hpp
   SaveReport.cpp
   StringTemplateParameter.hpp
-  std23/ranges.hpp
-  std23/utility.hpp
   windows/GetActiveRuntimePath.cpp
 )
 

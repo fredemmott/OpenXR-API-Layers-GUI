@@ -3,6 +3,7 @@
 
 #include <fmt/core.h>
 
+#include <algorithm>
 #include <cassert>
 #include <ranges>
 #include <unordered_map>
@@ -10,7 +11,6 @@
 
 #include "LayerRules.hpp"
 #include "Linter.hpp"
-#include "std23/ranges.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -31,7 +31,7 @@ static FacetMap ExpandFacets(
         break;
       case Facet::Kind::Extension:
         for (auto&& [layer, extensions]: layers) {
-          if (std23::ranges::contains(extensions, ExtensionID {facet})) {
+          if (std::ranges::contains(extensions, ExtensionID {facet})) {
             auto nextTrace = trace;
             nextTrace.push_front({layer, facet});
             next.emplace(layer, nextTrace);
@@ -40,7 +40,7 @@ static FacetMap ExpandFacets(
         break;
       case Facet::Kind::Explicit:
         for (auto&& rule: rules) {
-          if (std23::ranges::contains(rule.mFacets | std::views::keys, facet)) {
+          if (std::ranges::contains(rule.mFacets | std::views::keys, facet)) {
             auto nextTrace = trace;
             nextTrace.push_front({rule.mID, facet});
             next.emplace(rule.mID, nextTrace);
@@ -102,13 +102,13 @@ static std::vector<LayerRules> ExpandRules(
       LayerID {details.mName},
       details.mExtensions | std::views::transform([](auto& ext) {
         return ExtensionID {ext.mName};
-      }) | std23::ranges::to<std::unordered_set, Facet::Hash>());
+      }) | std::ranges::to<std::unordered_set<ExtensionID, Facet::Hash>>());
   }
 
   auto ret = rules | std::views::filter([](auto& it) {
                return it.mID.GetKind() == Facet::Kind::Layer;
              })
-    | std23::ranges::to<std::vector>();
+    | std::ranges::to<std::vector>();
   auto expandFacets = [&](LayerRules& it, auto proj) {
     FacetMap& facets = std::invoke(proj, it);
     facets = ExpandFacets(it, proj, layerExtensions, rules);
@@ -191,7 +191,7 @@ class OrderingLinter final : public Linter {
           }
           return true;
         })
-      | std23::ranges::to<std::vector>();
+      | std::ranges::to<std::vector>();
 
     std::vector<std::shared_ptr<LintError>> errors;
 
@@ -253,15 +253,16 @@ class OrderingLinter final : public Linter {
         }
 
         const auto& [other, otherDetails] = *otherIt;
-        errors.push_back(std::make_shared<LintError>(
-          fmt::format(
-            "{} ({}) and {} ({}) are incompatible; you must remove or "
-            "disable one.",
-            details.mName,
-            layer.mJSONPath.string(),
-            otherDetails.mName,
-            other.mJSONPath.string()),
-          PathSet {layer.mJSONPath, other.mJSONPath}));
+        errors.push_back(
+          std::make_shared<LintError>(
+            fmt::format(
+              "{} ({}) and {} ({}) are incompatible; you must remove or "
+              "disable one.",
+              details.mName,
+              layer.mJSONPath.string(),
+              otherDetails.mName,
+              other.mJSONPath.string()),
+            PathSet {layer.mJSONPath, other.mJSONPath}));
       }
 
       // LINT RULE: ConflictsPerApp
@@ -275,17 +276,19 @@ class OrderingLinter final : public Linter {
         }
 
         const auto& [other, otherDetails] = *otherIt;
-        errors.push_back(std::make_shared<LintError>(
-          fmt::format(
-            "{} ({}) and {} ({}) are incompatible; make sure that games using "
-            "{} are disabled in {}.",
-            details.mName,
-            layer.mJSONPath.string(),
-            otherDetails.mName,
-            other.mJSONPath.string(),
-            details.mName,
-            otherDetails.mName),
-          PathSet {layer.mJSONPath, other.mJSONPath}));
+        errors.push_back(
+          std::make_shared<LintError>(
+            fmt::format(
+              "{} ({}) and {} ({}) are incompatible; make sure that games "
+              "using "
+              "{} are disabled in {}.",
+              details.mName,
+              layer.mJSONPath.string(),
+              otherDetails.mName,
+              other.mJSONPath.string(),
+              details.mName,
+              otherDetails.mName),
+            PathSet {layer.mJSONPath, other.mJSONPath}));
       }
     }
 

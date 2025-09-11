@@ -25,15 +25,15 @@ class Facet {
   constexpr Facet(
     const std::string_view& id,
     const std::string_view& description)
-    : Facet(Kind::Explicit, id, description) {
-  }
+    : Facet(Kind::Explicit, id, description) {}
 
   constexpr Facet(
     const Kind kind,
     const std::string_view& id,
     const std::string_view& description)
-    : mKind(kind), mID(id), mDescription(description) {
-  }
+    : mKind(kind),
+      mID(id),
+      mDescription(description) {}
 
   [[nodiscard]] constexpr auto GetKind() const noexcept {
     return mKind;
@@ -51,7 +51,7 @@ class Facet {
     = default;
 
   struct Hash {
-    auto operator()(const Facet& facet) const noexcept {
+    static auto operator()(const Facet& facet) noexcept {
       return std::hash<std::string_view> {}(facet.GetID());
     }
   };
@@ -66,8 +66,7 @@ template <Facet::Kind TKind, auto TDescriptionFormat = "{}"_tp>
 class BasicFacetID {
  public:
   BasicFacetID() = delete;
-  explicit constexpr BasicFacetID(const std::string_view id) : mID(id) {
-  }
+  explicit constexpr BasicFacetID(const std::string_view id) : mID(id) {}
 
   explicit constexpr BasicFacetID(const Facet& facet) : mID(facet.GetID()) {
     assert(facet.GetKind() == TKind);
