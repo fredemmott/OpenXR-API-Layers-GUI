@@ -9,6 +9,8 @@
 #include <wil/com.h>
 #include <wil/resource.h>
 
+#include <nlohmann/json.hpp>
+
 #include <bit>
 #include <chrono>
 #include <format>
@@ -27,6 +29,7 @@
 #include "CheckForUpdates.hpp"
 #include "Config.hpp"
 #include "GUI.hpp"
+#include "LoaderData.hpp"
 #include "windows/GetKnownFolderPath.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
@@ -43,6 +46,7 @@ class PlatformGUI_Windows final : public PlatformGUI {
 
   std::optional<std::filesystem::path> GetExportFilePath() override;
   std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override;
+  std::expected<LoaderData, std::string> GetLoaderData() override;
 
   float GetDPIScaling() override {
     return mDPIScaling;
@@ -400,6 +404,79 @@ PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
     ret.emplace_back(std::wstring_view {buf.get()});
   }
   return ret;
+}
+
+std::expected<LoaderData, std::string> PlatformGUI_Windows::GetLoaderData() {
+  SECURITY_ATTRIBUTES saAttr {
+    .nLength = sizeof(SECURITY_ATTRIBUTES),
+    .bInheritHandle = TRUE,
+  };
+
+  wil::unique_handle stdoutRead;
+  wil::unique_handle stdoutWrite;
+  if (!CreatePipe(stdoutRead.put(), stdoutWrite.put(), &saAttr, 0)) {
+    return std::unexpected("Failed to create pipe");
+  }
+  if (!SetHandleInformation(stdoutRead.get(), HANDLE_FLAG_INHERIT, 0)) {
+    return std::unexpected("Failed to set pipe properties");
+  }
+
+  wchar_t modulePath[MAX_PATH];
+  if (!GetModuleFileNameW(nullptr, modulePath, MAX_PATH)) {
+    return std::unexpected("Failed to get executable path");
+  }
+
+  STARTUPINFOW si {
+    .cb = sizeof(STARTUPINFOW),
+    .dwFlags = STARTF_USESTDHANDLES,
+    .hStdOutput = stdoutWrite.get(),
+  };
+  PROCESS_INFORMATION pi {};
+
+  std::wstring cmdLine {modulePath};
+  cmdLine += L" loader-query";
+
+  if (!CreateProcessW(
+        modulePath,
+        cmdLine.data(),
+        nullptr,
+        nullptr,
+        TRUE,
+        0,
+        nullptr,
+        nullptr,
+        &si,
+        &pi)) {
+    return std::unexpected("Failed to create process");
+  }
+
+  wil::unique_handle process {pi.hProcess};
+  wil::unique_handle thread {pi.hThread};
+  stdoutWrite.reset();
+
+  std::string output;
+  char buffer[4096];
+  DWORD bytesRead;
+
+  while (ReadFile(stdoutRead.get(), buffer, sizeof(buffer), &bytesRead, nullptr)
+         && bytesRead > 0) {
+    output.append(buffer, bytesRead);
+  }
+
+  WaitForSingleObject(process.get(), INFINITE);
+
+  DWORD exitCode;
+  if (!GetExitCodeProcess(process.get(), &exitCode) || exitCode != 0) {
+    return std::unexpected(
+      std::format("Subprocess failed with exit code {}", exitCode));
+  }
+
+  try {
+    return static_cast<LoaderData>(nlohmann::json::parse(output));
+  } catch (const nlohmann::json::exception& e) {
+    const auto what = e.what();
+    __debugbreak();
+  }
 }
 
 void PlatformGUI_Windows::InitializeFonts(ImGuiIO* io) {

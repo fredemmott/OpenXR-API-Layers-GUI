@@ -5,6 +5,7 @@
 
 #include <portability/filesystem.hpp>
 
+#include <expected>
 #include <functional>
 #include <ranges>
 #include <unordered_map>
@@ -34,6 +35,7 @@ class PlatformGUI {
 
   virtual void Run(std::function<void()> drawFrame) = 0;
 
+  virtual std::expected<LoaderData, std::string> GetLoaderData() = 0;
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
   virtual float GetDPIScaling() = 0;

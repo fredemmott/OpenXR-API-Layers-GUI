@@ -50,9 +50,8 @@ std::vector<std::string> GetEnvironmentVariableNames() {
   std::ranges::sort(ret);
   return ret;
 }
-}// namespace
 
-LoaderData LoaderData::Get() {
+LoaderData QueryLoaderDataInCurrentProcess() {
   LoaderData ret {
     .mEnvironmentVariablesBeforeLoader = GetEnvironmentVariableNames(),
   };
@@ -82,6 +81,7 @@ LoaderData LoaderData::Get() {
 
   return ret;
 }
+}// namespace
 
 void to_json(nlohmann::json& j, const LoaderData& data) {
   j.update(
@@ -97,8 +97,21 @@ void to_json(nlohmann::json& j, const LoaderData& data) {
     });
 }
 
+void from_json(const nlohmann::json& j, LoaderData& data) {
+  data.mQueryLayersResult = static_cast<XrResult>(j["queryLayersResult"]);
+  data.mQueryExtensionsResult
+    = static_cast<XrResult>(j["queryExtensionsResult"]);
+  j.at("enabledLayerNames").get_to(data.mEnabledLayerNames);
+  j.at("environmentVariables")
+    .at("beforeLoader")
+    .get_to(data.mEnvironmentVariablesBeforeLoader);
+  j.at("environmentVariables")
+    .at("afterLoader")
+    .get_to(data.mEnvironmentVariablesAfterLoader);
+}
+
 void LoaderMain() {
-  const auto data = LoaderData::Get();
+  const auto data = QueryLoaderDataInCurrentProcess();
   const nlohmann::json json(data);
 
   std::cout << std::setw(2) << json << std::endl;

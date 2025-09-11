@@ -10,9 +10,6 @@
 namespace FredEmmott::OpenXRLayers {
 
 struct LoaderData {
-  [[nodiscard]]
-  static LoaderData Get();
-
   XrResult mQueryExtensionsResult {XR_RESULT_MAX_ENUM};
   XrResult mQueryLayersResult {XR_RESULT_MAX_ENUM};
 
