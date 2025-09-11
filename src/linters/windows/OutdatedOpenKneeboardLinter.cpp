@@ -58,8 +58,8 @@ class OutdatedOpenKneeboardLinter final : public Linter {
           "{} is from an extremely outdated version of OpenKneeboard, which "
           "may cause issues. Remove this API layer, install updates, and "
           "remove any left over old versions from 'Add or Remove Programs'.",
-          layer.mJSONPath.string()),
-        layer.mJSONPath));
+          layer.mManifestPath.string()),
+        layer.mManifestPath));
     }
     return errors;
   }

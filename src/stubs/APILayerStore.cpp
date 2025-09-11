@@ -14,7 +14,7 @@ class StubAPILayerStore final : public APILayerStore {
   std::vector<APILayer> GetAPILayers() const noexcept override {
     return {
       APILayer {
-        .mJSONPath = {"/var/not_a_real_layer.json"},
+        .mManifestPath = {"/var/not_a_real_layer.json"},
         .mValue = APILayer::Value::Enabled,
       },
     };

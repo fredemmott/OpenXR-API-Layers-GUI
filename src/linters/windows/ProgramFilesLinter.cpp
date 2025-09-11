@@ -61,7 +61,7 @@ class ProgramFilesLinter final : public Linter {
           "MS Store games or apps, such as OpenXR Tools for Windows Mixed "
           "Reality.",
           details.mLibraryPath.string()),
-        PathSet {layer.mJSONPath}));
+        PathSet {layer.mManifestPath}));
     }
     return errors;
   }

@@ -20,8 +20,8 @@ static void UnregisterLinter(Linter* linter) {
 LintError::LintError(
   const std::string& description,
   const std::set<std::filesystem::path>& affectedLayers)
-  : mDescription(description), mAffectedLayers(affectedLayers) {
-}
+  : mDescription(description),
+    mAffectedLayers(affectedLayers) {}
 
 std::string LintError::GetDescription() const {
   return mDescription;
@@ -46,7 +46,7 @@ std::vector<std::shared_ptr<LintError>> RunAllLinters(
 
   std::vector<std::tuple<APILayer, APILayerDetails>> layersWithDetails;
   for (const auto& layer: layers) {
-    layersWithDetails.push_back({layer, {layer.mJSONPath}});
+    layersWithDetails.push_back({layer, {layer.mManifestPath}});
   }
 
   auto it = std::back_inserter(errors);
@@ -69,15 +69,15 @@ OrderingLintError::OrderingLintError(
                                 : allAffectedLayers),
     mLayerToMove(layerToMove),
     mPosition(position),
-    mRelativeTo(relativeTo) {
-}
+    mRelativeTo(relativeTo) {}
 
 std::vector<APILayer> OrderingLintError::Fix(
   const std::vector<APILayer>& oldLayers) {
   auto newLayers = oldLayers;
 
-  auto moveIt = std::ranges::find_if(
-    newLayers, [this](const auto& it) { return it.mJSONPath == mLayerToMove; });
+  auto moveIt = std::ranges::find_if(newLayers, [this](const auto& it) {
+    return it.mManifestPath == mLayerToMove;
+  });
 
   if (moveIt == newLayers.end()) {
     return oldLayers;
@@ -85,8 +85,9 @@ std::vector<APILayer> OrderingLintError::Fix(
   const auto movedLayer = *moveIt;
   newLayers.erase(moveIt);
 
-  auto anchorIt = std::ranges::find_if(
-    newLayers, [this](const auto& it) { return it.mJSONPath == mRelativeTo; });
+  auto anchorIt = std::ranges::find_if(newLayers, [this](const auto& it) {
+    return it.mManifestPath == mRelativeTo;
+  });
 
   if (anchorIt == newLayers.end()) {
     return oldLayers;
@@ -107,8 +108,7 @@ std::vector<APILayer> OrderingLintError::Fix(
 KnownBadLayerLintError::KnownBadLayerLintError(
   const std::string& description,
   const std::filesystem::path& layer)
-  : FixableLintError(description, {layer}) {
-}
+  : FixableLintError(description, {layer}) {}
 
 std::vector<APILayer> KnownBadLayerLintError::Fix(
   const std::vector<APILayer>& allLayers) {
@@ -118,7 +118,7 @@ std::vector<APILayer> KnownBadLayerLintError::Fix(
 
   auto newLayers = allLayers;
   auto it = std::ranges::find_if(
-    newLayers, [&path](const auto& layer) { return layer.mJSONPath == path; });
+    newLayers, [&path](const auto& layer) { return layer.mManifestPath == path; });
 
   if (it != newLayers.end()) {
     it->mValue = APILayer::Value::Disabled;
@@ -129,8 +129,7 @@ std::vector<APILayer> KnownBadLayerLintError::Fix(
 InvalidLayerLintError::InvalidLayerLintError(
   const std::string& description,
   const std::filesystem::path& layer)
-  : FixableLintError(description, {layer}) {
-}
+  : FixableLintError(description, {layer}) {}
 
 std::vector<APILayer> InvalidLayerLintError::Fix(
   const std::vector<APILayer>& allLayers) {
@@ -140,7 +139,7 @@ std::vector<APILayer> InvalidLayerLintError::Fix(
 
   auto newLayers = allLayers;
   auto it = std::ranges::find_if(
-    newLayers, [&path](const auto& layer) { return layer.mJSONPath == path; });
+    newLayers, [&path](const auto& layer) { return layer.mManifestPath == path; });
 
   if (it != newLayers.end()) {
     newLayers.erase(it);
@@ -151,8 +150,7 @@ std::vector<APILayer> InvalidLayerLintError::Fix(
 InvalidLayerStateLintError::InvalidLayerStateLintError(
   const std::string& description,
   const std::filesystem::path& layer)
-  : FixableLintError(description, {layer}) {
-}
+  : FixableLintError(description, {layer}) {}
 
 std::vector<APILayer> InvalidLayerStateLintError::Fix(
   const std::vector<APILayer>& allLayers) {
@@ -162,7 +160,7 @@ std::vector<APILayer> InvalidLayerStateLintError::Fix(
 
   auto newLayers = allLayers;
   auto it = std::ranges::find_if(
-    newLayers, [&path](const auto& layer) { return layer.mJSONPath == path; });
+    newLayers, [&path](const auto& layer) { return layer.mManifestPath == path; });
 
   if (it != newLayers.end()) {
     it->mValue = APILayer::Value::Disabled;

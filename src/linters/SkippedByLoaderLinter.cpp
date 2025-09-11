@@ -3,6 +3,7 @@
 
 #include <fmt/format.h>
 
+#include "APILayerStore.hpp"
 #include "Linter.hpp"
 #include "LoaderData.hpp"
 #include "Platform.hpp"
@@ -24,6 +25,10 @@ class SkippedByLoaderLinter final : public Linter {
         continue;
       }
       if (!layer.IsEnabled()) {
+        continue;
+      }
+
+      if (!layer.mSource->IsForCurrentArchitecture()) {
         continue;
       }
 
@@ -50,7 +55,7 @@ class SkippedByLoaderLinter final : public Linter {
               fmt::format(
                 "This layer is blocked by your current OpenXR runtime",
                 details.mName),
-              PathSet {layer.mJSONPath}));
+              PathSet {layer.mManifestPath}));
           continue;
         }
       }
@@ -61,7 +66,7 @@ class SkippedByLoaderLinter final : public Linter {
             "Layer appears enabled, but is not loaded by OpenXR; it may be "
             "blocked by your runtime vendor",
             details.mName),
-          PathSet {layer.mJSONPath}));
+          PathSet {layer.mManifestPath}));
     }
     return errors;
   }

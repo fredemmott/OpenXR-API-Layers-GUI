@@ -83,7 +83,7 @@ void GUI::LayerSet::GUILayersList() {
       auto& layer = mLayers.at(i);
       auto layerErrors
         = std::ranges::filter_view(mLintErrors, [&layer](const auto& error) {
-            return error->GetAffectedLayers().contains(layer.mJSONPath);
+            return error->GetAffectedLayers().contains(layer.mManifestPath);
           });
 
       ImGui::PushID(i);
@@ -96,7 +96,7 @@ void GUI::LayerSet::GUILayersList() {
         mStore->SetAPILayers(mLayers);
       }
 
-      auto label = layer.mJSONPath.string();
+      auto label = layer.mManifestPath.string();
 
       if (!layerErrors.empty()) {
         label = fmt::format("{} {}", Config::GLYPH_ERROR, label);
@@ -207,7 +207,7 @@ void GUI::LayerSet::GUIErrorsTab() {
   if (ImGui::BeginTabItem("Warnings")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
     if (mSelectedLayer) {
-      ImGui::Text("For %s:", mSelectedLayer->mJSONPath.string().c_str());
+      ImGui::Text("For %s:", mSelectedLayer->mManifestPath.string().c_str());
     } else {
       ImGui::Text("All layers:");
     }
@@ -216,7 +216,7 @@ void GUI::LayerSet::GUIErrorsTab() {
     if (mSelectedLayer) {
       auto view = std::ranges::filter_view(
         mLintErrors, [layer = mSelectedLayer](const auto& error) {
-          return error->GetAffectedLayers().contains(layer->mJSONPath);
+          return error->GetAffectedLayers().contains(layer->mManifestPath);
         });
       selectedErrors = {view.begin(), view.end()};
     } else {
@@ -341,12 +341,12 @@ void GUI::LayerSet::GUIDetailsTab() {
       ImGui::Text("JSON File");
       ImGui::TableNextColumn();
       if (ImGui::Button("Copy##CopyJSONFile")) {
-        ImGui::SetClipboardText(mSelectedLayer->mJSONPath.string().c_str());
+        ImGui::SetClipboardText(mSelectedLayer->mManifestPath.string().c_str());
       }
       ImGui::SameLine();
-      ImGui::Text("%s", mSelectedLayer->mJSONPath.string().c_str());
+      ImGui::Text("%s", mSelectedLayer->mManifestPath.string().c_str());
 
-      const APILayerDetails details {mSelectedLayer->mJSONPath};
+      const APILayerDetails details {mSelectedLayer->mManifestPath};
       if (details.mState != APILayerDetails::State::Loaded) {
         const auto error = details.StateAsString();
         ImGui::TableNextRow();
@@ -500,7 +500,7 @@ void GUI::LayerSet::AddLayersClicked() {
   auto paths = Platform::Get().GetNewAPILayerJSONPaths();
   for (auto it = paths.begin(); it != paths.end();) {
     auto existingLayer = std::ranges::find_if(
-      mLayers, [it](const auto& layer) { return layer.mJSONPath == *it; });
+      mLayers, [it](const auto& layer) { return layer.mManifestPath == *it; });
     if (existingLayer != mLayers.end()) {
       it = paths.erase(it);
       continue;
@@ -513,11 +513,7 @@ void GUI::LayerSet::AddLayersClicked() {
   }
   auto nextLayers = mLayers;
   for (const auto& path: paths) {
-    nextLayers.push_back(
-      APILayer {
-        .mJSONPath = path,
-        .mValue = APILayer::Value::Enabled,
-      });
+    nextLayers.emplace_back(mStore, path, APILayer::Value::Enabled);
   }
 
   bool changed = false;
@@ -560,7 +556,7 @@ void GUI::LayerSet::GUIRemoveLayerPopup() {
       "Are you sure you want to completely remove '%s'?\n\nThis can not "
       "be "
       "undone.",
-      mSelectedLayer->mJSONPath.string().c_str());
+      mSelectedLayer->mManifestPath.string().c_str());
     ImGui::Separator();
     const auto dpiScaling = Platform::Get().GetDPIScaling();
     ImGui::SetCursorPosX((256 + 128) * dpiScaling);

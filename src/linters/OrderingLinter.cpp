@@ -152,9 +152,9 @@ static auto MakeOrderingLintError(
   const std::tuple<APILayer, APILayerDetails>& relativeTo,
   const FacetTrace& trace) {
   const auto toMoveName = std::get<1>(layerToMove).mName;
-  const auto toMovePath = std::get<0>(layerToMove).mJSONPath;
+  const auto toMovePath = std::get<0>(layerToMove).mManifestPath;
   const auto relativeToName = std::get<1>(relativeTo).mName;
-  const auto relativeToPath = std::get<0>(relativeTo).mJSONPath;
+  const auto relativeToPath = std::get<0>(relativeTo).mManifestPath;
 
   auto msg = std::format(
     "{} ({}) must be {} {} ({})",
@@ -259,10 +259,10 @@ class OrderingLinter final : public Linter {
               "{} ({}) and {} ({}) are incompatible; you must remove or "
               "disable one.",
               details.mName,
-              layer.mJSONPath.string(),
+              layer.mManifestPath.string(),
               otherDetails.mName,
-              other.mJSONPath.string()),
-            PathSet {layer.mJSONPath, other.mJSONPath}));
+              other.mManifestPath.string()),
+            PathSet {layer.mManifestPath, other.mManifestPath}));
       }
 
       // LINT RULE: ConflictsPerApp
@@ -283,12 +283,12 @@ class OrderingLinter final : public Linter {
               "using "
               "{} are disabled in {}.",
               details.mName,
-              layer.mJSONPath.string(),
+              layer.mManifestPath.string(),
               otherDetails.mName,
-              other.mJSONPath.string(),
+              other.mManifestPath.string(),
               details.mName,
               otherDetails.mName),
-            PathSet {layer.mJSONPath, other.mJSONPath}));
+            PathSet {layer.mManifestPath, other.mManifestPath}));
       }
     }
 

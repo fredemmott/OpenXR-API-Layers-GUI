@@ -37,7 +37,7 @@ class XRNeckSaferLinter final : public Linter {
           "XRNeckSafer has bugs that can cause issues include game crashes, and "
           "crashes in other API layers. Disable or uninstall it if you have any "
           "issues.",
-          layer.mJSONPath));
+          layer.mManifestPath));
     }
     return errors;
   }

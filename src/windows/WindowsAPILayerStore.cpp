@@ -113,15 +113,13 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
     }
 
     if (dataType == REG_DWORD) {
-      layers.push_back({
-        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-        .mValue = disabled ? Value::Disabled : Value::Enabled,
-      });
+      layers.emplace_back(
+        this,
+        std::wstring_view {nameBuffer, nameSize},
+        disabled ? Value::Disabled : Value::Enabled);
     } else {
-      layers.push_back({
-        .mJSONPath = {std::wstring_view {nameBuffer, nameSize}},
-        .mValue = Value::Win32_NotDWORD,
-      });
+      layers.emplace_back(
+        this, std::wstring_view {nameBuffer, nameSize}, Value::Win32_NotDWORD);
     }
 
     nameSize = maxNameSize;
@@ -173,14 +171,14 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
     }
 
     for (const auto& layer: oldLayers) {
-      RegDeleteValueW(mKey.get(), layer.mJSONPath.wstring().c_str());
+      RegDeleteValueW(mKey.get(), layer.mManifestPath.wstring().c_str());
     }
 
     for (const auto& layer: newLayers) {
       DWORD disabled = layer.IsEnabled() ? 0 : 1;
       RegSetValueExW(
         mKey.get(),
-        layer.mJSONPath.wstring().c_str(),
+        layer.mManifestPath.wstring().c_str(),
         NULL,
         REG_DWORD,
         reinterpret_cast<BYTE*>(&disabled),
@@ -211,8 +209,8 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
 
     std::ofstream f(path);
     for (const auto& layer: GetAPILayers()) {
-      f << (layer.IsEnabled() ? "0" : "1") << "\t" << layer.mJSONPath.string()
-        << "\n";
+      f << (layer.IsEnabled() ? "0" : "1") << "\t"
+        << layer.mManifestPath.string() << "\n";
     }
 
     mHaveBackup = true;

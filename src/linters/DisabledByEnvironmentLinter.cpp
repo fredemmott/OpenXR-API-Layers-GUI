@@ -25,7 +25,7 @@ class DisabledByEnvironmentLinter final : public Linter {
               "Layer is disabled, because required environment variable `{}` "
               "is not set",
               enableEnv),
-            PathSet {layer.mJSONPath}));
+            PathSet {layer.mManifestPath}));
       }
 
       const auto& disableEnv = details.mDisableEnvironment;
@@ -34,8 +34,8 @@ class DisabledByEnvironmentLinter final : public Linter {
           std::make_shared<LintError>(
             fmt::format(
               "Layer `{}` does not define a `disable_environment` key",
-              layer.mJSONPath.string()),
-            PathSet {layer.mJSONPath}));
+              layer.mManifestPath.string()),
+            PathSet {layer.mManifestPath}));
         continue;
       }
 
@@ -45,7 +45,7 @@ class DisabledByEnvironmentLinter final : public Linter {
           std::make_shared<LintError>(
             fmt::format(
               "Layer is disabled by environment variable `{}`", disableEnv),
-            PathSet {layer.mJSONPath}));
+            PathSet {layer.mManifestPath}));
       }
     }
     return errors;

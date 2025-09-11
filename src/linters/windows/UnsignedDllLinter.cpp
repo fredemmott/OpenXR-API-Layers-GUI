@@ -56,7 +56,7 @@ class UnsignedDllLinter final : public Linter {
               "{} does not have a trusted signature; this is very likely to "
               "cause issues with games that use anti-cheat software.",
               details.mLibraryPath.string()),
-            PathSet {layer.mJSONPath}));
+            PathSet {layer.mManifestPath}));
           break;
         case CERT_E_EXPIRED:
           // Not seen reports of this so far; don't know if anti-cheats are
@@ -68,7 +68,7 @@ class UnsignedDllLinter final : public Linter {
               "certificate; This may cause issues with games that use "
               "anti-cheat software.",
               details.mLibraryPath.string()),
-            PathSet {layer.mJSONPath}));
+            PathSet {layer.mManifestPath}));
           break;
         default:
           errors.push_back(std::make_shared<LintError>(
@@ -78,7 +78,7 @@ class UnsignedDllLinter final : public Linter {
               "software.",
               details.mLibraryPath.string(),
               std::bit_cast<uint32_t>(result)),
-            PathSet {layer.mJSONPath}));
+            PathSet {layer.mManifestPath}));
           break;
       }
     }

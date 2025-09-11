@@ -22,8 +22,8 @@ class NotADWORDLinter final : public Linter {
           "OpenXR requires that layer registry values are DWORDs; `{}` has a "
           "different type. This can cause various issues with other layers "
           "or games.",
-          layer.mJSONPath.string()),
-        layer.mJSONPath));
+          layer.mManifestPath.string()),
+        layer.mManifestPath));
     }
     return ret;
   }

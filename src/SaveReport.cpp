@@ -45,9 +45,9 @@ static std::string GenerateReportText(const APILayerStore* store) {
         value = Config::GLYPH_ERROR;
         break;
     }
-    ret += std::format("\n{} {}", value, layer.mJSONPath.string());
+    ret += std::format("\n{} {}", value, layer.mManifestPath.string());
 
-    const APILayerDetails details {layer.mJSONPath};
+    const APILayerDetails details {layer.mManifestPath};
     if (details.mState != APILayerDetails::State::Loaded) {
       ret += fmt::format(
         "\n\t- {} {}", Config::GLYPH_ERROR, details.StateAsString());
@@ -94,7 +94,7 @@ static std::string GenerateReportText(const APILayerStore* store) {
 
     auto layerErrors
       = std::ranges::filter_view(errors, [layer](const auto& error) {
-          return error->GetAffectedLayers().contains(layer.mJSONPath);
+          return error->GetAffectedLayers().contains(layer.mManifestPath);
         });
 
     if (layerErrors.empty()) {

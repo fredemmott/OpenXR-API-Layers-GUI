@@ -14,12 +14,12 @@ namespace FredEmmott::OpenXRLayers {
 class WindowsAPILayerStore : public virtual APILayerStore {
  public:
   enum class RegistryBitness {
-    Wow64_64,
-    Wow64_32,
+    Wow64_64 = sizeof(uint64_t),
+    Wow64_32 = sizeof(uint32_t),
   };
 
   WindowsAPILayerStore() = delete;
-  virtual ~WindowsAPILayerStore();
+  ~WindowsAPILayerStore() override;
 
   std::string GetDisplayName() const noexcept override;
 
@@ -27,11 +27,15 @@ class WindowsAPILayerStore : public virtual APILayerStore {
 
   bool Poll() const noexcept override;
 
-  inline RegistryBitness GetRegistryBitness() const noexcept {
+  bool IsForCurrentArchitecture() const noexcept override {
+    return std::to_underlying(mRegistryBitness) == sizeof(void*);
+  }
+
+  RegistryBitness GetRegistryBitness() const noexcept {
     return mRegistryBitness;
   }
 
-  inline HKEY GetRootKey() const noexcept {
+  HKEY GetRootKey() const noexcept {
     return mRootKey;
   }
 

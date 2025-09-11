@@ -33,7 +33,7 @@ class OpenXRToolkitLinter final : public Linter {
         "OpenXR Toolkit is unsupported, and is known to cause crashes and "
         "other issues in modern games; you should disable it if you encounter "
         "problems.",
-        layer.mJSONPath));
+        layer.mManifestPath));
     }
     return errors;
   }

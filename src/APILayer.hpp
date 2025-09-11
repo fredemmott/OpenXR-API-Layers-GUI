@@ -7,6 +7,8 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+class APILayerStore;
+
 /** The basic information about an API layer.
  *
  * This contains the information that is available in the list of
@@ -21,7 +23,17 @@ struct APILayer {
     Win32_NotDWORD,
   };
 
-  std::filesystem::path mJSONPath;
+  APILayer() = delete;
+  APILayer(
+    const APILayerStore* source,
+    const std::filesystem::path& manifestPath,
+    const Value value)
+    : mSource(source),
+      mManifestPath(manifestPath),
+      mValue(value) {}
+
+  const APILayerStore* mSource {nullptr};
+  std::filesystem::path mManifestPath;
   Value mValue;
 
   constexpr bool IsEnabled() const noexcept {

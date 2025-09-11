@@ -27,9 +27,9 @@ class DuplicatesLinter final : public Linter {
       }
 
       if (byName.contains(details.mName)) {
-        byName.at(details.mName).emplace(layer.mJSONPath);
+        byName.at(details.mName).emplace(layer.mManifestPath);
       } else {
-        byName[details.mName] = {layer.mJSONPath};
+        byName[details.mName] = {layer.mManifestPath};
       }
     }
 
