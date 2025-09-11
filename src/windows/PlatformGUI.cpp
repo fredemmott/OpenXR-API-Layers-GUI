@@ -474,8 +474,7 @@ std::expected<LoaderData, std::string> PlatformGUI_Windows::GetLoaderData() {
   try {
     return static_cast<LoaderData>(nlohmann::json::parse(output));
   } catch (const nlohmann::json::exception& e) {
-    const auto what = e.what();
-    __debugbreak();
+    return std::unexpected(e.what());
   }
 }
 
