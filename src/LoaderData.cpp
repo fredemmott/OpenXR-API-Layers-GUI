@@ -4,56 +4,20 @@
 
 #include <Windows.h>
 
-#include <wil/resource.h>
-
 #include <nlohmann/json.hpp>
 
 #include <iostream>
 #include <utility>
 
+#include "LoaderData.hpp"
+#include "Platform.hpp"
+
 namespace FredEmmott::OpenXRLayers {
-
-namespace {
-int WideCharToUTF8(
-  wchar_t const* in,
-  const std::size_t inCharCount,
-  char* out,
-  const std::size_t outByteCount) {
-  return WideCharToMultiByte(
-    CP_UTF8,
-    0,
-    in,
-    static_cast<int>(inCharCount),
-    out,
-    static_cast<int>(outByteCount),
-    nullptr,
-    nullptr);
-}
-
-std::vector<std::string> GetEnvironmentVariableNames() {
-  std::vector<std::string> ret;
-  wil::unique_environstrings_ptr env {GetEnvironmentStringsW()};
-  std::string buf;
-
-  for (auto it = env.get(); (it && *it); it += (wcslen(it) + 1)) {
-    const auto nameEnd = std::wstring_view {it}.find(L'=');
-    if (nameEnd == 0 || nameEnd == std::wstring_view::npos) {
-      continue;
-    }
-
-    const auto byteCount = WideCharToUTF8(it, nameEnd, nullptr, 0);
-    buf.resize_and_overwrite(byteCount + 1, [=](auto p, const auto size) {
-      return WideCharToUTF8(it, nameEnd, p, size);
-    });
-    ret.emplace_back(buf.data(), static_cast<std::size_t>(byteCount));
-  }
-  std::ranges::sort(ret);
-  return ret;
-}
 
 LoaderData QueryLoaderDataInCurrentProcess() {
   LoaderData ret {
-    .mEnvironmentVariablesBeforeLoader = GetEnvironmentVariableNames(),
+    .mEnvironmentVariablesBeforeLoader
+    = Platform::Get().GetEnvironmentVariableNames(),
   };
 
   // We don't care about the extensions, but enumerating them can load the
@@ -65,7 +29,8 @@ LoaderData QueryLoaderDataInCurrentProcess() {
   uint32_t layerCount {};
   ret.mQueryLayersResult
     = xrEnumerateApiLayerProperties(0, &layerCount, nullptr);
-  ret.mEnvironmentVariablesAfterLoader = GetEnvironmentVariableNames();
+  ret.mEnvironmentVariablesAfterLoader
+    = Platform::Get().GetEnvironmentVariableNames();
   if (XR_FAILED(ret.mQueryLayersResult)) {
     return ret;
   }
@@ -81,7 +46,6 @@ LoaderData QueryLoaderDataInCurrentProcess() {
 
   return ret;
 }
-}// namespace
 
 void to_json(nlohmann::json& j, const LoaderData& data) {
   j.update(

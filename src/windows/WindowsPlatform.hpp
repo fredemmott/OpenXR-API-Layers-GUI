@@ -25,6 +25,7 @@ class WindowsPlatform final : public Platform {
     return mDPIScaling;
   }
   void ShowFolderContainingFile(const std::filesystem::path& path) override;
+  std::vector<std::string> GetEnvironmentVariableNames() override;
 
  private:
   wil::unique_hwnd mWindowHandle {};

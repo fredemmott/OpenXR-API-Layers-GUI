@@ -42,6 +42,25 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 
 namespace FredEmmott::OpenXRLayers {
 
+namespace {
+int WideCharToUTF8(
+  wchar_t const* in,
+  const std::size_t inCharCount,
+  char* out,
+  const std::size_t outByteCount) {
+  return WideCharToMultiByte(
+    CP_UTF8,
+    0,
+    in,
+    static_cast<int>(inCharCount),
+    out,
+    static_cast<int>(outByteCount),
+    nullptr,
+    nullptr);
+}
+
+}// namespace
+
 void WindowsPlatform::InitializeDirect3D() {
   const auto hwnd = mWindowHandle.get();
   UINT d3dFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
@@ -194,6 +213,27 @@ void WindowsPlatform::ShowFolderContainingFile(
     nullptr));
 
   SHOpenFolderAndSelectItems(pidl.get(), 0, nullptr, 0);
+}
+
+std::vector<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
+  std::vector<std::string> ret;
+  wil::unique_environstrings_ptr env {GetEnvironmentStringsW()};
+  std::string buf;
+
+  for (auto it = env.get(); (it && *it); it += (wcslen(it) + 1)) {
+    const auto nameEnd = std::wstring_view {it}.find(L'=');
+    if (nameEnd == 0 || nameEnd == std::wstring_view::npos) {
+      continue;
+    }
+
+    const auto byteCount = WideCharToUTF8(it, nameEnd, nullptr, 0);
+    buf.resize_and_overwrite(byteCount + 1, [=](auto p, const auto size) {
+      return WideCharToUTF8(it, nameEnd, p, size);
+    });
+    ret.emplace_back(buf.data(), static_cast<std::size_t>(byteCount));
+  }
+  std::ranges::sort(ret);
+  return ret;
 }
 
 HWND WindowsPlatform::CreateAppWindow() {
