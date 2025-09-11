@@ -118,22 +118,22 @@ static std::string GenerateRuntimeText(
   const uint8_t bitness,
   const std::optional<Runtime>& runtime) {
   if (!runtime) {
-    return std::format("Active {}-bit runtime: NONE\n", bitness);
+    return std::format("❌ Active {}-bit runtime: NONE\n", bitness);
   }
 
   if (!runtime->mName) {
     if (runtime->mName.error() != Runtime::ManifestError::FieldNotPresent) {
       return std::format(
-        "Active {}-bit runtime: CORRUPTED - {}\n",
+        "🚨 Active {}-bit runtime: CORRUPTED - {}\n",
         bitness,
         runtime->mPath.string());
     }
     return std::format(
-      "Active {}-bit runtime: {}\n", bitness, runtime->mPath.string());
+      "✅ Active {}-bit runtime: {}\n", bitness, runtime->mPath.string());
   }
 
   return std::format(
-    "Active {}-bit runtime: \"{}\" - {}\n",
+    "✅ Active {}-bit runtime: \"{}\" - {}\n",
     bitness,
     runtime->mName.value(),
     runtime->mPath.string());
