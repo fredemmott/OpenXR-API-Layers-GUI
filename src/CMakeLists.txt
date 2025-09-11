@@ -3,6 +3,7 @@
 
 find_package(imgui CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(OpenXR CONFIG REQUIRED)
 # Using fmt instead of fmt::format until MacOS/libc++ catch up
 find_package(fmt CONFIG REQUIRED)
 
@@ -29,12 +30,14 @@ add_library(
   lib
   STATIC
   APILayerDetails.cpp
-  GUI.cpp
-  SaveReport.cpp
-  std23/ranges.hpp
   ConstexprString.hpp
-  StringTemplateParameter.hpp
+  GUI.cpp
   GetActiveRuntimePath.hpp
+  LoaderData.cpp LoaderData.hpp
+  SaveReport.cpp
+  StringTemplateParameter.hpp
+  std23/ranges.hpp
+  std23/utility.hpp
   windows/GetActiveRuntimePath.cpp
 )
 
@@ -65,6 +68,7 @@ target_link_libraries(
   nlohmann_json::nlohmann_json
   fmt::fmt-header-only
   imgui::imgui
+  OpenXR::headers OpenXR::openxr_loader
 )
 
 add_executable(

@@ -15,6 +15,7 @@
       ]
     },
     "nlohmann-json",
-    "fmt"
+    "fmt",
+    "openxr-loader"
   ]
 }
