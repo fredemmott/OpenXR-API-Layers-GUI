@@ -1,6 +1,8 @@
 // Copyright 2023 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: ISC
 
+#include "windows/WindowsPlatform.hpp"
+
 #include <Unknwn.h>
 #include <Windows.h>
 
@@ -28,8 +30,8 @@
 
 #include "CheckForUpdates.hpp"
 #include "Config.hpp"
-#include "GUI.hpp"
 #include "LoaderData.hpp"
+#include "Platform.hpp"
 #include "windows/GetKnownFolderPath.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
@@ -40,56 +42,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 
 namespace FredEmmott::OpenXRLayers {
 
-class PlatformGUI_Windows final : public PlatformGUI {
- public:
-  void Run(std::function<void()> drawFrame) override;
-
-  std::optional<std::filesystem::path> GetExportFilePath() override;
-  std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override;
-  std::expected<LoaderData, std::string> GetLoaderData() override;
-
-  float GetDPIScaling() override {
-    return mDPIScaling;
-  }
-  void ShowFolderContainingFile(const std::filesystem::path& path) override;
-
- private:
-  wil::unique_hwnd mWindowHandle {};
-  float mDPIScaling {};
-  std::optional<DPIChangeInfo> mDPIChangeInfo;
-  AutoUpdateProcess mUpdater {CheckForUpdates()};
-
-  wil::com_ptr<ID3D11Device> mD3DDevice;
-  wil::com_ptr<ID3D11DeviceContext> mD3DContext;
-  wil::com_ptr<IDXGISwapChain1> mSwapChain;
-  wil::com_ptr<ID3D11Texture2D> mBackBuffer;
-  wil::com_ptr<ID3D11RenderTargetView> mRenderTargetView;
-  bool mWindowClosed = false;
-
-  size_t mFrameCounter = 0;
-  ImVec2 mWindowSize {
-    Config::MINIMUM_WINDOW_WIDTH,
-    Config::MINIMUM_WINDOW_HEIGHT,
-  };
-
-  HWND CreateAppWindow();
-  void InitializeFonts(ImGuiIO* io);
-  void InitializeDirect3D();
-
-  void BeforeFrame();
-  void AfterFrame();
-
-  void Initialize();
-  void MainLoop(const std::function<void()>& drawFrame);
-  void Shutdown();
-
-  static LRESULT WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-  LRESULT
-  InstanceWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-};
-
-void PlatformGUI_Windows::InitializeDirect3D() {
+void WindowsPlatform::InitializeDirect3D() {
   const auto hwnd = mWindowHandle.get();
   UINT d3dFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
   UINT dxgiFlags = 0;
@@ -133,13 +86,13 @@ void PlatformGUI_Windows::InitializeDirect3D() {
     mBackBuffer.get(), nullptr, mRenderTargetView.put()));
 }
 
-void PlatformGUI_Windows::Run(const std::function<void()> drawFrame) {
+void WindowsPlatform::GUIMain(const std::function<void()> drawFrame) {
   this->Initialize();
   const auto shutdown = wil::scope_exit([this] { this->Shutdown(); });
   this->MainLoop(drawFrame);
 }
 
-void PlatformGUI_Windows::MainLoop(const std::function<void()>& drawFrame) {
+void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
   constexpr auto Interval
     = std::chrono::microseconds(1000000 / Config::MAX_FPS);
   while (true) {
@@ -167,7 +120,7 @@ void PlatformGUI_Windows::MainLoop(const std::function<void()>& drawFrame) {
   }
 }
 
-void PlatformGUI_Windows::Initialize() {
+void WindowsPlatform::Initialize() {
   static std::string sIniPath;
   sIniPath = (GetKnownFolderPath<FOLDERID_LocalAppData>()
               / "OpenXR API Layers GUI" / "imgui.ini")
@@ -196,13 +149,13 @@ void PlatformGUI_Windows::Initialize() {
   this->InitializeFonts(&io);
 }
 
-void PlatformGUI_Windows::Shutdown() {
+void WindowsPlatform::Shutdown() {
   ImGui_ImplDX11_Shutdown();
   ImGui_ImplWin32_Shutdown();
   ImGui::DestroyContext();
 }
 
-void PlatformGUI_Windows::BeforeFrame() {
+void WindowsPlatform::BeforeFrame() {
   if ((++mFrameCounter % 60) == 0) {
     mUpdater.ActivateWindowIfVisible();
   }
@@ -220,13 +173,13 @@ void PlatformGUI_Windows::BeforeFrame() {
   ImGui::SetNextWindowSize(mWindowSize);
 }
 
-void PlatformGUI_Windows::AfterFrame() {
+void WindowsPlatform::AfterFrame() {
   ImGui::Render();
   ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
   CheckHRESULT(mSwapChain->Present(0, 0));
 }
 
-void PlatformGUI_Windows::ShowFolderContainingFile(
+void WindowsPlatform::ShowFolderContainingFile(
   const std::filesystem::path& path) {
   const auto absolute = std::filesystem::absolute(path).wstring();
 
@@ -243,12 +196,12 @@ void PlatformGUI_Windows::ShowFolderContainingFile(
   SHOpenFolderAndSelectItems(pidl.get(), 0, nullptr, 0);
 }
 
-HWND PlatformGUI_Windows::CreateAppWindow() {
+HWND WindowsPlatform::CreateAppWindow() {
   static const auto WindowTitle
     = std::format(L"OpenXR API Layers v{}", Config::BUILD_VERSION_W);
   static const WNDCLASSEXW WindowClass {
     .cbSize = sizeof(WNDCLASSEXW),
-    .lpfnWndProc = &PlatformGUI_Windows::WindowProc,
+    .lpfnWndProc = &WindowsPlatform::WindowProc,
     .hInstance = GetModuleHandle(nullptr),
     .hIcon = LoadIconW(GetModuleHandle(nullptr), L"appIcon"),
     .hCursor = LoadCursorW(nullptr, IDC_ARROW),
@@ -290,7 +243,7 @@ HWND PlatformGUI_Windows::CreateAppWindow() {
   return handle;
 }
 
-std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
+std::optional<std::filesystem::path> WindowsPlatform::GetExportFilePath() {
   const auto picker
     = wil::CoCreateInstance<IFileSaveDialog>(CLSID_FileSaveDialog);
   {
@@ -345,8 +298,7 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
   CheckHRESULT(shellItem->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
   return std::filesystem::path {std::wstring_view {buf.get()}};
 }
-std::vector<std::filesystem::path>
-PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
+std::vector<std::filesystem::path> WindowsPlatform::GetNewAPILayerJSONPaths() {
   const auto picker
     = wil::CoCreateInstance<IFileOpenDialog>(CLSID_FileOpenDialog);
 
@@ -406,7 +358,7 @@ PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
   return ret;
 }
 
-std::expected<LoaderData, std::string> PlatformGUI_Windows::GetLoaderData() {
+std::expected<LoaderData, std::string> WindowsPlatform::GetLoaderData() {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
     .bInheritHandle = TRUE,
@@ -478,7 +430,7 @@ std::expected<LoaderData, std::string> PlatformGUI_Windows::GetLoaderData() {
   }
 }
 
-void PlatformGUI_Windows::InitializeFonts(ImGuiIO* io) {
+void WindowsPlatform::InitializeFonts(ImGuiIO* io) {
   const auto fontsPath = GetKnownFolderPath<FOLDERID_Fonts>();
 
   io->Fonts->Clear();
@@ -498,12 +450,12 @@ void PlatformGUI_Windows::InitializeFonts(ImGuiIO* io) {
     ranges);
 }
 
-LRESULT PlatformGUI_Windows::WindowProc(
+LRESULT WindowsPlatform::WindowProc(
   HWND hWnd,
   const UINT uMsg,
   const WPARAM wParam,
   const LPARAM lParam) {
-  auto self = reinterpret_cast<PlatformGUI_Windows*>(
+  auto self = reinterpret_cast<WindowsPlatform*>(
     GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 
   switch (uMsg) {
@@ -511,7 +463,7 @@ LRESULT PlatformGUI_Windows::WindowProc(
     case WM_NCCREATE: {
       const auto create = reinterpret_cast<CREATESTRUCT*>(lParam);
       if (create->lpCreateParams) {
-        self = static_cast<PlatformGUI_Windows*>(create->lpCreateParams);
+        self = static_cast<WindowsPlatform*>(create->lpCreateParams);
         SetWindowLongPtrW(hWnd, GWLP_USERDATA, std::bit_cast<LONG_PTR>(self));
       }
       break;
@@ -535,7 +487,7 @@ LRESULT PlatformGUI_Windows::WindowProc(
   return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
-LRESULT PlatformGUI_Windows::InstanceWindowProc(
+LRESULT WindowsPlatform::InstanceWindowProc(
   HWND hWnd,
   const UINT uMsg,
   const WPARAM wParam,
@@ -584,8 +536,8 @@ LRESULT PlatformGUI_Windows::InstanceWindowProc(
   return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
-PlatformGUI& PlatformGUI::Get() {
-  static PlatformGUI_Windows sInstance {};
+Platform& Platform::Get() {
+  static WindowsPlatform sInstance {};
   return sInstance;
 }
 

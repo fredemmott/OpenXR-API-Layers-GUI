@@ -35,6 +35,7 @@ add_library(
   GetActiveRuntimePath.hpp
   LoaderData.cpp LoaderData.hpp
   SaveReport.cpp
+  Platform.hpp
   StringTemplateParameter.hpp
   windows/GetActiveRuntimePath.cpp
 )
@@ -91,7 +92,7 @@ set(PLATFORM_REPORT_MAIN_CPP "SaveReport_main.cpp")
 
 if (WIN32)
   set(PLATFORM_APILAYERS_CPP "windows/WindowsAPILayerStore.cpp")
-  set(PLATFORM_GUI_CPP "windows/PlatformGUI.cpp")
+  set(PLATFORM_GUI_CPP "windows/WindowsPlatform.cpp")
   set(PLATFORM_MAIN_CPP "windows/wWinMain.cpp")
   set(PLATFORM_REPORT_MAIN_CPP "windows/SaveReport_wWinMain.cpp")
 
@@ -106,6 +107,7 @@ if (WIN32)
     PRIVATE
     windows/CheckForUpdates.cpp
     windows/GetActiveRuntimePath.cpp
+    windows/WindowsPlatform.hpp
   )
 
   target_sources(

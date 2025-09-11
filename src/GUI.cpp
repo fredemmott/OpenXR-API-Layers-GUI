@@ -13,6 +13,7 @@
 #include "APILayerStore.hpp"
 #include "Config.hpp"
 #include "Linter.hpp"
+#include "Platform.hpp"
 #include "SaveReport.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -64,13 +65,13 @@ GUI::GUI() {
 }
 
 void GUI::Run() {
-  auto& platform = PlatformGUI::Get();
-  platform.Run(std::bind_front(&GUI::DrawFrame, this));
+  auto& platform = Platform::Get();
+  platform.GUIMain(std::bind_front(&GUI::DrawFrame, this));
 }
 
 void GUI::LayerSet::GUILayersList() {
   auto viewport = ImGui::GetMainViewport();
-  const auto dpiScale = PlatformGUI::Get().GetDPIScaling();
+  const auto dpiScale = Platform::Get().GetDPIScaling();
   ImGui::BeginListBox(
     "##Layers",
     {viewport->WorkSize.x - (256 * dpiScale), viewport->WorkSize.y / 2});
@@ -496,7 +497,7 @@ void GUI::LayerSet::RunAllLintersNow() {
 }
 
 void GUI::LayerSet::AddLayersClicked() {
-  auto paths = PlatformGUI::Get().GetNewAPILayerJSONPaths();
+  auto paths = Platform::Get().GetNewAPILayerJSONPaths();
   for (auto it = paths.begin(); it != paths.end();) {
     auto existingLayer = std::ranges::find_if(
       mLayers, [it](const auto& layer) { return layer.mJSONPath == *it; });
@@ -561,7 +562,7 @@ void GUI::LayerSet::GUIRemoveLayerPopup() {
       "undone.",
       mSelectedLayer->mJSONPath.string().c_str());
     ImGui::Separator();
-    const auto dpiScaling = PlatformGUI::Get().GetDPIScaling();
+    const auto dpiScaling = Platform::Get().GetDPIScaling();
     ImGui::SetCursorPosX((256 + 128) * dpiScaling);
     if (ImGui::Button("Remove", {64 * dpiScaling, 0}) && mSelectedLayer) {
       auto nextLayers = mLayers;
@@ -635,7 +636,7 @@ void GUI::LayerSet::Draw() {
 }
 
 void GUI::Export() {
-  const auto path = PlatformGUI::Get().GetExportFilePath();
+  const auto path = Platform::Get().GetExportFilePath();
   if (!path) {
     return;
   }
@@ -643,7 +644,7 @@ void GUI::Export() {
   SaveReport(*path);
 
   if (std::filesystem::exists(*path)) {
-    PlatformGUI::Get().ShowFolderContainingFile(*path);
+    Platform::Get().ShowFolderContainingFile(*path);
   }
 }
 

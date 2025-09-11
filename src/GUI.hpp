@@ -3,54 +3,13 @@
 
 #pragma once
 
-#include <portability/filesystem.hpp>
-
-#include <expected>
-#include <functional>
-#include <ranges>
-#include <unordered_map>
 #include <vector>
-
-#include <imgui.h>
 
 #include "APILayer.hpp"
 #include "Linter.hpp"
 
 namespace FredEmmott::OpenXRLayers {
-
-class APILayerStore;
 class ReadWriteAPILayerStore;
-struct LoaderData;
-
-struct DPIChangeInfo {
-  float mDPIScaling {};
-  std::optional<ImVec2> mRecommendedSize;
-};
-
-// Platform-specific functions implemented in PlatformGUI_P*.cpp
-class PlatformGUI {
- public:
-  static PlatformGUI& Get();
-  virtual ~PlatformGUI() = default;
-
-  virtual void Run(std::function<void()> drawFrame) = 0;
-
-  virtual std::expected<LoaderData, std::string> GetLoaderData() = 0;
-  virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
-  virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
-  virtual float GetDPIScaling() = 0;
-
-  // Use OS/environment equivalent to Explorer
-  virtual void ShowFolderContainingFile(const std::filesystem::path&) = 0;
-
-  PlatformGUI(const PlatformGUI&) = delete;
-  PlatformGUI(PlatformGUI&&) = delete;
-  PlatformGUI& operator=(const PlatformGUI&) = delete;
-  PlatformGUI& operator=(PlatformGUI&&) = delete;
-
- protected:
-  PlatformGUI() = default;
-};
 
 // The actual app GUI
 class GUI final {
