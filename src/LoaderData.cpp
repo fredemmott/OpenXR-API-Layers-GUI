@@ -47,6 +47,7 @@ std::vector<std::string> GetEnvironmentVariableNames() {
     });
     ret.emplace_back(buf.data(), static_cast<std::size_t>(byteCount));
   }
+  std::ranges::sort(ret);
   return ret;
 }
 }// namespace
