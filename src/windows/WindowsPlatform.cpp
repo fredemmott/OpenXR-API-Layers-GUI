@@ -5,6 +5,8 @@
 
 #include <Unknwn.h>
 #include <Windows.h>
+#include <WinTrust.h>
+#include <SoftPub.h>
 
 #include <wil/com.h>
 #include <wil/registry.h>
@@ -136,6 +138,15 @@ std::size_t WideCharToUTF8(
     static_cast<int>(outByteCount),
     nullptr,
     nullptr);
+}
+
+std::string WideCharToUTF8(const std::wstring_view in) {
+  const auto byteCount = WideCharToUTF8(in.data(), in.size(), nullptr, 0);
+  std::string ret;
+  ret.resize_and_overwrite(byteCount + 1, [=](auto p, const auto size) {
+    return WideCharToUTF8(in.data(), in.size(), p, size);
+  });
+  return ret;
 }
 
 }// namespace
@@ -306,11 +317,7 @@ std::unordered_set<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
       continue;
     }
 
-    const auto byteCount = WideCharToUTF8(it, nameEnd, nullptr, 0);
-    buf.resize_and_overwrite(byteCount + 1, [=](auto p, const auto size) {
-      return WideCharToUTF8(it, nameEnd, p, size);
-    });
-    ret.emplace(buf.data(), static_cast<std::size_t>(byteCount));
+    ret.emplace(WideCharToUTF8({it, nameEnd}));
   }
   return ret;
 }
@@ -321,6 +328,73 @@ std::vector<AvailableRuntime> WindowsPlatform::GetAvailable32BitRuntimes() {
 
 std::vector<AvailableRuntime> WindowsPlatform::GetAvailable64BitRuntimes() {
   return GetAvailableRuntimes(KEY_WOW64_64KEY);
+}
+
+std::expected<APILayerSignature, APILayerSignature::Error>
+WindowsPlatform::GetAPILayerSignature(const std::filesystem::path& dllPath) {
+  using enum APILayerSignature::Error;
+  if (!std::filesystem::exists(dllPath)) {
+    return std::unexpected {FilesystemError};
+  }
+
+  WINTRUST_FILE_INFO fileInfo {
+    .cbStruct = sizeof(WINTRUST_FILE_INFO),
+    .pcwszFilePath = dllPath.c_str(),
+  };
+  WINTRUST_DATA wintrustData {
+    .cbStruct = sizeof(WINTRUST_DATA),
+    .dwUIChoice = WTD_UI_NONE,
+    .fdwRevocationChecks = WTD_REVOCATION_CHECK_NONE,
+    .dwUnionChoice = WTD_CHOICE_FILE,
+    .pFile = &fileInfo,
+    .dwStateAction = WTD_STATEACTION_VERIFY,
+  };
+
+  GUID policyGuid = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+  const auto result = WinVerifyTrust(
+    static_cast<HWND>(INVALID_HANDLE_VALUE), &policyGuid, &wintrustData);
+  const auto close = wil::scope_exit([&] {
+    wintrustData.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(
+      static_cast<HWND>(INVALID_HANDLE_VALUE), &policyGuid, &wintrustData);
+  });
+
+  switch (result) {
+    case 0:
+      break;
+    case TRUST_E_SUBJECT_NOT_TRUSTED:
+      return std::unexpected {UntrustedSignature};
+    case CERT_E_EXPIRED:
+      return std::unexpected {Expired};
+    case TRUST_E_NOSIGNATURE:
+    default:
+      return std::unexpected {Unsigned};
+  }
+
+  const auto providerData
+    = WTHelperProvDataFromStateData(wintrustData.hWVTStateData);
+  const auto signer = WTHelperGetProvSignerFromChain(providerData, 0, FALSE, 0);
+  const auto cert = WTHelperGetProvCertFromChain(signer, 0);
+
+  const auto signerUtf16Count = CertGetNameStringW(
+    cert->pCert, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nullptr, nullptr, 0);
+  std::wstring wideSignerName;
+  wideSignerName.resize_and_overwrite(
+    signerUtf16Count + 1, [=](auto p, const auto size) {
+      return CertGetNameStringW(
+               cert->pCert, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nullptr, p, size)
+        - 1;
+    });
+
+  const auto fileClockTimePoint
+    = std::chrono::file_clock::time_point {std::chrono::file_clock::duration {
+      static_cast<int64_t>(signer->sftVerifyAsOf.dwHighDateTime) << 32
+      | signer->sftVerifyAsOf.dwLowDateTime}};
+
+  return APILayerSignature {
+    WideCharToUTF8(wideSignerName),
+    std::chrono::clock_cast<std::chrono::system_clock>(fileClockTimePoint),
+  };
 }
 
 HWND WindowsPlatform::CreateAppWindow() {

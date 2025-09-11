@@ -27,6 +27,12 @@ IncludeCategories:
   - Regex: '^<Psapi\.h>'
     Priority: 30
     SortPriority: 31
+  - Regex: '^<WinTrust\.h>'
+    Priority: 30
+    SortPriority: 32
+  - Regex: '^<SoftPub\.h>'
+    Priority: 30
+    SortPriority: 33
   - Regex: '^<winrt/.+'
     Priority: 32
     SortPriority: 32

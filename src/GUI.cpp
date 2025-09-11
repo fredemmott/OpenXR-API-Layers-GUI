@@ -453,6 +453,26 @@ void GUI::LayerSet::GUIDetailsTab() {
           ImGui::EndTable();
           ImGui::TableNextColumn();
         }
+
+        if (details.mSignature) {
+          ImGui::TableNextRow();
+          ImGui::TableNextColumn();
+          ImGui::Text("Signed by");
+          ImGui::TableNextColumn();
+          ImGui::Text("%s", details.mSignature->mSignedBy.c_str());
+
+          ImGui::TableNextRow();
+          ImGui::TableNextColumn();
+          ImGui::Text("Signed at");
+          ImGui::TableNextColumn();
+          ImGui::Text(
+            "%s",
+            std::format(
+              "{}",
+              std::chrono::time_point_cast<std::chrono::seconds>(
+                details.mSignature->mSignedAt))
+              .c_str());
+        }
       }
 
       ImGui::EndTable();

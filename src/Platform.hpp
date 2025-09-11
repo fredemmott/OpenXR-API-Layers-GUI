@@ -9,6 +9,8 @@
 
 #include <imgui.h>
 
+#include "APILayerSignature.hpp"
+
 namespace FredEmmott::OpenXRLayers {
 class APILayerStore;
 class ReadWriteAPILayerStore;
@@ -59,6 +61,8 @@ class Platform {
 
   virtual void GUIMain(std::function<void()> drawFrame) = 0;
 
+  virtual std::expected<APILayerSignature, APILayerSignature::Error>
+  GetAPILayerSignature(const std::filesystem::path&) = 0;
   virtual std::expected<LoaderData, std::string> GetLoaderData() = 0;
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;

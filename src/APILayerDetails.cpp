@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "APILayer.hpp"
+#include "Platform.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -101,6 +102,8 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   }
 
   SetStringOrNumber(mImplementationVersion, layer, "implementation_version");
+
+  mSignature = Platform::Get().GetAPILayerSignature(mLibraryPath);
 
   mState = State::Loaded;
 }

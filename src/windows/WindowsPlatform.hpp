@@ -31,6 +31,9 @@ class WindowsPlatform final : public Platform {
   std::vector<AvailableRuntime> GetAvailable32BitRuntimes() override;
   std::vector<AvailableRuntime> GetAvailable64BitRuntimes() override;
 
+  std::expected<APILayerSignature, APILayerSignature::Error>
+  GetAPILayerSignature(const std::filesystem::path&) override;
+
  protected:
   std::filesystem::path Get32BitRuntimePath() override;
   std::filesystem::path Get64BitRuntimePath() override;

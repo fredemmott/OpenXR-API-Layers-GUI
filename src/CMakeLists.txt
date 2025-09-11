@@ -30,6 +30,7 @@ add_library(
   lib
   STATIC
   APILayerDetails.cpp
+  APILayerSignature.hpp
   ConstexprString.hpp
   GUI.cpp
   LoaderData.cpp LoaderData.hpp
@@ -154,6 +155,7 @@ if (WIN32)
     DwmApi
     Dxgi
     RuntimeObject
+    Crypt32
     WinTrust
   )
   foreach (NAME IN LISTS WINDOWS_SDK_LIBRARIES)

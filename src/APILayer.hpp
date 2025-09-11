@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <expected>
 #include <filesystem>
+
+#include "APILayerSignature.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -52,6 +55,7 @@ struct Extension {
 
 /// Information from the API layer manifest
 struct APILayerDetails {
+  APILayerDetails() = delete;
   APILayerDetails(const std::filesystem::path& jsonPath);
   enum class State {
     Uninitialized,
@@ -62,6 +66,8 @@ struct APILayerDetails {
     Loaded,
   };
   State mState {State::Uninitialized};
+
+  std::expected<APILayerSignature, APILayerSignature::Error> mSignature;
 
   std::string mFileFormatVersion;
   std::string mName;
@@ -75,6 +81,7 @@ struct APILayerDetails {
 
   bool operator==(const APILayerDetails&) const noexcept = default;
 
+  [[nodiscard]]
   std::string StateAsString() const noexcept;
 };
 

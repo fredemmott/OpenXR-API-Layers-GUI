@@ -56,6 +56,17 @@ static std::string GenerateReportText(const APILayerStore* store) {
         ret += fmt::format("\n\tName: {}", details.mName);
       }
 
+      if (details.mSignature) {
+        ret += fmt::format(
+          "\n\tSigned by: {}"
+          "\n\tSigned at: {}",
+          details.mSignature->mSignedBy,
+          std::chrono::time_point_cast<std::chrono::seconds>(
+            details.mSignature->mSignedAt));
+        // No need for an 'else' - linters already report warnings when
+        // appropriate
+      }
+
       if (details.mLibraryPath.empty()) {
         ret += fmt::format(
           "\n\tLibrary path: {} No library path in JSON file",
