@@ -28,6 +28,10 @@ class WindowsPlatform final : public Platform {
   void ShowFolderContainingFile(const std::filesystem::path& path) override;
   std::unordered_set<std::string> GetEnvironmentVariableNames() override;
 
+  std::vector<AvailableRuntime> GetAvailable32BitRuntimes() override;
+  std::vector<AvailableRuntime> GetAvailable64BitRuntimes() override;
+
+ protected:
   std::filesystem::path Get32BitRuntimePath() override;
   std::filesystem::path Get64BitRuntimePath() override;
 

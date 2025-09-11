@@ -114,7 +114,7 @@ static std::string GenerateReportText(const APILayerStore* store) {
   return ret;
 }
 
-static std::string GenerateRuntimeText(
+static std::string GenerateActiveRuntimeText(
   const uint8_t bitness,
   const std::optional<Runtime>& runtime) {
   if (!runtime) {
@@ -139,6 +139,51 @@ static std::string GenerateRuntimeText(
     runtime->mPath.string());
 }
 
+static std::string GenerateAvailableRuntimesText(
+  const uint8_t bitness,
+  const std::vector<AvailableRuntime>& runtimes) {
+  auto ret = std::format("\nAvailable {}-bit runtimes:\n", bitness);
+  if (runtimes.empty()) {
+    return ret + "  NONE\n";
+  }
+
+  for (auto&& runtime: runtimes) {
+    if (runtime.mName) {
+      ret += fmt::format(
+        "  - \"{}\" - {}", runtime.mName.value(), runtime.mPath.string());
+    } else {
+      using enum Runtime::ManifestError;
+      switch (runtime.mName.error()) {
+        case FieldNotPresent:
+          ret += fmt::format("  - {}", runtime.mPath.string());
+          break;
+        case FileNotFound:
+          ret += fmt::format("  - ❌ FILE MISSING: {}", runtime.mPath.string());
+          break;
+        case FileNotReadable:
+        case InvalidJson:
+          ret += fmt::format(
+            "  - ❌ FILE NOT READABLE: {}", runtime.mPath.string());
+          break;
+      }
+    }
+
+    switch (runtime.mDiscoverability) {
+      case AvailableRuntime::Discoverability::Discoverable:
+        ret += " (discoverable)\n";
+        break;
+      case AvailableRuntime::Discoverability::Hidden:
+        ret += " (disabled)\n";
+        break;
+      case AvailableRuntime::Discoverability::Win32_NotDWORD:
+        ret += " (🚨 NOT A DWORD)\n";
+        break;
+    }
+  }
+
+  return ret;
+}
+
 void SaveReport(const std::filesystem::path& path) {
   auto text = std::format(
     "OpenXR API Layers GUI v{}\n"
@@ -148,8 +193,13 @@ void SaveReport(const std::filesystem::path& path) {
       std::chrono::current_zone(), std::chrono::system_clock::now()));
 
   auto& platform = Platform::Get();
-  text += GenerateRuntimeText(64, platform.Get64BitRuntime());
-  text += GenerateRuntimeText(32, platform.Get32BitRuntime());
+  text += GenerateActiveRuntimeText(64, platform.Get64BitRuntime());
+  text += GenerateActiveRuntimeText(32, platform.Get32BitRuntime());
+
+  text
+    += GenerateAvailableRuntimesText(64, platform.GetAvailable64BitRuntimes());
+  text
+    += GenerateAvailableRuntimesText(32, platform.GetAvailable64BitRuntimes());
 
   for (const auto store: APILayerStore::Get()) {
     text += GenerateReportText(store);

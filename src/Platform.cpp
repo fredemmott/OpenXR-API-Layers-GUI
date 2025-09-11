@@ -12,35 +12,49 @@ namespace FredEmmott::OpenXRLayers {
 
 namespace {
 std::optional<Runtime> GetRuntimeFromPath(const std::filesystem::path& path) {
-  using enum Runtime::ManifestError;
-
   if (path.empty()) {
     return {};
   }
+  return Runtime(path);
+}
 
+std::expected<std::string, Runtime::ManifestError> GetRuntimeName(
+  const std::filesystem::path& path) {
+  using enum Runtime::ManifestError;
   try {
     if (!std::filesystem::exists(path)) {
-      return Runtime {path, std::unexpected {FileNotFound}};
+      return std::unexpected {FileNotFound};
     }
 
     std::ifstream f(path);
     if (!f) {
-      return Runtime {path, std::unexpected {FileNotReadable}};
+      return std::unexpected {FileNotReadable};
     }
 
     const auto json = nlohmann::json::parse(f);
     if (json.contains("runtime") && json.at("runtime").contains("name")) {
-      return Runtime {path, json.at("runtime").at("name")};
+      return json.at("runtime").at("name");
     }
 
-    return Runtime {path, std::unexpected {FieldNotPresent}};
-  } catch (const std::filesystem::filesystem_error& e) {
-    return Runtime {path, std::unexpected {FileNotReadable}};
-  } catch (const nlohmann::json::exception& e) {
-    return Runtime {path, std::unexpected {InvalidJson}};
+    return std::unexpected {FieldNotPresent};
+  } catch (const std::filesystem::filesystem_error&) {
+    return std::unexpected {FileNotReadable};
+  } catch (const nlohmann::json::exception&) {
+    return std::unexpected {InvalidJson};
   }
 }
+
 }// namespace
+
+Runtime::Runtime(const std::filesystem::path& path)
+  : mPath(path),
+    mName(GetRuntimeName(path)) {}
+
+AvailableRuntime::AvailableRuntime(
+  const std::filesystem::path& path,
+  const Discoverability discoverability)
+  : Runtime(path),
+    mDiscoverability(discoverability) {}
 
 Platform::Platform() = default;
 Platform::~Platform() = default;

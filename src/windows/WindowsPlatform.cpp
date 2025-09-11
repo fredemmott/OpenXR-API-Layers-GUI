@@ -7,6 +7,7 @@
 #include <Windows.h>
 
 #include <wil/com.h>
+#include <wil/registry.h>
 #include <wil/resource.h>
 
 #include <nlohmann/json.hpp>
@@ -41,17 +42,55 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 namespace FredEmmott::OpenXRLayers {
 
 namespace {
+
+std::vector<AvailableRuntime> GetAvailableRuntimes(const REGSAM bitness) {
+  const REGSAM desiredAccess = bitness | KEY_READ;
+  wil::unique_hkey hkey;
+  RegOpenKeyExW(
+    HKEY_LOCAL_MACHINE,
+    L"SOFTWARE\\Khronos\\OpenXR\\1\\AvailableRuntimes",
+    0,
+    desiredAccess,
+    hkey.put());
+  if (!hkey) {
+    return {};
+  }
+
+  std::vector<AvailableRuntime> ret;
+  using enum AvailableRuntime::Discoverability;
+  for (auto&& it: wil::make_range(
+         wil::reg::value_iterator {hkey.get()}, wil::reg::value_iterator {})) {
+    if (it.type != REG_DWORD) {
+      ret.emplace_back(it.name, Win32_NotDWORD);
+      continue;
+    }
+
+    DWORD value {};
+    DWORD valueSize {sizeof(value)};
+    RegGetValueW(
+      hkey.get(),
+      nullptr,
+      it.name.c_str(),
+      RRF_RT_DWORD,
+      nullptr,
+      &value,
+      &valueSize);
+    ret.emplace_back(it.name, (value == 0) ? Discoverable : Hidden);
+  }
+  return ret;
+}
+
 static LSTATUS
 GetActiveRuntimePath(const REGSAM desiredAccess, void* data, DWORD* dataSize) {
-  wil::unique_hkey hKey;
+  wil::unique_hkey hkey;
   RegOpenKeyExW(
     HKEY_LOCAL_MACHINE,
     L"SOFTWARE\\Khronos\\OpenXR\\1",
     0,
     desiredAccess,
-    hKey.put());
+    hkey.put());
   return RegGetValueW(
-    hKey.get(),
+    hkey.get(),
     nullptr,
     L"ActiveRuntime",
     RRF_RT_REG_SZ,
@@ -274,6 +313,14 @@ std::unordered_set<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
     ret.emplace(buf.data(), static_cast<std::size_t>(byteCount));
   }
   return ret;
+}
+
+std::vector<AvailableRuntime> WindowsPlatform::GetAvailable32BitRuntimes() {
+  return GetAvailableRuntimes(KEY_WOW64_32KEY);
+}
+
+std::vector<AvailableRuntime> WindowsPlatform::GetAvailable64BitRuntimes() {
+  return GetAvailableRuntimes(KEY_WOW64_64KEY);
 }
 
 HWND WindowsPlatform::CreateAppWindow() {

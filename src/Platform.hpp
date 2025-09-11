@@ -27,8 +27,24 @@ struct Runtime {
     FieldNotPresent,
   };
 
+  Runtime() = delete;
+  explicit Runtime(const std::filesystem::path& path);
+
   std::filesystem::path mPath;
   std::expected<std::string, ManifestError> mName;
+};
+
+struct AvailableRuntime : Runtime {
+  enum class Discoverability {
+    Discoverable,
+    Hidden,
+    Win32_NotDWORD,
+  };
+
+  AvailableRuntime() = delete;
+  AvailableRuntime(const std::filesystem::path& path, Discoverability);
+
+  Discoverability mDiscoverability;
 };
 
 // Platform-specific functions implemented in PlatformGUI_P*.cpp
@@ -47,6 +63,9 @@ class Platform {
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
   virtual std::unordered_set<std::string> GetEnvironmentVariableNames() = 0;
   virtual float GetDPIScaling() = 0;
+
+  virtual std::vector<AvailableRuntime> GetAvailable32BitRuntimes() = 0;
+  virtual std::vector<AvailableRuntime> GetAvailable64BitRuntimes() = 0;
 
   // Use OS/environment equivalent to Explorer
   virtual void ShowFolderContainingFile(const std::filesystem::path&) = 0;
