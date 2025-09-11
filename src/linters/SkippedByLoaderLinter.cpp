@@ -18,6 +18,10 @@ class SkippedByLoaderLinter final : public Linter {
       return {};
     }
 
+    const auto runtime = Platform::Get().GetActiveRuntime();
+    const auto runtimeString
+      = runtime ? runtime->mName.value_or(runtime->mPath.string()) : "NONE";
+
     std::vector<std::shared_ptr<LintError>> errors;
 
     for (const auto& [layer, details]: layers) {
@@ -53,8 +57,8 @@ class SkippedByLoaderLinter final : public Linter {
           errors.push_back(
             std::make_shared<LintError>(
               fmt::format(
-                "This layer is blocked by your current OpenXR runtime",
-                details.mName),
+                "This layer is blocked by your current OpenXR runtime ('{}')",
+                runtimeString),
               PathSet {layer.mManifestPath}));
           continue;
         }
@@ -64,8 +68,8 @@ class SkippedByLoaderLinter final : public Linter {
         std::make_shared<LintError>(
           fmt::format(
             "Layer appears enabled, but is not loaded by OpenXR; it may be "
-            "blocked by your runtime vendor",
-            details.mName),
+            "blocked by your OpenXR runtime ('{}')",
+            runtimeString),
           PathSet {layer.mManifestPath}));
     }
     return errors;

@@ -55,6 +55,7 @@ class Platform {
 
   std::optional<Runtime> Get32BitRuntime();
   std::optional<Runtime> Get64BitRuntime();
+  std::optional<Runtime> GetActiveRuntime();
 
   virtual void GUIMain(std::function<void()> drawFrame) = 0;
 

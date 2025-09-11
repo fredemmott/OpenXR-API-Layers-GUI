@@ -66,5 +66,13 @@ std::optional<Runtime> Platform::Get32BitRuntime() {
 std::optional<Runtime> Platform::Get64BitRuntime() {
   return GetRuntimeFromPath(Get64BitRuntimePath());
 }
+std::optional<Runtime> Platform::GetActiveRuntime() {
+  if constexpr (sizeof(void*) == 8) {
+    return Get64BitRuntime();
+  } else if constexpr (sizeof(void*) == 4) {
+    return Get32BitRuntime();
+  }
+  std::unreachable();
+}
 
 }// namespace FredEmmott::OpenXRLayers
