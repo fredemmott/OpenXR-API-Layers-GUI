@@ -80,6 +80,9 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   if (layer.contains("disable_environment")) {
     mDisableEnvironment = layer.at("disable_environment");
   }
+  if (layer.contains("enable_environment")) {
+    mEnableEnvironment = layer.at("enable_environment");
+  }
 
   if (layer.contains("instance_extensions")) {
     auto extensions = layer.at("instance_extensions");
@@ -88,10 +91,11 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
         std::string version;
         SetStringOrNumber(version, extension, "extension_version");
 
-        mExtensions.push_back(Extension {
-          .mName = extension.value("name", std::string {}),
-          .mVersion = version,
-        });
+        mExtensions.push_back(
+          Extension {
+            .mName = extension.value("name", std::string {}),
+            .mVersion = version,
+          });
       }
     }
   }
