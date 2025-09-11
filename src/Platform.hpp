@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <unordered_set>
 
 #include <imgui.h>
 
@@ -29,7 +30,7 @@ class Platform {
   virtual std::expected<LoaderData, std::string> GetLoaderData() = 0;
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
-  virtual std::vector<std::string> GetEnvironmentVariableNames() = 0;
+  virtual std::unordered_set<std::string> GetEnvironmentVariableNames() = 0;
   virtual float GetDPIScaling() = 0;
 
   // Use OS/environment equivalent to Explorer

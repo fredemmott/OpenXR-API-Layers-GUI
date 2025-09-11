@@ -51,7 +51,7 @@ add_library(
   linters/DuplicatesLinter.cpp
   linters/OrderingLinter.cpp
   linters/DisabledByEnvironmentLinter.cpp
-
+  linters/SkippedByLoaderLinter.cpp
 )
 target_link_libraries(linters PUBLIC lib)
 target_include_directories(

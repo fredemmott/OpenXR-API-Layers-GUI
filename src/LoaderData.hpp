@@ -5,7 +5,7 @@
 #include <openxr/openxr.h>
 
 #include <string>
-#include <vector>
+#include <unordered_set>
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -13,12 +13,12 @@ struct LoaderData {
   XrResult mQueryExtensionsResult {XR_RESULT_MAX_ENUM};
   XrResult mQueryLayersResult {XR_RESULT_MAX_ENUM};
 
-  std::vector<std::string> mEnabledLayerNames;
+  std::unordered_set<std::string> mEnabledLayerNames;
 
   // It's possible for runtimes to modify the environment variables,
   // which can disable API layers
-  std::vector<std::string> mEnvironmentVariablesBeforeLoader;
-  std::vector<std::string> mEnvironmentVariablesAfterLoader;
+  std::unordered_set<std::string> mEnvironmentVariablesBeforeLoader;
+  std::unordered_set<std::string> mEnvironmentVariablesAfterLoader;
 };
 
 void from_json(const nlohmann::json&, LoaderData&);

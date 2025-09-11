@@ -13,7 +13,7 @@ class DisabledByEnvironmentLinter final : public Linter {
     std::vector<std::shared_ptr<LintError>> errors;
 
     for (const auto& [layer, details]: layers) {
-      if (!std::filesystem::exists(layer.mJSONPath)) {
+      if (details.mState != APILayerDetails::State::Loaded) {
         continue;
       }
 

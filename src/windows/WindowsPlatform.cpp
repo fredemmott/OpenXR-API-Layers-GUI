@@ -6,8 +6,6 @@
 #include <Unknwn.h>
 #include <Windows.h>
 
-#include <winrt/base.h>
-
 #include <wil/com.h>
 #include <wil/resource.h>
 
@@ -215,8 +213,9 @@ void WindowsPlatform::ShowFolderContainingFile(
   SHOpenFolderAndSelectItems(pidl.get(), 0, nullptr, 0);
 }
 
-std::vector<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
-  std::vector<std::string> ret;
+std::unordered_set<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
+  std::unordered_set<std::string> ret;
+
   wil::unique_environstrings_ptr env {GetEnvironmentStringsW()};
   std::string buf;
 
@@ -230,9 +229,8 @@ std::vector<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
     buf.resize_and_overwrite(byteCount + 1, [=](auto p, const auto size) {
       return WideCharToUTF8(it, nameEnd, p, size);
     });
-    ret.emplace_back(buf.data(), static_cast<std::size_t>(byteCount));
+    ret.emplace(buf.data(), static_cast<std::size_t>(byteCount));
   }
-  std::ranges::sort(ret);
   return ret;
 }
 
@@ -399,6 +397,14 @@ std::vector<std::filesystem::path> WindowsPlatform::GetNewAPILayerJSONPaths() {
 }
 
 std::expected<LoaderData, std::string> WindowsPlatform::GetLoaderData() {
+  if (!mLoaderData) {
+    mLoaderData = GetLoaderDataWithoutCache();
+  }
+  return mLoaderData.value();
+}
+
+std::expected<LoaderData, std::string>
+WindowsPlatform::GetLoaderDataWithoutCache() {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
     .bInheritHandle = TRUE,
