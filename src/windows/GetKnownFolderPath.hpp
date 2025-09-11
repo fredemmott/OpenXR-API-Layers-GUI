@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: ISC
 #pragma once
 
-#include <winrt/base.h>
+#include <wil/resource.h>
 
 #include <filesystem>
 #include <mutex>
-#include <string>
 
 #include <ShlObj.h>
+
+#include "windows/check.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -18,21 +19,14 @@ auto GetKnownFolderPath() {
   static std::once_flag sOnce;
 
   std::call_once(sOnce, [&path = sPath]() {
-    wchar_t* buf {nullptr};
-    try {
-      winrt::check_hresult(
-        SHGetKnownFolderPath(knownFolderID, KF_FLAG_DEFAULT, NULL, &buf));
-    } catch (...) {
-      CoTaskMemFree(buf);
-      throw;
-    }
+    wil::unique_cotaskmem_string buf;
+    CheckHRESULT(
+      SHGetKnownFolderPath(knownFolderID, KF_FLAG_DEFAULT, NULL, buf.put()));
 
-    path = {std::wstring_view {buf}};
+    path = {std::wstring_view {buf.get()}};
     if (std::filesystem::exists(path)) {
       path = std::filesystem::canonical(path);
     }
-
-    CoTaskMemFree(buf);
   });
 
   return sPath;

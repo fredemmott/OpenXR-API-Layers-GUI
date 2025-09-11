@@ -7,7 +7,6 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
 if (WIN32)
-  find_package(cppwinrt CONFIG REQUIRED)
   find_package(wil CONFIG REQUIRED)
 endif ()
 
@@ -140,13 +139,11 @@ if (WIN32)
     "/EHsc"
     "/diagnostics:caret"
     "/utf-8"
-    "/await:strict"
   )
 
   target_link_libraries(
     lib
     PUBLIC
-    Microsoft::CppWinRT
     WIL::WIL
   )
   set(

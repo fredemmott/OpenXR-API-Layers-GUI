@@ -13,7 +13,9 @@
 #include <memory>
 
 #include "Config.hpp"
+#include "windows/check.hpp"
 
+namespace FredEmmott::OpenXRLayers {
 namespace {
 class HandleInOtherProcess {
  public:
@@ -28,7 +30,7 @@ class HandleInOtherProcess {
     HANDLE targetProcess,
     DWORD desiredAccess)
     : mTargetProcess(targetProcess) {
-    winrt::check_bool(DuplicateHandle(
+    CheckBOOL(DuplicateHandle(
       GetCurrentProcess(),
       sourceHandle,
       targetProcess,
@@ -40,7 +42,7 @@ class HandleInOtherProcess {
 
   ~HandleInOtherProcess() {
     HANDLE handleInThisProcess {nullptr};
-    winrt::check_bool(DuplicateHandle(
+    CheckBOOL(DuplicateHandle(
       mTargetProcess,
       mHandleInTargetProcess,
       GetCurrentProcess(),
@@ -61,8 +63,6 @@ class HandleInOtherProcess {
   HANDLE mHandleInTargetProcess {nullptr};
 };
 }// namespace
-
-namespace FredEmmott::OpenXRLayers {
 
 AutoUpdateProcess CheckForUpdates() {
   wchar_t exePathStr[32767];
@@ -100,12 +100,12 @@ AutoUpdateProcess CheckForUpdates() {
   auto threadAttributesBuffer = std::make_unique<char[]>(threadAttributesSize);
   auto threadAttributes = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(
     threadAttributesBuffer.get());
-  winrt::check_bool(InitializeProcThreadAttributeList(
+  CheckBOOL(InitializeProcThreadAttributeList(
     threadAttributes, 1, 0, &threadAttributesSize));
 
   // Need a pointer to the value, not just the value
   HANDLE shellProcessRaw {shellProcess.get()};
-  winrt::check_bool(UpdateProcThreadAttribute(
+  CheckBOOL(UpdateProcThreadAttribute(
     threadAttributes,
     0,
     PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
@@ -132,7 +132,7 @@ AutoUpdateProcess CheckForUpdates() {
     .CompletionKey = job.get(),
     .CompletionPort = jobCompletion.get(),
   };
-  winrt::check_bool(SetInformationJobObject(
+  CheckBOOL(SetInformationJobObject(
     job.get(),
     JobObjectAssociateCompletionPortInformation,
     &assoc,
@@ -168,8 +168,7 @@ AutoUpdateProcess CheckForUpdates() {
       OutputDebugStringW(error.c_str());
       return hr;
     }
-    winrt::check_bool(
-      AssignProcessToJobObject(job.get(), processInfo.hProcess));
+    CheckBOOL(AssignProcessToJobObject(job.get(), processInfo.hProcess));
     ResumeThread(processInfo.hThread);
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);

@@ -2,10 +2,6 @@
   "builtin-baseline": "120deac3062162151622ca4860575a33844ba10b",
   "dependencies": [
     {
-      "name": "cppwinrt",
-      "platform": "windows"
-    },
-    {
       "name": "wil",
       "platform": "windows"
     },

@@ -93,7 +93,7 @@ void PlatformGUI_Windows::InitializeDirect3D() {
   d3dFlags |= D3D11_CREATE_DEVICE_DEBUG;
   dxgiFlags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
-  winrt::check_hresult(D3D11CreateDevice(
+  CheckHRESULT(D3D11CreateDevice(
     nullptr,
     D3D_DRIVER_TYPE_HARDWARE,
     nullptr,
@@ -106,8 +106,7 @@ void PlatformGUI_Windows::InitializeDirect3D() {
     mD3DContext.put()));
 
   wil::com_ptr<IDXGIFactory3> dxgiFactory;
-  winrt::check_hresult(
-    CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(dxgiFactory.put())));
+  CheckHRESULT(CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(dxgiFactory.put())));
   constexpr DXGI_SWAP_CHAIN_DESC1 SwapChainDesc {
     .Width = Config::MINIMUM_WINDOW_WIDTH,
     .Height = Config::MINIMUM_WINDOW_HEIGHT,
@@ -118,16 +117,15 @@ void PlatformGUI_Windows::InitializeDirect3D() {
     .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
     .AlphaMode = DXGI_ALPHA_MODE_IGNORE,
   };
-  winrt::check_hresult(dxgiFactory->CreateSwapChainForHwnd(
+  CheckHRESULT(dxgiFactory->CreateSwapChainForHwnd(
     mD3DDevice.get(),
     hwnd,
     &SwapChainDesc,
     nullptr,
     nullptr,
     mSwapChain.put()));
-  winrt::check_hresult(
-    mSwapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer.put())));
-  winrt::check_hresult(mD3DDevice->CreateRenderTargetView(
+  CheckHRESULT(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer.put())));
+  CheckHRESULT(mD3DDevice->CreateRenderTargetView(
     mBackBuffer.get(), nullptr, mRenderTargetView.put()));
 }
 
@@ -172,7 +170,7 @@ void PlatformGUI_Windows::Initialize() {
                .string();
 
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-  winrt::init_apartment();
+  CheckHRESULT(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
@@ -221,7 +219,7 @@ void PlatformGUI_Windows::BeforeFrame() {
 void PlatformGUI_Windows::AfterFrame() {
   ImGui::Render();
   ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-  winrt::check_hresult(mSwapChain->Present(0, 0));
+  CheckHRESULT(mSwapChain->Present(0, 0));
 }
 
 void PlatformGUI_Windows::ShowFolderContainingFile(
@@ -231,7 +229,7 @@ void PlatformGUI_Windows::ShowFolderContainingFile(
   wil::unique_any<PIDLIST_ABSOLUTE, decltype(&CoTaskMemFree), &CoTaskMemFree>
     pidl;
 
-  winrt::check_hresult(SHParseDisplayName(
+  CheckHRESULT(SHParseDisplayName(
     std::filesystem::absolute(path).wstring().c_str(),
     nullptr,
     pidl.put(),
@@ -310,9 +308,9 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
   picker->SetTitle(L"Export to File");
 
   wil::com_ptr<IShellFolder> desktopFolder;
-  winrt::check_hresult(SHGetDesktopFolder(desktopFolder.put()));
+  CheckHRESULT(SHGetDesktopFolder(desktopFolder.put()));
   wil::com_ptr<IShellItem> desktopItem;
-  winrt::check_hresult(
+  CheckHRESULT(
     SHGetItemFromObject(desktopFolder.get(), IID_PPV_ARGS(desktopItem.put())));
   picker->SetDefaultFolder(desktopItem.get());
 
@@ -340,7 +338,7 @@ std::optional<std::filesystem::path> PlatformGUI_Windows::GetExportFilePath() {
   }
 
   wil::unique_cotaskmem_string buf;
-  winrt::check_hresult(shellItem->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
+  CheckHRESULT(shellItem->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
   return std::filesystem::path {std::wstring_view {buf.get()}};
 }
 std::vector<std::filesystem::path>
@@ -379,22 +377,22 @@ PlatformGUI_Windows::GetNewAPILayerJSONPaths() {
   }
 
   wil::com_ptr<IShellItemArray> items;
-  winrt::check_hresult(picker->GetResults(items.put()));
+  CheckHRESULT(picker->GetResults(items.put()));
 
   if (!items) {
     return {};
   }
 
   DWORD count {};
-  winrt::check_hresult(items->GetCount(&count));
+  CheckHRESULT(items->GetCount(&count));
 
   std::vector<std::filesystem::path> ret;
 
   for (DWORD i = 0; i < count; ++i) {
     wil::com_ptr<IShellItem> item;
-    winrt::check_hresult(items->GetItemAt(i, item.put()));
+    CheckHRESULT(items->GetItemAt(i, item.put()));
     wil::unique_cotaskmem_string buf;
-    winrt::check_hresult(item->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
+    CheckHRESULT(item->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
     if (!buf) {
       continue;
     }
@@ -486,17 +484,16 @@ LRESULT PlatformGUI_Windows::InstanceWindowProc(
     }
     case WM_SIZE: {
       DXGI_SWAP_CHAIN_DESC1 desc {};
-      winrt::check_hresult(mSwapChain->GetDesc1(&desc));
+      CheckHRESULT(mSwapChain->GetDesc1(&desc));
 
       mBackBuffer.reset();
       mRenderTargetView.reset();
       const auto w = LOWORD(lParam);
       const auto h = HIWORD(lParam);
-      winrt::check_hresult(
+      CheckHRESULT(
         mSwapChain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, desc.Flags));
-      winrt::check_hresult(
-        mSwapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer.put())));
-      winrt::check_hresult(mD3DDevice->CreateRenderTargetView(
+      CheckHRESULT(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer.put())));
+      CheckHRESULT(mD3DDevice->CreateRenderTargetView(
         mBackBuffer.get(), nullptr, mRenderTargetView.put()));
       mWindowSize = {static_cast<float>(w), static_cast<float>(h)};
       break;
