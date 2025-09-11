@@ -32,12 +32,10 @@ add_library(
   APILayerDetails.cpp
   ConstexprString.hpp
   GUI.cpp
-  GetActiveRuntimePath.hpp
   LoaderData.cpp LoaderData.hpp
   SaveReport.cpp
-  Platform.hpp
+  Platform.cpp Platform.hpp
   StringTemplateParameter.hpp
-  windows/GetActiveRuntimePath.cpp
 )
 
 # Using an OBJECT library instead of `STATIC`, because otherwise
@@ -106,7 +104,6 @@ if (WIN32)
     lib
     PRIVATE
     windows/CheckForUpdates.cpp
-    windows/GetActiveRuntimePath.cpp
     windows/WindowsPlatform.hpp
   )
 

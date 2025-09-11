@@ -28,6 +28,9 @@ class WindowsPlatform final : public Platform {
   void ShowFolderContainingFile(const std::filesystem::path& path) override;
   std::unordered_set<std::string> GetEnvironmentVariableNames() override;
 
+  std::filesystem::path Get32BitRuntimePath() override;
+  std::filesystem::path Get64BitRuntimePath() override;
+
  private:
   wil::unique_hwnd mWindowHandle {};
   float mDPIScaling {};

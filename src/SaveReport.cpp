@@ -12,8 +12,8 @@
 
 #include "APILayerStore.hpp"
 #include "Config.hpp"
-#include "GetActiveRuntimePath.hpp"
 #include "Linter.hpp"
+#include "Platform.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -114,21 +114,42 @@ static std::string GenerateReportText(const APILayerStore* store) {
   return ret;
 }
 
+static std::string GenerateRuntimeText(
+  const uint8_t bitness,
+  const std::optional<Runtime>& runtime) {
+  if (!runtime) {
+    return std::format("Active {}-bit runtime: NONE\n", bitness);
+  }
+
+  if (!runtime->mName) {
+    if (runtime->mName.error() != Runtime::ManifestError::FieldNotPresent) {
+      return std::format(
+        "Active {}-bit runtime: CORRUPTED - {}\n",
+        bitness,
+        runtime->mPath.string());
+    }
+    return std::format(
+      "Active {}-bit runtime: {}\n", bitness, runtime->mPath.string());
+  }
+
+  return std::format(
+    "Active {}-bit runtime: \"{}\" - {}\n",
+    bitness,
+    runtime->mName.value(),
+    runtime->mPath.string());
+}
+
 void SaveReport(const std::filesystem::path& path) {
   auto text = std::format(
     "OpenXR API Layers GUI v{}\n"
-    "Reported generated at {:%Y-%m-%d %H:%M:%S}",
+    "Reported generated at {:%Y-%m-%d %H:%M:%S}\n\n",
     Config::BUILD_VERSION,
     std::chrono::zoned_time(
       std::chrono::current_zone(), std::chrono::system_clock::now()));
 
-  const auto runtime = GetActiveRuntimePath();
-  if (runtime.empty()) {
-    text
-      += std::format("\n\n{} NO ACTIVE RUNTIME FOUND\n", Config::GLYPH_ERROR);
-  } else {
-    text += std::format("\n\nActive runtime: {}\n", runtime.string());
-  }
+  auto& platform = Platform::Get();
+  text += GenerateRuntimeText(64, platform.Get64BitRuntime());
+  text += GenerateRuntimeText(32, platform.Get32BitRuntime());
 
   for (const auto store: APILayerStore::Get()) {
     text += GenerateReportText(store);

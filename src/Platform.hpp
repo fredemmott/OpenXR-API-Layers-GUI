@@ -19,11 +19,26 @@ struct DPIChangeInfo {
   std::optional<ImVec2> mRecommendedSize;
 };
 
+struct Runtime {
+  enum class ManifestError {
+    FileNotFound,
+    FileNotReadable,
+    InvalidJson,
+    FieldNotPresent,
+  };
+
+  std::filesystem::path mPath;
+  std::expected<std::string, ManifestError> mName;
+};
+
 // Platform-specific functions implemented in PlatformGUI_P*.cpp
 class Platform {
  public:
   static Platform& Get();
-  virtual ~Platform() = default;
+  virtual ~Platform();
+
+  std::optional<Runtime> Get32BitRuntime();
+  std::optional<Runtime> Get64BitRuntime();
 
   virtual void GUIMain(std::function<void()> drawFrame) = 0;
 
@@ -42,6 +57,8 @@ class Platform {
   Platform& operator=(Platform&&) = delete;
 
  protected:
-  Platform() = default;
+  Platform();
+  virtual std::filesystem::path Get32BitRuntimePath() = 0;
+  virtual std::filesystem::path Get64BitRuntimePath() = 0;
 };
 }// namespace FredEmmott::OpenXRLayers

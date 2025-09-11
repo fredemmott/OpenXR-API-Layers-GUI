@@ -41,7 +41,49 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 namespace FredEmmott::OpenXRLayers {
 
 namespace {
-int WideCharToUTF8(
+static LSTATUS
+GetActiveRuntimePath(const REGSAM desiredAccess, void* data, DWORD* dataSize) {
+  wil::unique_hkey hKey;
+  RegOpenKeyExW(
+    HKEY_LOCAL_MACHINE,
+    L"SOFTWARE\\Khronos\\OpenXR\\1",
+    0,
+    desiredAccess,
+    hKey.put());
+  return RegGetValueW(
+    hKey.get(),
+    nullptr,
+    L"ActiveRuntime",
+    RRF_RT_REG_SZ,
+    nullptr,
+    data,
+    dataSize);
+}
+
+std::filesystem::path GetActiveRuntimePath(const REGSAM wowFlag) {
+  const REGSAM desiredAccess = wowFlag | KEY_QUERY_VALUE;
+
+  DWORD dataSize {0};
+  if (
+    GetActiveRuntimePath(desiredAccess, nullptr, &dataSize) != ERROR_SUCCESS) {
+    return {};
+  }
+  if (dataSize == 0) {
+    return {};
+  }
+  assert(dataSize % sizeof(wchar_t) == 0);
+
+  std::wstring ret;
+  ret.resize(dataSize / sizeof(WCHAR));
+  GetActiveRuntimePath(desiredAccess, ret.data(), &dataSize);
+  while (ret.back() == L'\0') {
+    ret.pop_back();
+  }
+
+  return ret;
+}
+
+std::size_t WideCharToUTF8(
   wchar_t const* in,
   const std::size_t inCharCount,
   char* out,
@@ -585,6 +627,14 @@ LRESULT WindowsPlatform::InstanceWindowProc(
 Platform& Platform::Get() {
   static WindowsPlatform sInstance {};
   return sInstance;
+}
+
+std::filesystem::path WindowsPlatform::Get32BitRuntimePath() {
+  return GetActiveRuntimePath(KEY_WOW64_32KEY);
+}
+
+std::filesystem::path WindowsPlatform::Get64BitRuntimePath() {
+  return GetActiveRuntimePath(KEY_WOW64_64KEY);
 }
 
 }// namespace FredEmmott::OpenXRLayers
