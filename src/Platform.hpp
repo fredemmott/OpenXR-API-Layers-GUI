@@ -10,11 +10,11 @@
 #include <imgui.h>
 
 #include "APILayerSignature.hpp"
+#include "LoaderData.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 class APILayerStore;
 class ReadWriteAPILayerStore;
-struct LoaderData;
 
 struct DPIChangeInfo {
   float mDPIScaling {};
@@ -70,7 +70,7 @@ class Platform {
 
   virtual std::expected<APILayerSignature, APILayerSignature::Error>
   GetAPILayerSignature(const std::filesystem::path&) = 0;
-  virtual std::expected<LoaderData, std::string> GetLoaderData() = 0;
+  virtual std::expected<LoaderData, LoaderData::Error> GetLoaderData() = 0;
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
   virtual std::unordered_set<std::string> GetEnvironmentVariableNames() = 0;

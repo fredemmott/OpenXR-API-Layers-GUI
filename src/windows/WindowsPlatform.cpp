@@ -574,14 +574,26 @@ std::vector<std::filesystem::path> WindowsPlatform::GetNewAPILayerJSONPaths() {
   return ret;
 }
 
-std::expected<LoaderData, std::string> WindowsPlatform::GetLoaderData() {
+template <class T>
+static std::unexpected<T> UnexpectedHRESULT(HRESULT value) {
+  return std::unexpected {
+    T {{value, std::system_category()}},
+  };
+}
+
+template <class T>
+static std::unexpected<T> UnexpectedGetLastError() {
+  return UnexpectedHRESULT<T>(HRESULT_FROM_WIN32(GetLastError()));
+}
+
+std::expected<LoaderData, LoaderData::Error> WindowsPlatform::GetLoaderData() {
   if (!mLoaderData) {
     mLoaderData = GetLoaderDataWithoutCache();
   }
   return mLoaderData.value();
 }
 
-std::expected<LoaderData, std::string>
+std::expected<LoaderData, LoaderData::Error>
 WindowsPlatform::GetLoaderDataWithoutCache() {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
@@ -591,15 +603,16 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
   wil::unique_handle stdoutRead;
   wil::unique_handle stdoutWrite;
   if (!CreatePipe(stdoutRead.put(), stdoutWrite.put(), &saAttr, 0)) {
-    return std::unexpected("Failed to create pipe");
+    return UnexpectedGetLastError<LoaderData::PipeCreationError>();
   }
   if (!SetHandleInformation(stdoutRead.get(), HANDLE_FLAG_INHERIT, 0)) {
-    return std::unexpected("Failed to set pipe properties");
+    return UnexpectedGetLastError<LoaderData::PipeAttributeError>();
   }
 
-  wchar_t modulePath[MAX_PATH];
-  if (!GetModuleFileNameW(nullptr, modulePath, MAX_PATH)) {
-    return std::unexpected("Failed to get executable path");
+  constexpr auto MaxPathExtended = 32768;
+  wchar_t modulePath[MaxPathExtended];
+  if (!GetModuleFileNameW(nullptr, modulePath, MaxPathExtended)) {
+    return UnexpectedGetLastError<LoaderData::CanNotFindExecutableError>();
   }
 
   STARTUPINFOW si {
@@ -623,7 +636,7 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
         nullptr,
         &si,
         &pi)) {
-    return std::unexpected("Failed to create process");
+    return UnexpectedGetLastError<LoaderData::CanNotSpawnError>();
   }
 
   wil::unique_handle process {pi.hProcess};
@@ -643,14 +656,13 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
 
   DWORD exitCode;
   if (!GetExitCodeProcess(process.get(), &exitCode) || exitCode != 0) {
-    return std::unexpected(
-      std::format("Subprocess failed with exit code {}", exitCode));
+    return std::unexpected {LoaderData::BadExitCodeError {exitCode}};
   }
 
   try {
     return static_cast<LoaderData>(nlohmann::json::parse(output));
   } catch (const nlohmann::json::exception& e) {
-    return std::unexpected(e.what());
+    return std::unexpected {LoaderData::InvalidJSONError {e.what()}};
   }
 }
 

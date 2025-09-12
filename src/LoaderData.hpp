@@ -5,11 +5,39 @@
 #include <openxr/openxr.h>
 
 #include <string>
+#include <system_error>
 #include <unordered_set>
+#include <variant>
 
 namespace FredEmmott::OpenXRLayers {
 
 struct LoaderData {
+  struct PipeCreationError {
+    std::error_code mError;
+  };
+  struct PipeAttributeError {
+    std::error_code mError;
+  };
+  struct CanNotFindExecutableError {
+    std::error_code mError;
+  };
+  struct CanNotSpawnError {
+    std::error_code mError;
+  };
+  struct BadExitCodeError {
+    uint32_t mExitCode;
+  };
+  struct InvalidJSONError {
+    std::string mExplanation;
+  };
+  using Error = std::variant<
+    PipeCreationError,
+    PipeAttributeError,
+    CanNotFindExecutableError,
+    CanNotSpawnError,
+    BadExitCodeError,
+    InvalidJSONError>;
+
   XrResult mQueryExtensionsResult {XR_RESULT_MAX_ENUM};
   XrResult mQueryLayersResult {XR_RESULT_MAX_ENUM};
 

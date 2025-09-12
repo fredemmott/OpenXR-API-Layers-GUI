@@ -20,7 +20,7 @@ class WindowsPlatform final : public Platform {
 
   std::optional<std::filesystem::path> GetExportFilePath() override;
   std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override;
-  std::expected<LoaderData, std::string> GetLoaderData() override;
+  std::expected<LoaderData, LoaderData::Error> GetLoaderData() override;
 
   float GetDPIScaling() override {
     return mDPIScaling;
@@ -58,7 +58,7 @@ class WindowsPlatform final : public Platform {
     Config::MINIMUM_WINDOW_WIDTH,
     Config::MINIMUM_WINDOW_HEIGHT,
   };
-  std::optional<std::expected<LoaderData, std::string>> mLoaderData;
+  std::optional<std::expected<LoaderData, LoaderData::Error>> mLoaderData;
 
   HWND CreateAppWindow();
   void InitializeFonts(ImGuiIO* io);
@@ -71,7 +71,8 @@ class WindowsPlatform final : public Platform {
   void MainLoop(const std::function<void()>& drawFrame);
   void Shutdown();
 
-  static std::expected<LoaderData, std::string> GetLoaderDataWithoutCache();
+  static std::expected<LoaderData, LoaderData::Error>
+  GetLoaderDataWithoutCache();
   static LRESULT WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
   LRESULT
