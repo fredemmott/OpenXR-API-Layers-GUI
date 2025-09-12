@@ -32,6 +32,10 @@ class SkippedByLoaderLinter final : public Linter {
         continue;
       }
 
+      if (layer.GetKind() != APILayer::Kind::Implicit) {
+        continue;
+      }
+
       if (!layer.mSource->IsForCurrentArchitecture()) {
         continue;
       }

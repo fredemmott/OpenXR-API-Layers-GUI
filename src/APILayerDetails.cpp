@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "APILayer.hpp"
+#include "APILayerStore.hpp"
 #include "Platform.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -29,6 +30,16 @@ static void SetStringOrNumber(
     variable = fmt::to_string(value.template get<uint32_t>());
     return;
   }
+}
+
+APILayer::Kind APILayer::GetKind() const noexcept {
+  if (!mSource) {
+    /// If we didn't find it in the registry or manifest locations,
+    /// it can't be implicit.
+    return Kind::Explicit;
+  }
+
+  return mSource->GetKind();
 }
 
 APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {

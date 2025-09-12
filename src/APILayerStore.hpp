@@ -13,6 +13,8 @@ class APILayerStore {
  public:
   virtual ~APILayerStore() = default;
 
+  virtual APILayer::Kind GetKind() const noexcept = 0;
+
   // e.g. "Win64-HKLM"
   virtual std::string GetDisplayName() const noexcept = 0;
   virtual std::vector<APILayer> GetAPILayers() const noexcept = 0;

@@ -20,15 +20,19 @@
 
 namespace FredEmmott::OpenXRLayers {
 
-static constexpr auto SubKey {
+static constexpr auto ImplicitSubKey {
   L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit"};
+static constexpr auto ExplicitSubKey {
+  L"SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Explicit"};
 
 WindowsAPILayerStore::WindowsAPILayerStore(
   std::string_view displayName,
+  APILayer::Kind kind,
   RegistryBitness bitness,
   HKEY rootKey,
   REGSAM desiredAccess)
   : mDisplayName(displayName),
+    mLayerKind(kind),
     mRegistryBitness(bitness),
     mRootKey(rootKey) {
   REGSAM samFlags {desiredAccess};
@@ -43,7 +47,7 @@ WindowsAPILayerStore::WindowsAPILayerStore(
   if (
     RegCreateKeyExW(
       rootKey,
-      SubKey,
+      (kind == APILayer::Kind::Implicit) ? ImplicitSubKey : ExplicitSubKey,
       0,
       nullptr,
       REG_OPTION_NON_VOLATILE,
@@ -59,10 +63,14 @@ WindowsAPILayerStore::WindowsAPILayerStore(
     return;
   }
   mEvent.reset(CreateEvent(nullptr, false, false, nullptr));
-  this->Poll();
+  this->WindowsAPILayerStore::Poll();
 }
 
 WindowsAPILayerStore::~WindowsAPILayerStore() = default;
+
+APILayer::Kind WindowsAPILayerStore::GetKind() const noexcept {
+  return mLayerKind;
+}
 
 std::string WindowsAPILayerStore::GetDisplayName() const noexcept {
   return mDisplayName;
@@ -139,9 +147,10 @@ class ReadOnlyWindowsAPILayerStore final : public WindowsAPILayerStore {
  public:
   ReadOnlyWindowsAPILayerStore(
     std::string_view displayName,
+    APILayer::Kind kind,
     RegistryBitness bitness,
     HKEY rootKey)
-    : WindowsAPILayerStore(displayName, bitness, rootKey, KEY_READ) {}
+    : WindowsAPILayerStore(displayName, kind, bitness, rootKey, KEY_READ) {}
 };
 
 class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
@@ -149,10 +158,12 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
  public:
   ReadWriteWindowsAPILayerStore(
     std::string_view displayName,
+    APILayer::Kind kind,
     RegistryBitness bitness,
     HKEY rootKey)
     : WindowsAPILayerStore(
         displayName,
+        kind,
         bitness,
         rootKey,
         KEY_READ | KEY_WRITE) {}
@@ -220,19 +231,32 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
 template <class TInterface, class TConcrete>
 std::span<const TInterface*> GetStaticStores() noexcept {
   using RB = WindowsAPILayerStore::RegistryBitness;
+  using enum APILayer::Kind;
   static const TConcrete sHKLM64 {
-    "Win64-HKLM", RB::Wow64_64, HKEY_LOCAL_MACHINE};
+    "Win64-HKLM", Implicit, RB::Wow64_64, HKEY_LOCAL_MACHINE};
   static const TConcrete sHKCU64 {
-    "Win64-HKCU", RB::Wow64_64, HKEY_CURRENT_USER};
+    "Win64-HKCU", Implicit, RB::Wow64_64, HKEY_CURRENT_USER};
   static const TConcrete sHKLM32 {
-    "Win32-HKLM", RB::Wow64_32, HKEY_LOCAL_MACHINE};
+    "Win32-HKLM", Implicit, RB::Wow64_32, HKEY_LOCAL_MACHINE};
   static const TConcrete sHKCU32 {
-    "Win32-HKCU", RB::Wow64_32, HKEY_CURRENT_USER};
+    "Win32-HKCU", Implicit, RB::Wow64_32, HKEY_CURRENT_USER};
+  static const TConcrete sExplicitHKLM64 {
+    "Explicit Win64-HKLM", Explicit, RB::Wow64_64, HKEY_LOCAL_MACHINE};
+  static const TConcrete sExplicitHKCU64 {
+    "Explicit Win64-HKCU", Explicit, RB::Wow64_64, HKEY_CURRENT_USER};
+  static const TConcrete sExplicitHKLM32 {
+    "Explicit Win32-HKLM", Explicit, RB::Wow64_32, HKEY_LOCAL_MACHINE};
+  static const TConcrete sExplicitHKCU32 {
+    "Explicit Win32-HKCU", Explicit, RB::Wow64_32, HKEY_CURRENT_USER};
   static const TInterface* sStores[] {
     &sHKLM64,
     &sHKCU64,
     &sHKLM32,
     &sHKCU32,
+    &sExplicitHKLM64,
+    &sExplicitHKCU64,
+    &sExplicitHKLM32,
+    &sExplicitHKCU32,
   };
   return sStores;
 }

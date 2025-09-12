@@ -23,10 +23,14 @@ struct APILayer {
   enum class Value {
     Enabled,
     Disabled,
+    NotInstalled,
     Win32_NotDWORD,
   };
+  enum class Kind {
+    Explicit,
+    Implicit,
+  };
 
-  APILayer() = delete;
   APILayer(
     const APILayerStore* source,
     const std::filesystem::path& manifestPath,
@@ -35,15 +39,31 @@ struct APILayer {
       mManifestPath(manifestPath),
       mValue(value) {}
 
+  static APILayer MakeAbsentExplicit(const std::string_view name) {
+    APILayer ret {nullptr, {}, Value::NotInstalled};
+    ret.mReferencedName = name;
+    return ret;
+  }
+
+  Kind GetKind() const noexcept;
+
   const APILayerStore* mSource {nullptr};
   std::filesystem::path mManifestPath;
   Value mValue;
 
+  /// Only set for explicit API layers that are referenced but not
+  /// present
+  std::string mReferencedName;
+
+  [[nodiscard]]
   constexpr bool IsEnabled() const noexcept {
     return mValue == Value::Enabled;
   };
 
   bool operator==(const APILayer&) const noexcept = default;
+
+ private:
+  APILayer() = default;
 };
 
 struct Extension {

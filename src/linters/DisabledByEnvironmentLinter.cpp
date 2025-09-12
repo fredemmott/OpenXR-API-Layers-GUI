@@ -17,6 +17,10 @@ class DisabledByEnvironmentLinter final : public Linter {
         continue;
       }
 
+      if (layer.GetKind() != APILayer::Kind::Implicit) {
+        continue;
+      }
+
       const auto& enableEnv = details.mEnableEnvironment;
       if ((!enableEnv.empty()) && !std::getenv(enableEnv.c_str())) {
         errors.push_back(

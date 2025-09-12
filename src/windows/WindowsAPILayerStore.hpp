@@ -21,6 +21,8 @@ class WindowsAPILayerStore : public virtual APILayerStore {
   WindowsAPILayerStore() = delete;
   ~WindowsAPILayerStore() override;
 
+  APILayer::Kind GetKind() const noexcept override;
+
   std::string GetDisplayName() const noexcept override;
 
   std::vector<APILayer> GetAPILayers() const noexcept override;
@@ -42,6 +44,7 @@ class WindowsAPILayerStore : public virtual APILayerStore {
  protected:
   WindowsAPILayerStore(
     std::string_view displayName,
+    APILayer::Kind layerKind,
     RegistryBitness bitness,
     HKEY rootKey,
     REGSAM desiredAccess);
@@ -51,6 +54,7 @@ class WindowsAPILayerStore : public virtual APILayerStore {
 
  private:
   const std::string mDisplayName;
+  const APILayer::Kind mLayerKind;
   const RegistryBitness mRegistryBitness;
   const HKEY mRootKey;
 };
