@@ -103,7 +103,14 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
 
   SetStringOrNumber(mImplementationVersion, layer, "implementation_version");
 
-  mSignature = Platform::Get().GetAPILayerSignature(mLibraryPath);
+  auto& platform = Platform::Get();
+  try {
+    mManifestFilesystemChangeTime = platform.GetFileChangeTime(jsonPath);
+    mLibraryFilesystemChangeTime = platform.GetFileChangeTime(mLibraryPath);
+  } catch (const std::filesystem::filesystem_error&) {
+  }
+
+  mSignature = platform.GetAPILayerSignature(mLibraryPath);
 
   mState = State::Loaded;
 }

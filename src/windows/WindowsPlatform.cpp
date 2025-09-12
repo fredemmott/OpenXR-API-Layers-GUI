@@ -329,6 +329,21 @@ std::vector<AvailableRuntime> WindowsPlatform::GetAvailable32BitRuntimes() {
 std::vector<AvailableRuntime> WindowsPlatform::GetAvailable64BitRuntimes() {
   return GetAvailableRuntimes(KEY_WOW64_64KEY);
 }
+std::filesystem::file_time_type WindowsPlatform::GetFileChangeTime(
+  const std::filesystem::path& path) {
+  const wil::unique_hfile file {CreateFileW(
+    path.wstring().c_str(),
+    GENERIC_READ,
+    FILE_SHARE_READ,
+    nullptr,
+    OPEN_EXISTING,
+    FILE_FLAG_BACKUP_SEMANTICS,
+    nullptr)};
+  FILE_BASIC_INFO info {};
+  GetFileInformationByHandleEx(file.get(), FileBasicInfo, &info, sizeof(info));
+  return std::filesystem::file_time_type {std::chrono::file_clock::duration {
+    std::bit_cast<int64_t>(info.ChangeTime)}};
+}
 
 std::expected<APILayerSignature, APILayerSignature::Error>
 WindowsPlatform::GetAPILayerSignature(const std::filesystem::path& dllPath) {

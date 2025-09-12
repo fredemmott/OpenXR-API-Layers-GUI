@@ -61,6 +61,13 @@ class Platform {
 
   virtual void GUIMain(std::function<void()> drawFrame) = 0;
 
+  /// Unlike `std::filesystem::last_write_time()`, this should
+  /// return the actual time the file was modified on disk, e.g. when it
+  /// was extracted/installed
+  virtual std::filesystem::file_time_type GetFileChangeTime(
+    const std::filesystem::path& path)
+    = 0;
+
   virtual std::expected<APILayerSignature, APILayerSignature::Error>
   GetAPILayerSignature(const std::filesystem::path&) = 0;
   virtual std::expected<LoaderData, std::string> GetLoaderData() = 0;

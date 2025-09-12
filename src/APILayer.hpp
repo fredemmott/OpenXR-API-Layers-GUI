@@ -79,6 +79,9 @@ struct APILayerDetails {
   std::string mEnableEnvironment;
   std::vector<Extension> mExtensions;
 
+  std::filesystem::file_time_type mManifestFilesystemChangeTime;
+  std::filesystem::file_time_type mLibraryFilesystemChangeTime;
+
   bool operator==(const APILayerDetails&) const noexcept = default;
 
   [[nodiscard]]

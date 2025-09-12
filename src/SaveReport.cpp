@@ -52,19 +52,14 @@ static std::string GenerateReportText(const APILayerStore* store) {
       ret += fmt::format(
         "\n\t- {} {}", Config::GLYPH_ERROR, details.StateAsString());
     } else {
+      ret += fmt::format(
+        "\n\tManifest JSON last modified at: {}",
+        std::chrono::clock_cast<std::chrono::system_clock>(
+          std::chrono::time_point_cast<std::chrono::seconds>(
+            details.mManifestFilesystemChangeTime)));
+
       if (!details.mName.empty()) {
         ret += fmt::format("\n\tName: {}", details.mName);
-      }
-
-      if (details.mSignature) {
-        ret += fmt::format(
-          "\n\tSigned by: {}"
-          "\n\tSigned at: {}",
-          details.mSignature->mSignedBy,
-          std::chrono::time_point_cast<std::chrono::seconds>(
-            details.mSignature->mSignedAt));
-        // No need for an 'else' - linters already report warnings when
-        // appropriate
       }
 
       if (details.mLibraryPath.empty()) {
@@ -74,6 +69,24 @@ static std::string GenerateReportText(const APILayerStore* store) {
       } else {
         ret
           += fmt::format("\n\tLibrary path: {}", details.mLibraryPath.string());
+
+        ret += fmt::format(
+          "\n\tLibrary last modified at: {}",
+          details.mLibraryPath.extension().string(),
+          std::chrono::clock_cast<std::chrono::system_clock>(
+            std::chrono::time_point_cast<std::chrono::seconds>(
+              details.mLibraryFilesystemChangeTime)));
+
+        if (details.mSignature) {
+          ret += fmt::format(
+            "\n\tSigned by: {}"
+            "\n\tSigned at: {}",
+            details.mSignature->mSignedBy,
+            std::chrono::time_point_cast<std::chrono::seconds>(
+              details.mSignature->mSignedAt));
+          // No need for an 'else' - linters already report warnings when
+          // appropriate
+        }
       }
 
       if (!details.mImplementationVersion.empty()) {
