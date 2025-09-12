@@ -57,7 +57,8 @@ class SkippedByLoaderLinter final : public Linter {
           errors.push_back(
             std::make_shared<LintError>(
               fmt::format(
-                "This layer is blocked by your current OpenXR runtime ('{}')",
+                "Layer `{}` is blocked by your current OpenXR runtime ('{}')",
+                layer.mManifestPath.string(),
                 runtimeString),
               PathSet {layer.mManifestPath}));
           continue;
@@ -67,8 +68,9 @@ class SkippedByLoaderLinter final : public Linter {
       errors.push_back(
         std::make_shared<LintError>(
           fmt::format(
-            "Layer appears enabled, but is not loaded by OpenXR; it may be "
-            "blocked by your OpenXR runtime ('{}')",
+            "Layer `{}` appears enabled, but is not loaded by OpenXR; it may "
+            "be blocked by your OpenXR runtime ('{}')",
+            layer.mManifestPath.string(),
             runtimeString),
           PathSet {layer.mManifestPath}));
     }

@@ -22,8 +22,9 @@ class DisabledByEnvironmentLinter final : public Linter {
         errors.push_back(
           std::make_shared<LintError>(
             fmt::format(
-              "Layer is disabled, because required environment variable `{}` "
-              "is not set",
+              "Layer `{}` is disabled, because required environment variable "
+              "`{}` is not set",
+              layer.mManifestPath.string(),
               enableEnv),
             PathSet {layer.mManifestPath}));
       }
@@ -44,7 +45,9 @@ class DisabledByEnvironmentLinter final : public Linter {
         errors.push_back(
           std::make_shared<LintError>(
             fmt::format(
-              "Layer is disabled by environment variable `{}`", disableEnv),
+              "Layer `{}` is disabled by environment variable `{}`",
+              layer.mManifestPath.string(),
+              disableEnv),
             PathSet {layer.mManifestPath}));
       }
     }
