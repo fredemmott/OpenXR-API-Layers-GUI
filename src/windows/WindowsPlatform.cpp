@@ -208,11 +208,16 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
 
   const wil::unique_event changeEvent(
     CreateEventW(nullptr, FALSE, TRUE, nullptr));
-  const auto changeSubscriptions
-    = APILayerStore::Get()
-    | std::views::transform([e = changeEvent.get()](const auto store) {
-        return store->OnChange(std::bind_front(&SetEvent, e));
-      })
+  const auto changeSubscriptions = APILayerStore::Get()
+    | std::views::transform([e = changeEvent.get(), this](const auto store) {
+                                     return store->OnChange([e, this] {
+                                       {
+                                         const std::unique_lock lock(mMutex);
+                                         mLoaderData.reset();
+                                       }
+                                       SetEvent(e);
+                                     });
+                                   })
     | std::ranges::to<std::vector>();
 
   while (true) {
@@ -229,9 +234,12 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
 
     ResetEvent(changeEvent.get());
 
-    this->BeforeFrame();
-    drawFrame();
-    this->AfterFrame();
+    {
+      const std::unique_lock lock(mMutex);
+      this->BeforeFrame();
+      drawFrame();
+      this->AfterFrame();
+    }
 
     {
       const auto e = changeEvent.get();

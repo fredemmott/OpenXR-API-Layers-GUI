@@ -5,6 +5,8 @@
 #include <wil/com.h>
 #include <wil/resource.h>
 
+#include <mutex>
+
 #include <d3d11.h>
 #include <dxgi1_2.h>
 
@@ -58,6 +60,7 @@ class WindowsPlatform final : public Platform {
     Config::MINIMUM_WINDOW_WIDTH,
     Config::MINIMUM_WINDOW_HEIGHT,
   };
+  std::mutex mMutex;
   std::optional<std::expected<LoaderData, LoaderData::Error>> mLoaderData;
 
   HWND CreateAppWindow();
