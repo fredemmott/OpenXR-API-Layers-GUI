@@ -62,8 +62,11 @@ WindowsAPILayerStore::WindowsAPILayerStore(
     mKey = {};
     return;
   }
-  mEvent.reset(CreateEvent(nullptr, false, false, nullptr));
-  this->WindowsAPILayerStore::Poll();
+
+  mWatcher = wil::make_registry_watcher(
+    mKey.get(), /* no subkey. nullptr not allowed */ L"", true, [this](auto) {
+      this->NotifyChange();
+    });
 }
 
 WindowsAPILayerStore::~WindowsAPILayerStore() = default;
@@ -134,13 +137,6 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
     disabledSize = sizeof(disabled);
   }
   return layers;
-}
-
-bool WindowsAPILayerStore::Poll() const noexcept {
-  const auto result = WaitForSingleObject(mEvent.get(), 0);
-  RegNotifyChangeKeyValue(
-    mKey.get(), false, REG_NOTIFY_CHANGE_LAST_SET, mEvent.get(), true);
-  return (result == WAIT_OBJECT_0);
 }
 
 class ReadOnlyWindowsAPILayerStore final : public WindowsAPILayerStore {
@@ -229,26 +225,26 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
 };
 
 template <class TInterface, class TConcrete>
-std::span<const TInterface*> GetStaticStores() noexcept {
+std::span<TInterface*> GetStaticStores() noexcept {
   using RB = WindowsAPILayerStore::RegistryBitness;
   using enum APILayer::Kind;
-  static const TConcrete sHKLM64 {
+  static TConcrete sHKLM64 {
     "Win64-HKLM", Implicit, RB::Wow64_64, HKEY_LOCAL_MACHINE};
-  static const TConcrete sHKCU64 {
+  static TConcrete sHKCU64 {
     "Win64-HKCU", Implicit, RB::Wow64_64, HKEY_CURRENT_USER};
-  static const TConcrete sHKLM32 {
+  static TConcrete sHKLM32 {
     "Win32-HKLM", Implicit, RB::Wow64_32, HKEY_LOCAL_MACHINE};
-  static const TConcrete sHKCU32 {
+  static TConcrete sHKCU32 {
     "Win32-HKCU", Implicit, RB::Wow64_32, HKEY_CURRENT_USER};
-  static const TConcrete sExplicitHKLM64 {
+  static TConcrete sExplicitHKLM64 {
     "Explicit Win64-HKLM", Explicit, RB::Wow64_64, HKEY_LOCAL_MACHINE};
-  static const TConcrete sExplicitHKCU64 {
+  static TConcrete sExplicitHKCU64 {
     "Explicit Win64-HKCU", Explicit, RB::Wow64_64, HKEY_CURRENT_USER};
-  static const TConcrete sExplicitHKLM32 {
+  static TConcrete sExplicitHKLM32 {
     "Explicit Win32-HKLM", Explicit, RB::Wow64_32, HKEY_LOCAL_MACHINE};
-  static const TConcrete sExplicitHKCU32 {
+  static TConcrete sExplicitHKCU32 {
     "Explicit Win32-HKCU", Explicit, RB::Wow64_32, HKEY_CURRENT_USER};
-  static const TInterface* sStores[] {
+  static TInterface* sStores[] {
     &sHKLM64,
     &sHKCU64,
     &sHKLM32,
@@ -261,12 +257,11 @@ std::span<const TInterface*> GetStaticStores() noexcept {
   return sStores;
 }
 
-std::span<const APILayerStore*> APILayerStore::Get() noexcept {
+std::span<APILayerStore*> APILayerStore::Get() noexcept {
   return GetStaticStores<APILayerStore, ReadOnlyWindowsAPILayerStore>();
 };
 
-std::span<const ReadWriteAPILayerStore*>
-ReadWriteAPILayerStore::Get() noexcept {
+std::span<ReadWriteAPILayerStore*> ReadWriteAPILayerStore::Get() noexcept {
   return GetStaticStores<
     ReadWriteAPILayerStore,
     ReadWriteWindowsAPILayerStore>();

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: ISC
 
 #pragma once
+#include <boost/signals2.hpp>
+
 #include <span>
 #include <vector>
 
@@ -21,16 +23,27 @@ class APILayerStore {
   // e.g. if we're a 64-bit build, we won't see 32-bit layers
   virtual bool IsForCurrentArchitecture() const noexcept = 0;
 
-  virtual bool Poll() const noexcept = 0;
+  virtual boost::signals2::scoped_connection OnChange(
+    std::function<void()> callback) noexcept {
+    return mOnChangeSignal.connect(std::move(callback));
+  }
 
-  static std::span<const APILayerStore*> Get() noexcept;
+  static std::span<APILayerStore*> Get() noexcept;
+
+ protected:
+  void NotifyChange() {
+    mOnChangeSignal();
+  }
+
+ private:
+  boost::signals2::signal<void()> mOnChangeSignal;
 };
 
 class ReadWriteAPILayerStore : public virtual APILayerStore {
  public:
   virtual bool SetAPILayers(const std::vector<APILayer>&) const noexcept = 0;
 
-  static std::span<const ReadWriteAPILayerStore*> Get() noexcept;
+  static std::span<ReadWriteAPILayerStore*> Get() noexcept;
 };
 
 }// namespace FredEmmott::OpenXRLayers

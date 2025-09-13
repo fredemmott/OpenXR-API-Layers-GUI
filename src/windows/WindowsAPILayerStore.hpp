@@ -27,8 +27,6 @@ class WindowsAPILayerStore : public virtual APILayerStore {
 
   std::vector<APILayer> GetAPILayers() const noexcept override;
 
-  bool Poll() const noexcept override;
-
   bool IsForCurrentArchitecture() const noexcept override {
     return std::to_underlying(mRegistryBitness) == sizeof(void*);
   }
@@ -50,13 +48,13 @@ class WindowsAPILayerStore : public virtual APILayerStore {
     REGSAM desiredAccess);
 
   wil::unique_hkey mKey {};
-  wil::unique_event mEvent {};
 
  private:
   const std::string mDisplayName;
   const APILayer::Kind mLayerKind;
   const RegistryBitness mRegistryBitness;
   const HKEY mRootKey;
+  wil::unique_registry_watcher mWatcher;
 };
 
 }// namespace FredEmmott::OpenXRLayers

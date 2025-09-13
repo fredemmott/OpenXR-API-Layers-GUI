@@ -59,14 +59,23 @@ void GUI::DrawFrame() {
 }
 
 GUI::GUI() {
+  const auto stores = ReadWriteAPILayerStore::Get();
+  mLayerSets.reserve(stores.size());
   for (auto&& store: ReadWriteAPILayerStore::Get()) {
-    mLayerSets.push_back({store});
+    mLayerSets.emplace_back(store);
   }
 }
 
 void GUI::Run() {
   auto& platform = Platform::Get();
   platform.GUIMain(std::bind_front(&GUI::DrawFrame, this));
+}
+
+GUI::LayerSet::~LayerSet() = default;
+
+GUI::LayerSet::LayerSet(ReadWriteAPILayerStore* store) : mStore(store) {
+  mOnChangeConnection
+    = store->OnChange([this] { this->mLayerDataIsStale = true; });
 }
 
 void GUI::LayerSet::GUILayersList() {
@@ -632,9 +641,6 @@ void GUI::LayerSet::DragDropReorder(
 }
 
 void GUI::LayerSet::Draw() {
-  if (mStore->Poll()) {
-    mLayerDataIsStale = true;
-  }
   if (mLayerDataIsStale) {
     this->ReloadLayerDataNow();
   }

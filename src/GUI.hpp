@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <boost/signals2/connection.hpp>
+
 #include <vector>
 
 #include "APILayer.hpp"
@@ -20,8 +22,17 @@ class GUI final {
  private:
   using LintErrors = std::vector<std::shared_ptr<LintError>>;
 
-  class LayerSet {
+  class LayerSet final {
    public:
+    LayerSet() = delete;
+    ~LayerSet();
+    explicit LayerSet(ReadWriteAPILayerStore* store);
+
+    LayerSet(const LayerSet&) = delete;
+    LayerSet& operator=(const LayerSet&) = delete;
+    LayerSet(LayerSet&&) = default;
+    LayerSet& operator=(LayerSet&&) = default;
+
     std::type_identity_t<const ReadWriteAPILayerStore>* mStore {nullptr};
 
     std::vector<APILayer> mLayers;
@@ -51,6 +62,9 @@ class GUI final {
 
     void AddLayersClicked();
     void DragDropReorder(const APILayer& source, const APILayer& target);
+
+   private:
+    boost::signals2::scoped_connection mOnChangeConnection;
   };
 
   std::vector<LayerSet> mLayerSets;
