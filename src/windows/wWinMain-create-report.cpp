@@ -6,7 +6,6 @@
 #include <shellapi.h>
 
 #include "CheckForUpdates.hpp"
-#include "LoaderData.hpp"
 #include "Platform.hpp"
 #include "SaveReport.hpp"
 
@@ -22,16 +21,6 @@ int WINAPI wWinMain(
   [[maybe_unused]] int nCmdShow) {
   {
     [[maybe_unused]] auto fireAndForget = CheckForUpdates();
-  }
-
-  int argc {};
-  const wil::unique_any<LPWSTR*, decltype(&LocalFree), &LocalFree> argv {
-    CommandLineToArgvW(GetCommandLineW(), &argc)};
-
-  constexpr std::wstring_view LoaderQuery {L"loader-query"};
-  if (argc == 2 && argv.get()[1] == LoaderQuery) {
-    FredEmmott::OpenXRLayers::LoaderMain();
-    return 0;
   }
 
   // Make the file picker high-DPI if supported

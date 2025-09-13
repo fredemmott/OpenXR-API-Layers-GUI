@@ -1,8 +1,8 @@
 # Copyright 2023 Fred Emmott <fred@fredemmott.com>
 # SPDX-License-Identifier: ISC
 
-find_package(imgui CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)
 # Using fmt instead of fmt::format until MacOS/libc++ catch up
 find_package(fmt CONFIG REQUIRED)
@@ -25,198 +25,22 @@ configure_file(
   "${CODEGEN_BUILD_DIR}/Config.hpp"
   @ONLY
 )
+add_library(config-hpp INTERFACE "${CODEGEN_BUILD_DIR}/Config.hpp")
+target_include_directories(config-hpp INTERFACE "${CODEGEN_BUILD_DIR}")
 
-add_library(
-  lib
-  STATIC
-  APILayerDetails.cpp
-  APILayerSignature.hpp
-  ConstexprString.hpp
-  GUI.cpp
-  LoaderData.cpp LoaderData.hpp
-  SaveReport.cpp
-  Platform.cpp Platform.hpp
-  StringTemplateParameter.hpp
-)
+option(BUILD_EXECUTABLES "Build executables" ON)
 
-# Using an OBJECT library instead of `STATIC`, because otherwise
-# Microsoft's linker gets rid of the static initializers used to register linters :(
-add_library(
-  linters
-  OBJECT
-  Linter.cpp
-  LayerRules.cpp
-  linters/BadInstallationLinter.cpp
-  linters/DuplicatesLinter.cpp
-  linters/OrderingLinter.cpp
-  linters/DisabledByEnvironmentLinter.cpp
-  linters/SkippedByLoaderLinter.cpp
-)
-target_link_libraries(linters PUBLIC lib)
-target_include_directories(
-  lib
-  PUBLIC
-  "${CODEGEN_BUILD_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
-target_link_libraries(
-  lib
-  PUBLIC
-  nlohmann_json::nlohmann_json
-  fmt::fmt-header-only
-  imgui::imgui
-  OpenXR::headers OpenXR::openxr_loader
-)
-
-add_executable(
-  gui
-  WIN32
-  "${CMAKE_SOURCE_DIR}/icon/icon.rc"
-)
-
-# Used by version.in.rc
-set(OUTPUT_NAME "OpenXR-API-Layers-GUI")
-set_target_properties(
-  gui
-  PROPERTIES
-  OUTPUT_NAME "${OUTPUT_NAME}"
-)
-target_link_libraries(gui PRIVATE lib linters)
-
-set(PLATFORM_APILAYERS_CPP "stubs/APILayerStore.cpp")
-set(PLATFORM_MAIN_CPP "main.cpp")
-set(PLATFORM_GUI_CPP "stubs/PlatformGUI.cpp")
-set(PLATFORM_REPORT_MAIN_CPP "SaveReport_main.cpp")
-
-if (WIN32)
-  set(PLATFORM_APILAYERS_CPP "windows/WindowsAPILayerStore.cpp")
-  set(PLATFORM_GUI_CPP "windows/WindowsPlatform.cpp")
-  set(PLATFORM_MAIN_CPP "windows/wWinMain.cpp")
-  set(PLATFORM_REPORT_MAIN_CPP "windows/SaveReport_wWinMain.cpp")
-
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
-    "${CODEGEN_BUILD_DIR}/gui-version.rc"
-    @ONLY
-  )
-
-  target_sources(
-    lib
-    PRIVATE
-    windows/CheckForUpdates.cpp
-    windows/WindowsPlatform.hpp
-  )
-
-  target_sources(
-    linters
-    PRIVATE
-    linters/windows/NotADWORDLinter.cpp
-    linters/windows/OpenXRToolkitLinter.cpp
-    linters/windows/OutdatedOpenKneeboardLinter.cpp
-    linters/windows/ProgramFilesLinter.cpp
-    linters/windows/UnsignedDllLinter.cpp
-    linters/windows/XRNeckSaferLinter.cpp
-  )
-
-  target_sources(
-    gui
-    PRIVATE
-    "${CODEGEN_BUILD_DIR}/gui-version.rc"
-    manifest.xml
-  )
-
-  target_compile_definitions(
-    lib
-    PUBLIC
-    "WIN32_LEAN_AND_MEAN"
-    "NOMINMAX"
-    "UNICODE"
-    "_UNICODE"
-  )
-
-  target_compile_options(
-    lib
-    PUBLIC
-    "/EHsc"
-    "/diagnostics:caret"
-    "/utf-8"
-  )
-
-  target_link_libraries(
-    lib
-    PUBLIC
-    WIL::WIL
-  )
-  set(
-    WINDOWS_SDK_LIBRARIES
-    Comctl32
-    D3d11
-    DwmApi
-    Dxgi
-    RuntimeObject
-    Crypt32
-    WinTrust
-  )
-  foreach (NAME IN LISTS WINDOWS_SDK_LIBRARIES)
-    set(LIB_PATH_VAR "${NAME}_PATH}")
-    find_library("${LIB_PATH_VAR}" NAMES "${NAME}" REQUIRED)
-    target_link_libraries(lib PUBLIC "${${LIB_PATH_VAR}}")
-  endforeach ()
-
-  target_link_options(
-    gui
-    PRIVATE
-    "/MANIFESTUAC:level='requireAdministrator'"
-  )
-
+option(BUILD_GUI "Build the GUI" "${BUILD_EXECUTABLES}")
+if (BUILD_GUI)
+  include(gui.cmake)
 endif ()
 
-target_sources(
-  lib
-  PRIVATE
-  "${PLATFORM_APILAYERS_CPP}"
-  "${PLATFORM_GUI_CPP}"
-)
-target_sources(
-  gui
-  PRIVATE
-  "${PLATFORM_MAIN_CPP}"
-)
+option(BUILD_CREATE_REPORT "Build the Create-Report executable" "${BUILD_EXECUTABLES}")
+if (BUILD_CREATE_REPORT)
+  include(create-report.cmake)
+endif ()
 
-set(OUTPUT_NAME "OpenXR-API-Layers-Create-Report")
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
-  "${CODEGEN_BUILD_DIR}/create-report-version.rc"
-  @ONLY
-)
-add_executable(
-  create-report
-  WIN32
-  "${PLATFORM_REPORT_MAIN_CPP}"
-  "${CMAKE_SOURCE_DIR}/icon/icon.rc"
-  "${CODEGEN_BUILD_DIR}/create-report-version.rc"
-)
-target_link_libraries(
-  create-report
-  PRIVATE
-  lib
-  linters
-)
-set_target_properties(
-  create-report
-  PROPERTIES
-  OUTPUT_NAME "${OUTPUT_NAME}"
-)
-
-if (WIN32)
-  set(UPDATER_FILENAME "fredemmott_OpenXR-API-Layers-GUI_Updater.exe")
-  add_custom_command(
-    TARGET gui POST_BUILD
-    COMMAND
-    "${CMAKE_COMMAND}" -E copy_if_different
-    "${UPDATER_EXE}"
-    "$<TARGET_FILE_DIR:gui>/${UPDATER_FILENAME}"
-    VERBATIM
-  )
+option(BUILD_LOADER_DATA "Build the loader-data executable" "${BUILD_EXECUTABLES}")
+if (BUILD_LOADER_DATA)
+  include(loader-data.cmake)
 endif ()

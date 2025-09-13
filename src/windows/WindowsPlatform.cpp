@@ -646,12 +646,12 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
   };
   PROCESS_INFORMATION pi {};
 
-  std::wstring cmdLine {modulePath};
-  cmdLine += L" loader-query";
-
+  const auto commandLine = (std::filesystem::path {modulePath}.parent_path()
+                            / "OpenXR-API-Layers-loader-data-64.exe")
+                             .wstring();
   if (!CreateProcessW(
-        modulePath,
-        cmdLine.data(),
+        commandLine.c_str(),
+        nullptr,
         nullptr,
         nullptr,
         TRUE,

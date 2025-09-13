@@ -52,6 +52,4 @@ struct LoaderData {
 void from_json(const nlohmann::json&, LoaderData&);
 void to_json(nlohmann::json&, const LoaderData&);
 
-void LoaderMain();
-
 }// namespace FredEmmott::OpenXRLayers
