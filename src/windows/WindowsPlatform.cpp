@@ -29,6 +29,7 @@
 #include <shellapi.h>
 #include <shtypes.h>
 
+#include "APILayerStore.hpp"
 #include "CheckForUpdates.hpp"
 #include "Config.hpp"
 #include "LoaderData.hpp"
@@ -204,6 +205,16 @@ void WindowsPlatform::GUIMain(const std::function<void()> drawFrame) {
 void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
   constexpr auto Interval
     = std::chrono::microseconds(1000000 / Config::MAX_FPS);
+
+  const wil::unique_event changeEvent(
+    CreateEventW(nullptr, FALSE, TRUE, nullptr));
+  const auto changeSubscriptions
+    = APILayerStore::Get()
+    | std::views::transform([e = changeEvent.get()](const auto store) {
+        return store->OnChange(std::bind_front(&SetEvent, e));
+      })
+    | std::ranges::to<std::vector>();
+
   while (true) {
     const auto earliestNextFrame = std::chrono::steady_clock::now() + Interval;
     MSG msg {};
@@ -216,11 +227,16 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
       return;
     }
 
+    ResetEvent(changeEvent.get());
+
     this->BeforeFrame();
     drawFrame();
     this->AfterFrame();
 
-    WaitMessage();
+    {
+      const auto e = changeEvent.get();
+      MsgWaitForMultipleObjects(1, &e, FALSE, INFINITE, QS_ALLINPUT);
+    }
     const auto sleepFor = earliestNextFrame - std::chrono::steady_clock::now();
     if (sleepFor > std::chrono::steady_clock::duration::zero()) {
       std::this_thread::sleep_for(
