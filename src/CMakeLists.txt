@@ -35,11 +35,6 @@ if (BUILD_GUI)
   include(gui.cmake)
 endif ()
 
-option(BUILD_CREATE_REPORT "Build the Create-Report executable" "${BUILD_EXECUTABLES}")
-if (BUILD_CREATE_REPORT)
-  include(create-report.cmake)
-endif ()
-
 option(BUILD_LOADER_DATA "Build the loader-data executable" "${BUILD_EXECUTABLES}")
 if (BUILD_LOADER_DATA)
   include(loader-data.cmake)
