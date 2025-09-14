@@ -16,7 +16,7 @@ target_link_libraries(
 target_include_directories(loader-data PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 math(EXPR VOID_P_BITS "${CMAKE_SIZEOF_VOID_P} * 8")
-set(OUTPUT_NAME "OpenXR-API-Layers-loader-data-${VOID_P_BITS}")
+set(OUTPUT_NAME "helper-openxr-loader-data-${VOID_P_BITS}")
 set_target_properties(
   loader-data
   PROPERTIES
