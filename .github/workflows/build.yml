@@ -47,13 +47,13 @@ jobs:
         working-directory: build
         run: cmake --build . --parallel --verbose
       - name: Upload Executable Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ matrix.build-type == 'Release' && matrix.os-arch == 'Win64' }}
         with:
           name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
           path: build/out/bin
       - name: Upload Debug Symbol Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ matrix.build-type == 'Release' && matrix.os-arch == 'Win64' }}
         with:
           name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}-DebugSymbols"
