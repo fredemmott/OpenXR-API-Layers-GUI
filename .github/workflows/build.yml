@@ -22,7 +22,7 @@ jobs:
           cmd /c "`"${VSRoot}/VC/Auxiliary/Build/vcvarsall.bat`" x64&set" `
             | Where-Object { $_ -like '*=*' } `
             | Out-File -Encoding utf8 -Append $Env:GITHUB_ENV
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Make build directory
