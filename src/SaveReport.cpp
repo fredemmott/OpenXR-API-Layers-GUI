@@ -73,7 +73,6 @@ static std::string GenerateReportText(const APILayerStore* store) {
 
           ret += fmt::format(
             "\n\tLibrary last modified at: {}",
-            details.mLibraryPath.extension().string(),
             std::chrono::clock_cast<std::chrono::system_clock>(
               std::chrono::time_point_cast<std::chrono::seconds>(
                 details.mLibraryFilesystemChangeTime)));
