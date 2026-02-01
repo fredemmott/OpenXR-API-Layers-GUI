@@ -80,6 +80,7 @@ if (WIN32)
     linters/windows/OpenXRToolkitLinter.cpp
     linters/windows/OutdatedOpenKneeboardLinter.cpp
     linters/windows/ProgramFilesLinter.cpp
+    linters/windows/UltraleapLastLinter.cpp
     linters/windows/UnsignedDllLinter.cpp
     linters/windows/XRNeckSaferLinter.cpp
   )
