@@ -57,7 +57,7 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   nlohmann::json json;
   try {
     json = nlohmann::json::parse(f);
-  } catch (const std::runtime_error&) {
+  } catch (const nlohmann::json::exception&) {
     mState = State::InvalidJson;
     return;
   }

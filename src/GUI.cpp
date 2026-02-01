@@ -608,6 +608,15 @@ void GUI::LayerSet::AddLayersClicked() {
       }
 
       const auto fixed = fixable->Fix(nextLayers);
+
+      if (fixed.size() <= nextLayers.size()) {
+        // Don't just silently fail. Add it with a lint error
+        if (store.SetAPILayers(nextLayers)) {
+          mLayerDataIsStale = true;
+        }
+        return;
+      }
+
       if (fixed != nextLayers) {
         nextLayers = fixed;
         changed = true;

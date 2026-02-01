@@ -41,7 +41,7 @@ class BadInstallationLinter final : public Linter {
         errors.push_back(
           std::make_shared<InvalidLayerLintError>(
             fmt::format(
-              "Unable to load details from the JSON file `{}`",
+              "Unable to load details from the manifest file `{}`",
               layer.mManifestPath.string()),
             layer));
         continue;
