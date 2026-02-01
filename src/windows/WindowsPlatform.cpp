@@ -647,7 +647,7 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
   PROCESS_INFORMATION pi {};
 
   const auto commandLine = (std::filesystem::path {modulePath}.parent_path()
-                            / "helper-openxr-loader-data-64.exe")
+                            / "openxr-loader-data-64.dll")
                              .wstring();
   if (!CreateProcessW(
         commandLine.c_str(),

@@ -16,11 +16,13 @@ target_link_libraries(
 target_include_directories(loader-data PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 math(EXPR VOID_P_BITS "${CMAKE_SIZEOF_VOID_P} * 8")
-set(OUTPUT_NAME "helper-openxr-loader-data-${VOID_P_BITS}")
+set(OUTPUT_NAME "openxr-loader-data-${VOID_P_BITS}")
 set_target_properties(
   loader-data
   PROPERTIES
   OUTPUT_NAME "${OUTPUT_NAME}"
+  # This is a lie, but makes people less likely to try to run them instead of the main exe
+  SUFFIX ".dll"
 )
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
