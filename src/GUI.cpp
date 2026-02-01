@@ -12,6 +12,7 @@
 #include "APILayer.hpp"
 #include "APILayerStore.hpp"
 #include "Config.hpp"
+#include "EnabledExplicitAPILayerStore.hpp"
 #include "Linter.hpp"
 #include "Platform.hpp"
 #include "SaveReport.hpp"
@@ -29,7 +30,7 @@ void GUI::DrawFrame() {
 
   if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
     for (auto&& layerSet: mLayerSets) {
-      const auto name = layerSet.mStore->GetDisplayName();
+      const auto name = layerSet.GetStore().GetDisplayName();
       const auto label = layerSet.HasErrors()
         ? fmt::format("{} {}", Config::GLYPH_ERROR, name)
         : name;
@@ -60,11 +61,31 @@ void GUI::DrawFrame() {
 
 GUI::GUI() {
   const auto stores = ReadWriteAPILayerStore::Get();
-  mLayerSets.reserve(stores.size());
-  for (auto&& store: ReadWriteAPILayerStore::Get()) {
+  auto implicitStores = std::views::filter(stores, [](const auto store) {
+    return store->GetKind() == APILayer::Kind::Implicit;
+  });
+  auto explicitStores = std::views::filter(stores, [](const auto store) {
+    return store->GetKind() == APILayer::Kind::Explicit;
+  });
+
+  mLayerSets.reserve(stores.size() + 1);
+  for (auto&& store: implicitStores) {
+    mLayerSets.emplace_back(store);
+  }
+
+  mEnabledExplicitLayers = std::make_unique<EnabledExplicitAPILayerStore>(
+    Platform::Get(),
+    explicitStores | std::views::transform([](const auto readWrite) {
+      return static_cast<APILayerStore*>(readWrite);
+    }) | std::ranges::to<std::vector>());
+  mLayerSets.emplace_back(mEnabledExplicitLayers.get());
+
+  for (auto&& store: explicitStores) {
     mLayerSets.emplace_back(store);
   }
 }
+
+GUI::~GUI() = default;
 
 void GUI::Run() {
   auto& platform = Platform::Get();
@@ -73,7 +94,14 @@ void GUI::Run() {
 
 GUI::LayerSet::~LayerSet() = default;
 
-GUI::LayerSet::LayerSet(ReadWriteAPILayerStore* store) : mStore(store) {
+GUI::LayerSet::LayerSet(APILayerStore* const store) : mStore(store) {
+  mOnChangeConnection
+    = store->OnChange([this] { this->mLayerDataIsStale = true; });
+}
+
+GUI::LayerSet::LayerSet(ReadWriteAPILayerStore* const store)
+  : mStore(store),
+    mReadWriteStore(store) {
   mOnChangeConnection
     = store->OnChange([this] { this->mLayerDataIsStale = true; });
 }
@@ -98,14 +126,18 @@ void GUI::LayerSet::GUILayersList() {
       ImGui::PushID(i);
 
       bool layerIsEnabled = layer.IsEnabled();
+      ImGui::BeginDisabled(!mReadWriteStore);
       if (ImGui::Checkbox("##Enabled", &layerIsEnabled)) {
         using Value = APILayer::Value;
         layer.mValue = layerIsEnabled ? Value::Enabled : Value::Disabled;
-        mLintErrorsAreStale = true;
-        mStore->SetAPILayers(mLayers);
+        if (mReadWriteStore->SetAPILayers(mLayers)) {
+          mLintErrorsAreStale = true;
+          mLayerDataIsStale = true;
+        }
       }
+      ImGui::EndDisabled();
 
-      auto label = layer.mManifestPath.string();
+      auto label = layer.GetKey().mValue;
 
       if (!layerErrors.empty()) {
         label = fmt::format("{} {}", Config::GLYPH_ERROR, label);
@@ -145,57 +177,68 @@ void GUI::LayerSet::GUIButtons() {
     mLayerDataIsStale = true;
   }
 
+  ImGui::BeginDisabled(!IsReadWrite());
   if (ImGui::Button("Add Layers...", {-FLT_MIN, 0})) {
     this->AddLayersClicked();
   }
+  ImGui::EndDisabled();
 
-  ImGui::BeginDisabled(mSelectedLayer == nullptr);
+  ImGui::BeginDisabled(mSelectedLayer == nullptr || !IsReadWrite());
   if (ImGui::Button("Remove Layer...", {-FLT_MIN, 0})) {
     ImGui::OpenPopup("Remove Layer");
   }
   ImGui::EndDisabled();
-  this->GUIRemoveLayerPopup();
+  if (IsReadWrite()) {
+    this->GUIRemoveLayerPopup();
+  }
 
   ImGui::Separator();
 
-  ImGui::BeginDisabled(!(mSelectedLayer && !mSelectedLayer->IsEnabled()));
-  using Value = APILayer::Value;
-  if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
-    mSelectedLayer->mValue = Value::Enabled;
-    mLintErrorsAreStale = true;
-    mStore->SetAPILayers(mLayers);
-  }
-  ImGui::EndDisabled();
+  {
+    ImGui::BeginDisabled(
+      !(mSelectedLayer && !mSelectedLayer->IsEnabled() && mReadWriteStore));
+    using Value = APILayer::Value;
+    if (ImGui::Button("Enable Layer", {-FLT_MIN, 0})) {
+      mSelectedLayer->mValue = Value::Enabled;
+      if (mReadWriteStore->SetAPILayers(mLayers)) {
+        mLintErrorsAreStale = true;
+      }
+    }
 
-  ImGui::BeginDisabled(!(mSelectedLayer && mSelectedLayer->IsEnabled()));
-  if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
-    mSelectedLayer->mValue = Value::Disabled;
-    mLintErrorsAreStale = true;
-    mStore->SetAPILayers(mLayers);
+    if (ImGui::Button("Disable Layer", {-FLT_MIN, 0})) {
+      mSelectedLayer->mValue = Value::Disabled;
+      if (mReadWriteStore->SetAPILayers(mLayers)) {
+        mLintErrorsAreStale = true;
+      }
+    }
+    ImGui::EndDisabled();
   }
-  ImGui::EndDisabled();
 
   ImGui::Separator();
 
-  ImGui::BeginDisabled(!(mSelectedLayer && *mSelectedLayer != mLayers.front()));
+  ImGui::BeginDisabled(
+    !(mSelectedLayer && *mSelectedLayer != mLayers.front() && mReadWriteStore));
   if (ImGui::Button("Move Up", {-FLT_MIN, 0})) {
     auto newLayers = mLayers;
     auto it = std::ranges::find(newLayers, *mSelectedLayer);
     if (it != newLayers.begin() && it != newLayers.end()) {
       std::iter_swap((it - 1), it);
-      mStore->SetAPILayers(newLayers);
-      mLayerDataIsStale = true;
+      if (mReadWriteStore->SetAPILayers(newLayers)) {
+        mLayerDataIsStale = true;
+      }
     }
   }
   ImGui::EndDisabled();
-  ImGui::BeginDisabled(!(mSelectedLayer && *mSelectedLayer != mLayers.back()));
+  ImGui::BeginDisabled(
+    !(mSelectedLayer && *mSelectedLayer != mLayers.back() && mReadWriteStore));
   if (ImGui::Button("Move Down", {-FLT_MIN, 0})) {
     auto newLayers = mLayers;
     auto it = std::ranges::find(newLayers, *mSelectedLayer);
     if (it != newLayers.end() && (it + 1) != newLayers.end()) {
       std::iter_swap(it, it + 1);
-      mStore->SetAPILayers(newLayers);
-      mLayerDataIsStale = true;
+      if (mReadWriteStore->SetAPILayers(newLayers)) {
+        mLayerDataIsStale = true;
+      }
     }
   }
   ImGui::EndDisabled();
@@ -284,14 +327,17 @@ void GUI::LayerSet::GUIErrorsTab() {
               selectedErrors.size())
               .c_str());
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Fix Them!")) {
-          auto nextLayers = mLayers;
-          for (auto&& fixable: fixableErrors) {
-            nextLayers = fixable->Fix(nextLayers);
+        if (const auto store = mReadWriteStore) {
+          ImGui::SameLine();
+          if (ImGui::Button("Fix Them!")) {
+            auto nextLayers = mLayers;
+            for (auto&& fixable: fixableErrors) {
+              nextLayers = fixable->Fix(nextLayers);
+            }
+            if (store->SetAPILayers(nextLayers)) {
+              mLayerDataIsStale = true;
+            }
           }
-          mStore->SetAPILayers(nextLayers);
-          mLayerDataIsStale = true;
         }
       }
 
@@ -312,11 +358,13 @@ void GUI::LayerSet::GUIErrorsTab() {
         ImGui::TextWrapped("%s", desc.c_str());
         ImGui::TableNextColumn();
         {
-          auto fixer = std::dynamic_pointer_cast<FixableLintError>(error);
-          ImGui::BeginDisabled(!fixer);
+          const auto fixer = std::dynamic_pointer_cast<FixableLintError>(error);
+          const auto fixable = fixer && fixer->IsFixable() && mReadWriteStore;
+          ImGui::BeginDisabled(!fixable);
           if (ImGui::Button("Fix It!")) {
-            mStore->SetAPILayers(fixer->Fix(mLayers));
-            mLayerDataIsStale = true;
+            if (mReadWriteStore->SetAPILayers(fixer->Fix(mLayers))) {
+              mLayerDataIsStale = true;
+            }
           }
           ImGui::EndDisabled();
         }
@@ -526,6 +574,7 @@ void GUI::LayerSet::RunAllLintersNow() {
 }
 
 void GUI::LayerSet::AddLayersClicked() {
+  const auto& store = GetReadWriteStore();
   auto paths = Platform::Get().GetNewAPILayerJSONPaths();
   for (auto it = paths.begin(); it != paths.end();) {
     auto existingLayer = std::ranges::find_if(
@@ -572,11 +621,13 @@ void GUI::LayerSet::AddLayersClicked() {
     }
   } while (changed);
 
-  mStore->SetAPILayers(nextLayers);
-  mLayerDataIsStale = true;
+  if (store.SetAPILayers(nextLayers)) {
+    mLayerDataIsStale = true;
+  }
 }
 
 void GUI::LayerSet::GUIRemoveLayerPopup() {
+  const auto& store = GetReadWriteStore();
   auto viewport = ImGui::GetMainViewport();
   ImVec2 center = viewport->GetCenter();
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -596,8 +647,9 @@ void GUI::LayerSet::GUIRemoveLayerPopup() {
       auto it = std::ranges::find(nextLayers, *mSelectedLayer);
       if (it != nextLayers.end()) {
         nextLayers.erase(it);
-        mStore->SetAPILayers(nextLayers);
-        mLayerDataIsStale = true;
+        if (store.SetAPILayers(nextLayers)) {
+          mLayerDataIsStale = true;
+        }
       }
       ImGui::CloseCurrentPopup();
     }
@@ -614,6 +666,8 @@ void GUI::LayerSet::GUIRemoveLayerPopup() {
 void GUI::LayerSet::DragDropReorder(
   const APILayer& source,
   const APILayer& target) {
+  const auto& store = GetReadWriteStore();
+
   auto newLayers = mLayers;
 
   auto sourceIt = std::ranges::find(newLayers, source);
@@ -637,7 +691,7 @@ void GUI::LayerSet::DragDropReorder(
   newLayers.insert(targetIt, source);
 
   assert(mLayers.size() == newLayers.size());
-  if (mStore->SetAPILayers(newLayers)) {
+  if (store.SetAPILayers(newLayers)) {
     mLayerDataIsStale = true;
   }
 }

@@ -14,10 +14,11 @@ class XRNeckSaferLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore* store,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
-    auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
+    const auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
     if (
-      winStore->GetRegistryBitness()
-      != WindowsAPILayerStore::RegistryBitness::Wow64_64) {
+      (!winStore)
+      || winStore->GetRegistryBitness()
+        != WindowsAPILayerStore::RegistryBitness::Wow64_64) {
       return {};
     }
 

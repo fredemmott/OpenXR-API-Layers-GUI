@@ -16,8 +16,9 @@ class OpenXRToolkitLinter final : public Linter {
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
     auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
     if (
-      winStore->GetRegistryBitness()
-      != WindowsAPILayerStore::RegistryBitness::Wow64_64) {
+      (!winStore)// e.g. explicit api layer store
+      || winStore->GetRegistryBitness()
+        != WindowsAPILayerStore::RegistryBitness::Wow64_64) {
       return {};
     }
 

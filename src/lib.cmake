@@ -7,6 +7,8 @@ add_library(
   APILayerDetails.cpp
   APILayerSignature.hpp
   ConstexprString.hpp
+  EnabledExplicitAPILayerStore.cpp
+  EnabledExplicitAPILayerStore.hpp
   GUI.cpp
   LoaderData.cpp LoaderData.hpp
   SaveReport.cpp

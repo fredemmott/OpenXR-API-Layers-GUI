@@ -17,6 +17,7 @@ class ReadWriteAPILayerStore;
 class GUI final {
  public:
   GUI();
+  ~GUI();
   void Run();
 
  private:
@@ -26,6 +27,7 @@ class GUI final {
    public:
     LayerSet() = delete;
     ~LayerSet();
+    explicit LayerSet(APILayerStore* store);
     explicit LayerSet(ReadWriteAPILayerStore* store);
 
     LayerSet(const LayerSet&) = delete;
@@ -33,7 +35,19 @@ class GUI final {
     LayerSet(LayerSet&&) = default;
     LayerSet& operator=(LayerSet&&) = default;
 
-    std::type_identity_t<const ReadWriteAPILayerStore>* mStore {nullptr};
+    [[nodiscard]]
+    const APILayerStore& GetStore() const {
+      return *mStore;
+    }
+
+    [[nodiscard]]
+    ReadWriteAPILayerStore& GetReadWriteStore() const {
+      if (!mReadWriteStore) [[unlikely]] {
+        throw std::logic_error(
+          "Attempted to get read-write store from read-only store");
+      }
+      return *mReadWriteStore;
+    }
 
     std::vector<APILayer> mLayers;
     APILayer* mSelectedLayer {nullptr};
@@ -63,11 +77,19 @@ class GUI final {
     void AddLayersClicked();
     void DragDropReorder(const APILayer& source, const APILayer& target);
 
+    [[nodiscard]] bool IsReadWrite() const {
+      return mReadWriteStore != nullptr;
+    }
+
    private:
     boost::signals2::scoped_connection mOnChangeConnection;
+
+    const APILayerStore* mStore {nullptr};
+    ReadWriteAPILayerStore* mReadWriteStore {nullptr};
   };
 
   std::vector<LayerSet> mLayerSets;
+  std::unique_ptr<APILayerStore> mEnabledExplicitLayers {nullptr};
 
   void Export();
   void DrawFrame();

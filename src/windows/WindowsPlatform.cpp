@@ -444,6 +444,8 @@ std::vector<std::string> WindowsPlatform::GetEnabledExplicitAPILayers() {
   }
   std::wstring envVar(charCount, L'\0');
   GetEnvironmentVariableW(L"XR_ENABLE_API_LAYERS", envVar.data(), charCount);
+  assert(envVar.back() == L'\0');
+  envVar.pop_back();
 
   std::vector<std::string> ret;
   for (auto&& layer: std::views::split(envVar, L';')) {

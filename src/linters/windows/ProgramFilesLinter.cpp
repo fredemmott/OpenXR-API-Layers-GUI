@@ -18,11 +18,8 @@ class ProgramFilesLinter final : public Linter {
   std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore* store,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) override {
-    auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
+    const auto winStore = dynamic_cast<const WindowsAPILayerStore*>(store);
     if (!winStore) {
-#ifndef NDEBUG
-      __debugbreak();
-#endif
       return {};
     }
 
