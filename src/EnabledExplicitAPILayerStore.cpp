@@ -19,7 +19,7 @@ APILayer::Kind EnabledExplicitAPILayerStore::GetKind() const noexcept {
   return APILayer::Kind::Explicit;
 }
 std::string EnabledExplicitAPILayerStore::GetDisplayName() const noexcept {
-  return "Enabled Explicit";
+  return "XR_ENABLE_API_LAYERS";
 }
 
 std::vector<APILayer> EnabledExplicitAPILayerStore::GetAPILayers()
@@ -50,6 +50,7 @@ std::vector<APILayer> EnabledExplicitAPILayerStore::GetAPILayers()
       if (match.mValue == APILayer::Value::Enabled) {
         entry.mValue = APILayer::Value::Enabled;
         entry.mArchitectures |= match.mArchitectures;
+        entry.mManifestPath = match.mManifestPath;
       }
     }
   }

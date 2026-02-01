@@ -439,7 +439,8 @@ WindowsPlatform::GetAPILayerSignature(const std::filesystem::path& dllPath) {
 std::vector<std::string> WindowsPlatform::GetEnabledExplicitAPILayers() {
   const auto charCount
     = GetEnvironmentVariableW(L"XR_ENABLE_API_LAYERS", nullptr, 0);
-  if (charCount == 0) {
+  if (charCount < 2) {
+    // Error (e.g. no var) or just a trailing null
     return {};
   }
   std::wstring envVar(charCount, L'\0');
@@ -448,17 +449,84 @@ std::vector<std::string> WindowsPlatform::GetEnabledExplicitAPILayers() {
   envVar.pop_back();
 
   std::vector<std::string> ret;
-  for (auto&& layer: std::views::split(envVar, L';')) {
-    ret.push_back(WideCharToUTF8(std::wstring_view {layer}));
+  for (auto&& layer: std::views::split(WideCharToUTF8(envVar), ';')) {
+    ret.emplace_back(std::string_view {layer});
   }
   return ret;
 }
+std::optional<std::vector<std::filesystem::path>>
+WindowsPlatform::GetOverridePaths() const {
+  const auto charCount
+    = GetEnvironmentVariableW(L"XR_API_LAYER_PATH", nullptr, 0);
+  if (charCount == 0) {
+    return std::nullopt;
+  }
+  if (charCount == 1) {
+    // Just a trailing null
+    return {};
+  }
+  std::wstring envVar(charCount, L'\0');
+  GetEnvironmentVariableW(L"XR_API_LAYER_PATH", envVar.data(), charCount);
+  assert(envVar.back() == L'\0');
+  envVar.pop_back();
+
+  std::vector<std::filesystem::path> ret;
+  for (auto&& path: std::views::split(WideCharToUTF8(envVar), ';')) {
+    ret.emplace_back(std::filesystem::path {std::string_view {path}});
+  }
+  return ret;
+}
+
 Architectures WindowsPlatform::GetArchitectures() const {
   constexpr auto Current = GetBuildArchitecture();
   static_assert(
     Current == Architecture::x64 || Current == Architecture::x86,
     "Unsupported architecture");
   return Architecture::x64 | Architecture::x86;
+}
+Architectures WindowsPlatform::GetSharedLibraryArchitectures(
+  const std::filesystem::path& path) const {
+  const wil::unique_hfile file {CreateFileW(
+    path.wstring().c_str(),
+    GENERIC_READ,
+    FILE_SHARE_READ,
+    nullptr,
+    OPEN_EXISTING,
+    NULL,
+    nullptr)};
+  if (!file) {
+    return {};
+  }
+
+  const wil::unique_handle mapping {
+    CreateFileMappingW(file.get(), nullptr, PAGE_READONLY, 0, 0, nullptr)};
+  if (!mapping) {
+    return {};
+  }
+  const wil::unique_mapview_ptr<const IMAGE_DOS_HEADER> dosHeader {
+    static_cast<const IMAGE_DOS_HEADER*>(
+      MapViewOfFile(mapping.get(), FILE_MAP_READ, 0, 0, 0))};
+  if (!dosHeader) {
+    return {};
+  }
+  if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+    return {};
+  }
+  const auto base = reinterpret_cast<uintptr_t>(dosHeader.get());
+  const auto ntHeaders
+    = reinterpret_cast<const IMAGE_NT_HEADERS*>(base + dosHeader->e_lfanew);
+  if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) {
+    return {};
+  }
+
+  switch (ntHeaders->FileHeader.Machine) {
+    case IMAGE_FILE_MACHINE_I386:
+      return Architecture::x86;
+    case IMAGE_FILE_MACHINE_AMD64:
+      return Architecture::x64;
+    default:
+      return {};
+  }
 }
 
 HWND WindowsPlatform::CreateAppWindow() {

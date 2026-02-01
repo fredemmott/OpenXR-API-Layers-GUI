@@ -86,6 +86,11 @@ class Platform {
   static constexpr Architecture GetBuildArchitecture();
 
   virtual Architectures GetArchitectures() const = 0;
+  // Plural in case we ever support macOS, which has 'fat dylibs'
+  virtual Architectures GetSharedLibraryArchitectures(
+    const std::filesystem::path&) const = 0;
+  virtual std::optional<std::vector<std::filesystem::path>> GetOverridePaths()
+    const = 0;
 
   Platform(const Platform&) = delete;
   Platform(Platform&&) = delete;

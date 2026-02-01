@@ -15,6 +15,8 @@ add_library(
   EnabledExplicitAPILayerStore.hpp
   GUI.cpp
   LoaderData.cpp LoaderData.hpp
+  OverridePathsAPILayerStore.cpp
+  OverridePathsAPILayerStore.hpp
   SaveReport.cpp
   Platform.cpp Platform.hpp
   StringTemplateParameter.hpp

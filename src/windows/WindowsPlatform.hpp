@@ -39,8 +39,12 @@ class WindowsPlatform final : public Platform {
   GetAPILayerSignature(const std::filesystem::path&) override;
 
   std::vector<std::string> GetEnabledExplicitAPILayers() override;
+  std::optional<std::vector<std::filesystem::path>> GetOverridePaths()
+    const override;
 
   Architectures GetArchitectures() const override;
+  Architectures GetSharedLibraryArchitectures(
+    const std::filesystem::path&) const override;
 
  protected:
   std::filesystem::path Get32BitRuntimePath() override;

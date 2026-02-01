@@ -17,6 +17,7 @@
 #include "APILayerStore.hpp"
 #include "Config.hpp"
 #include "EnabledExplicitAPILayerStore.hpp"
+#include "OverridePathsAPILayerStore.hpp"
 #include "windows/GetKnownFolderPath.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -257,20 +258,24 @@ std::span<APILayerStore*> APILayerStore::Get() noexcept {
     "Explicit Win32-HKLM", Explicit, RB::Wow64_32, HKEY_LOCAL_MACHINE};
   static TConcrete sExplicitHKCU32 {
     "Explicit Win32-HKCU", Explicit, RB::Wow64_32, HKEY_CURRENT_USER};
+  static OverridePathsAPILayerStore sOverridePaths {Platform::Get()};
   static EnabledExplicitAPILayerStore sEnabledExplicit {
     Platform::Get(),
     {
+      &sOverridePaths,
       &sExplicitHKLM64,
       &sExplicitHKCU64,
       &sExplicitHKLM32,
       &sExplicitHKCU32,
     }};
+
   static APILayerStore* sStores[] {
     &sHKLM64,
     &sHKCU64,
     &sHKLM32,
     &sHKCU32,
     &sEnabledExplicit,
+    &sOverridePaths,
     &sExplicitHKLM64,
     &sExplicitHKCU64,
     &sExplicitHKLM32,
