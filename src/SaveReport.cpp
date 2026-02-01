@@ -118,7 +118,7 @@ static std::string GenerateReportText(const APILayerStore* store) {
 
     auto layerErrors
       = std::ranges::filter_view(errors, [layer](const auto& error) {
-          return error->GetAffectedLayers().contains(layer.mManifestPath);
+          return error->GetAffectedLayers().contains(layer);
         });
 
     if (layerErrors.empty()) {

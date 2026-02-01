@@ -92,6 +92,8 @@ if (WIN32)
     "NOMINMAX"
     "UNICODE"
     "_UNICODE"
+    # MS-specific 'deprecations' with MS-specific 'replacements'
+    "_CRT_SECURE_NO_WARNINGS"
   )
   if (MSVC)
     target_compile_options(

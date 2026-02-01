@@ -92,7 +92,7 @@ void GUI::LayerSet::GUILayersList() {
       auto& layer = mLayers.at(i);
       auto layerErrors
         = std::ranges::filter_view(mLintErrors, [&layer](const auto& error) {
-            return error->GetAffectedLayers().contains(layer.mManifestPath);
+            return error->GetAffectedLayers().contains(layer);
           });
 
       ImGui::PushID(i);
@@ -225,7 +225,7 @@ void GUI::LayerSet::GUIErrorsTab() {
     if (mSelectedLayer) {
       auto view = std::ranges::filter_view(
         mLintErrors, [layer = mSelectedLayer](const auto& error) {
-          return error->GetAffectedLayers().contains(layer->mManifestPath);
+          return error->GetAffectedLayers().contains(*layer);
         });
       selectedErrors = {view.begin(), view.end()};
     } else {
@@ -549,6 +549,9 @@ void GUI::LayerSet::AddLayersClicked() {
   do {
     changed = false;
     auto errors = RunAllLinters(mStore, nextLayers);
+    const auto nextKeys = std::views::transform(nextLayers, &APILayer::GetKey)
+      | std::ranges::to<std::unordered_set>();
+
     for (const auto& error: errors) {
       auto fixable = std::dynamic_pointer_cast<FixableLintError>(error);
       if (!fixable) {
@@ -556,9 +559,8 @@ void GUI::LayerSet::AddLayersClicked() {
       }
 
       if (!std::ranges::any_of(
-            fixable->GetAffectedLayers(), [&paths](const auto& it) {
-              return std::ranges::find(paths, it) != paths.end();
-            })) {
+            fixable->GetAffectedLayers(),
+            [&nextKeys](const auto& key) { return nextKeys.contains(key); })) {
         continue;
       }
 

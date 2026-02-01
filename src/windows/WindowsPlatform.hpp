@@ -38,6 +38,8 @@ class WindowsPlatform final : public Platform {
   std::expected<APILayerSignature, APILayerSignature::Error>
   GetAPILayerSignature(const std::filesystem::path&) override;
 
+  std::vector<std::string> GetEnabledExplicitAPILayers() override;
+
  protected:
   std::filesystem::path Get32BitRuntimePath() override;
   std::filesystem::path Get64BitRuntimePath() override;

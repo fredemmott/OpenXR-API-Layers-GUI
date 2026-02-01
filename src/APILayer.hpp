@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <compare>
 #include <expected>
 #include <filesystem>
 
@@ -20,10 +21,16 @@ class APILayerStore;
  * Manifest data is available via `APILayerDetails`.
  */
 struct APILayer {
+  struct Key {
+    std::string mValue;
+
+    constexpr auto operator<=>(const Key&) const = default;
+  };
+
   enum class Value {
     Enabled,
     Disabled,
-    NotInstalled,
+    EnabledButAbsent,
     Win32_NotDWORD,
   };
   enum class Kind {
@@ -37,23 +44,29 @@ struct APILayer {
     const Value value)
     : mSource(source),
       mManifestPath(manifestPath),
-      mValue(value) {}
+      mValue(value),
+      mKey(manifestPath.string()) {}
 
-  static APILayer MakeAbsentExplicit(const std::string_view name) {
-    APILayer ret {nullptr, {}, Value::NotInstalled};
-    ret.mReferencedName = name;
+  static APILayer MakeForEnvVar(
+    const APILayerStore* source,
+    const std::string_view name,
+    const Value value) {
+    APILayer ret {source, {}, value};
+    ret.mKey.mValue = name;
     return ret;
   }
 
+  [[nodiscard]]
+  Key GetKey() const noexcept {
+    return mKey;
+  }
+
+  [[nodiscard]]
   Kind GetKind() const noexcept;
 
   const APILayerStore* mSource {nullptr};
   std::filesystem::path mManifestPath;
   Value mValue;
-
-  /// Only set for explicit API layers that are referenced but not
-  /// present
-  std::string mReferencedName;
 
   [[nodiscard]]
   constexpr bool IsEnabled() const noexcept {
@@ -62,8 +75,18 @@ struct APILayer {
 
   bool operator==(const APILayer&) const noexcept = default;
 
+  operator Key() const noexcept {
+    return GetKey();
+  }
+
+  bool operator==(const Key& key) const noexcept {
+    return GetKey() == key;
+  }
+
  private:
   APILayer() = default;
+
+  Key mKey;
 };
 
 struct Extension {
@@ -109,3 +132,11 @@ struct APILayerDetails {
 };
 
 }// namespace FredEmmott::OpenXRLayers
+
+template <>
+struct std::hash<FredEmmott::OpenXRLayers::APILayer::Key> {
+  static auto operator()(
+    const FredEmmott::OpenXRLayers::APILayer::Key& key) noexcept {
+    return std::hash<std::string> {}(key.mValue);
+  }
+};

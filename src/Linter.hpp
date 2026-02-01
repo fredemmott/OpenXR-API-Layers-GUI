@@ -13,22 +13,22 @@
 
 namespace FredEmmott::OpenXRLayers {
 
-using PathSet = std::set<std::filesystem::path>;
+using LayerKeySet = std::set<APILayer::Key>;
 
 class APILayerStore;
 
 class LintError {
  public:
   LintError() = delete;
-  LintError(const std::string& description, const PathSet& affectedLayers);
+  LintError(const std::string& description, const LayerKeySet& affectedLayers);
   virtual ~LintError() = default;
 
   [[nodiscard]] std::string GetDescription() const;
-  [[nodiscard]] PathSet GetAffectedLayers() const;
+  [[nodiscard]] LayerKeySet GetAffectedLayers() const;
 
  private:
   std::string mDescription;
-  PathSet mAffectedLayers;
+  LayerKeySet mAffectedLayers;
 };
 
 // A lint error that can be automatically fixed
@@ -37,6 +37,11 @@ class FixableLintError : public LintError {
   using LintError::LintError;
   ~FixableLintError() override = default;
 
+  [[nodiscard]]
+  virtual bool IsFixable() const noexcept {
+    return true;
+  }
+  [[nodiscard]]
   virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) = 0;
 };
 
@@ -50,26 +55,24 @@ class OrderingLintError final : public FixableLintError {
 
   OrderingLintError(
     const std::string& description,
-    const std::filesystem::path& layerToMove,
+    const APILayer& layerToMove,
     Position position,
-    const std::filesystem::path& relativeTo,
-    const PathSet& allAffectedLayers = {});
+    const APILayer& relativeTo,
+    const LayerKeySet& allAffectedLayers = {});
   virtual ~OrderingLintError() = default;
 
   virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
 
  private:
-  std::filesystem::path mLayerToMove;
+  APILayer::Key mLayerToMove;
   Position mPosition;
-  std::filesystem::path mRelativeTo;
+  APILayer::Key mRelativeTo;
 };
 
 /// A lint error that is fixed by disabling the layer
 class KnownBadLayerLintError final : public FixableLintError {
-  public:
-    KnownBadLayerLintError(
-      const std::string& description,
-      const std::filesystem::path& layer);
+ public:
+  KnownBadLayerLintError(const std::string& description, const APILayer& layer);
 
   ~KnownBadLayerLintError() override = default;
   std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
@@ -78,12 +81,14 @@ class KnownBadLayerLintError final : public FixableLintError {
 /// A lint error that is fixed by removing the layer
 class InvalidLayerLintError final : public FixableLintError {
  public:
-  InvalidLayerLintError(
-    const std::string& description,
-    const std::filesystem::path& layer);
-  virtual ~InvalidLayerLintError() = default;
+  InvalidLayerLintError(const std::string& description, const APILayer& layer);
+  ~InvalidLayerLintError() override = default;
 
-  virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
+  bool IsFixable() const noexcept override;
+  std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
+
+ private:
+  bool mIsFixable;
 };
 
 // A lint error that is fixed by disabling the layer
@@ -91,7 +96,7 @@ class InvalidLayerStateLintError final : public FixableLintError {
  public:
   InvalidLayerStateLintError(
     const std::string& description,
-    const std::filesystem::path& layer);
+    const APILayer& layer);
   virtual ~InvalidLayerStateLintError() = default;
 
   virtual std::vector<APILayer> Fix(const std::vector<APILayer>&) override;
@@ -106,8 +111,7 @@ class Linter {
 
   virtual std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore*,
-    const std::vector<std::tuple<APILayer, APILayerDetails>>&)
-    = 0;
+    const std::vector<std::tuple<APILayer, APILayerDetails>>&) = 0;
 };
 
 std::vector<std::shared_ptr<LintError>> RunAllLinters(

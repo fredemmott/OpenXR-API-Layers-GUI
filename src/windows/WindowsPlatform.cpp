@@ -436,6 +436,22 @@ WindowsPlatform::GetAPILayerSignature(const std::filesystem::path& dllPath) {
   };
 }
 
+std::vector<std::string> WindowsPlatform::GetEnabledExplicitAPILayers() {
+  const auto charCount
+    = GetEnvironmentVariableW(L"XR_ENABLE_API_LAYERS", nullptr, 0);
+  if (charCount == 0) {
+    return {};
+  }
+  std::wstring envVar(charCount, L'\0');
+  GetEnvironmentVariableW(L"XR_ENABLE_API_LAYERS", envVar.data(), charCount);
+
+  std::vector<std::string> ret;
+  for (auto&& layer: std::views::split(envVar, L';')) {
+    ret.push_back(WideCharToUTF8(std::wstring_view {layer}));
+  }
+  return ret;
+}
+
 HWND WindowsPlatform::CreateAppWindow() {
   static const auto WindowTitle
     = std::format(L"OpenXR API Layers v{}", Config::BUILD_VERSION_W);

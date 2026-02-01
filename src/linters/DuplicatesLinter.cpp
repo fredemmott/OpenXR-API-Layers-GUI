@@ -16,7 +16,7 @@ class DuplicatesLinter final : public Linter {
   virtual std::vector<std::shared_ptr<LintError>> Lint(
     const APILayerStore*,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
-    std::unordered_map<std::string, PathSet> byName;
+    std::unordered_map<std::string, LayerKeySet> byName;
     for (const auto& [layer, details]: layers) {
       if (!layer.IsEnabled()) {
         continue;
@@ -27,24 +27,24 @@ class DuplicatesLinter final : public Linter {
       }
 
       if (byName.contains(details.mName)) {
-        byName.at(details.mName).emplace(layer.mManifestPath);
+        byName.at(details.mName).emplace(layer);
       } else {
-        byName[details.mName] = {layer.mManifestPath};
+        byName[details.mName] = {layer};
       }
     }
 
     std::vector<std::shared_ptr<LintError>> errors;
-    for (const auto& [name, paths]: byName) {
-      if (paths.size() == 1) {
+    for (const auto& [name, keys]: byName) {
+      if (keys.size() == 1) {
         continue;
       }
 
       auto text = fmt::format("Multiple copies of {} are enabled:", name);
-      for (const auto& path: paths) {
-        text += fmt::format("\n- {}", path.string());
+      for (auto&& key: keys) {
+        text += fmt::format("\n- {}", key.mValue);
       }
 
-      errors.push_back(std::make_shared<LintError>(text, paths));
+      errors.push_back(std::make_shared<LintError>(text, keys));
     }
     return errors;
   }

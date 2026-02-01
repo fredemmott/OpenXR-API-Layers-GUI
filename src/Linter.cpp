@@ -19,7 +19,7 @@ static void UnregisterLinter(Linter* linter) {
 
 LintError::LintError(
   const std::string& description,
-  const std::set<std::filesystem::path>& affectedLayers)
+  const LayerKeySet& affectedLayers)
   : mDescription(description),
     mAffectedLayers(affectedLayers) {}
 
@@ -27,7 +27,7 @@ std::string LintError::GetDescription() const {
   return mDescription;
 }
 
-PathSet LintError::GetAffectedLayers() const {
+LayerKeySet LintError::GetAffectedLayers() const {
   return mAffectedLayers;
 }
 
@@ -59,13 +59,13 @@ std::vector<std::shared_ptr<LintError>> RunAllLinters(
 
 OrderingLintError::OrderingLintError(
   const std::string& description,
-  const std::filesystem::path& layerToMove,
+  const APILayer& layerToMove,
   Position position,
-  const std::filesystem::path& relativeTo,
-  const PathSet& allAffectedLayers)
+  const APILayer& relativeTo,
+  const LayerKeySet& allAffectedLayers)
   : FixableLintError(
       description,
-      allAffectedLayers.empty() ? PathSet {layerToMove, relativeTo}
+      allAffectedLayers.empty() ? LayerKeySet {layerToMove, relativeTo}
                                 : allAffectedLayers),
     mLayerToMove(layerToMove),
     mPosition(position),
@@ -75,20 +75,15 @@ std::vector<APILayer> OrderingLintError::Fix(
   const std::vector<APILayer>& oldLayers) {
   auto newLayers = oldLayers;
 
-  auto moveIt = std::ranges::find_if(newLayers, [this](const auto& it) {
-    return it.mManifestPath == mLayerToMove;
-  });
+  const auto moveIt = std::ranges::find(newLayers, mLayerToMove);
 
   if (moveIt == newLayers.end()) {
     return oldLayers;
   }
-  const auto movedLayer = *moveIt;
+  const auto movedLayer = std::move(*moveIt);
   newLayers.erase(moveIt);
 
-  auto anchorIt = std::ranges::find_if(newLayers, [this](const auto& it) {
-    return it.mManifestPath == mRelativeTo;
-  });
-
+  const auto anchorIt = std::ranges::find(newLayers, mRelativeTo);
   if (anchorIt == newLayers.end()) {
     return oldLayers;
   }
@@ -107,18 +102,17 @@ std::vector<APILayer> OrderingLintError::Fix(
 
 KnownBadLayerLintError::KnownBadLayerLintError(
   const std::string& description,
-  const std::filesystem::path& layer)
+  const APILayer& layer)
   : FixableLintError(description, {layer}) {}
 
 std::vector<APILayer> KnownBadLayerLintError::Fix(
   const std::vector<APILayer>& allLayers) {
   const auto affected = this->GetAffectedLayers();
   assert(affected.size() == 1);
-  const auto& path = *affected.begin();
+  const auto& layer = *affected.begin();
 
   auto newLayers = allLayers;
-  auto it = std::ranges::find_if(
-    newLayers, [&path](const auto& layer) { return layer.mManifestPath == path; });
+  const auto it = std::ranges::find(newLayers, layer);
 
   if (it != newLayers.end()) {
     it->mValue = APILayer::Value::Disabled;
@@ -128,18 +122,22 @@ std::vector<APILayer> KnownBadLayerLintError::Fix(
 
 InvalidLayerLintError::InvalidLayerLintError(
   const std::string& description,
-  const std::filesystem::path& layer)
-  : FixableLintError(description, {layer}) {}
+  const APILayer& layer)
+  : FixableLintError(description, {layer}),
+    mIsFixable(layer.mValue != APILayer::Value::EnabledButAbsent) {}
+
+bool InvalidLayerLintError::IsFixable() const noexcept {
+  return mIsFixable;
+}
 
 std::vector<APILayer> InvalidLayerLintError::Fix(
   const std::vector<APILayer>& allLayers) {
   const auto affected = this->GetAffectedLayers();
   assert(affected.size() == 1);
-  const auto& path = *affected.begin();
+  const auto& key = *affected.begin();
 
   auto newLayers = allLayers;
-  auto it = std::ranges::find_if(
-    newLayers, [&path](const auto& layer) { return layer.mManifestPath == path; });
+  const auto it = std::ranges::find(newLayers, key);
 
   if (it != newLayers.end()) {
     newLayers.erase(it);
@@ -149,18 +147,17 @@ std::vector<APILayer> InvalidLayerLintError::Fix(
 
 InvalidLayerStateLintError::InvalidLayerStateLintError(
   const std::string& description,
-  const std::filesystem::path& layer)
+  const APILayer& layer)
   : FixableLintError(description, {layer}) {}
 
 std::vector<APILayer> InvalidLayerStateLintError::Fix(
   const std::vector<APILayer>& allLayers) {
   const auto affected = this->GetAffectedLayers();
   assert(affected.size() == 1);
-  const auto& path = *affected.begin();
+  const auto& layer = *affected.begin();
 
   auto newLayers = allLayers;
-  auto it = std::ranges::find_if(
-    newLayers, [&path](const auto& layer) { return layer.mManifestPath == path; });
+  const auto it = std::ranges::find(newLayers, layer);
 
   if (it != newLayers.end()) {
     it->mValue = APILayer::Value::Disabled;

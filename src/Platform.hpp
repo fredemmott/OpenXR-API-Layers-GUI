@@ -65,8 +65,7 @@ class Platform {
   /// return the actual time the file was modified on disk, e.g. when it
   /// was extracted/installed
   virtual std::filesystem::file_time_type GetFileChangeTime(
-    const std::filesystem::path& path)
-    = 0;
+    const std::filesystem::path& path) = 0;
 
   virtual std::expected<APILayerSignature, APILayerSignature::Error>
   GetAPILayerSignature(const std::filesystem::path&) = 0;
@@ -74,6 +73,7 @@ class Platform {
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
   virtual std::unordered_set<std::string> GetEnvironmentVariableNames() = 0;
+  virtual std::vector<std::string> GetEnabledExplicitAPILayers() = 0;
   virtual float GetDPIScaling() = 0;
 
   virtual std::vector<AvailableRuntime> GetAvailable32BitRuntimes() = 0;

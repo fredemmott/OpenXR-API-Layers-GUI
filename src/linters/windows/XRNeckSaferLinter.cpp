@@ -34,10 +34,12 @@ class XRNeckSaferLinter final : public Linter {
       }
       errors.push_back(
         std::make_shared<KnownBadLayerLintError>(
-          "XRNeckSafer has bugs that can cause issues include game crashes, and "
-          "crashes in other API layers. Disable or uninstall it if you have any "
+          "XRNeckSafer has bugs that can cause issues include game crashes, "
+          "and "
+          "crashes in other API layers. Disable or uninstall it if you have "
+          "any "
           "issues.",
-          layer.mManifestPath));
+          layer));
     }
     return errors;
   }

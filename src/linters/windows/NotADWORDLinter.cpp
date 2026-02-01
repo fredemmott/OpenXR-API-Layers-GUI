@@ -17,13 +17,14 @@ class NotADWORDLinter final : public Linter {
       if (layer.mValue != APILayer::Value::Win32_NotDWORD) {
         continue;
       }
-      ret.push_back(std::make_shared<InvalidLayerStateLintError>(
-        fmt::format(
-          "OpenXR requires that layer registry values are DWORDs; `{}` has a "
-          "different type. This can cause various issues with other layers "
-          "or games.",
-          layer.mManifestPath.string()),
-        layer.mManifestPath));
+      ret.push_back(
+        std::make_shared<InvalidLayerStateLintError>(
+          fmt::format(
+            "OpenXR requires that layer registry values are DWORDs; `{}` has a "
+            "different type. This can cause various issues with other layers "
+            "or games.",
+            layer.mManifestPath.string()),
+          layer));
     }
     return ret;
   }

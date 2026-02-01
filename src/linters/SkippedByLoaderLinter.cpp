@@ -64,7 +64,7 @@ class SkippedByLoaderLinter final : public Linter {
                 "Layer `{}` is blocked by your current OpenXR runtime ('{}')",
                 layer.mManifestPath.string(),
                 runtimeString),
-              PathSet {layer.mManifestPath}));
+              LayerKeySet {layer}));
           continue;
         }
       }
@@ -76,7 +76,7 @@ class SkippedByLoaderLinter final : public Linter {
             "be blocked by your OpenXR runtime ('{}')",
             layer.mManifestPath.string(),
             runtimeString),
-          PathSet {layer.mManifestPath}));
+          LayerKeySet {layer}));
     }
     return errors;
   }

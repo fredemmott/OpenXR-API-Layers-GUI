@@ -55,13 +55,15 @@ class ProgramFilesLinter final : public Linter {
         continue;
       }
 
-      errors.push_back(std::make_shared<LintError>(
-        fmt::format(
-          "{} is outside of Program Files; this can cause issue with sandboxed "
-          "MS Store games or apps, such as OpenXR Tools for Windows Mixed "
-          "Reality.",
-          details.mLibraryPath.string()),
-        PathSet {layer.mManifestPath}));
+      errors.push_back(
+        std::make_shared<LintError>(
+          fmt::format(
+            "{} is outside of Program Files; this can cause issue with "
+            "sandboxed "
+            "MS Store games or apps, such as OpenXR Tools for Windows Mixed "
+            "Reality.",
+            details.mLibraryPath.string()),
+          LayerKeySet {layer}));
     }
     return errors;
   }

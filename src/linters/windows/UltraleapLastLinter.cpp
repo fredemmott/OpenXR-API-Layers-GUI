@@ -14,14 +14,13 @@ class MustBeLastLayerLintError final : public FixableLintError {
  public:
   MustBeLastLayerLintError(
     const std::string& description,
-    const std::filesystem::path& layer)
+    const APILayer& layer)
     : FixableLintError(description, {layer}),
-      mManifestPath(layer) {}
+      mLayer(layer) {}
 
   std::vector<APILayer> Fix(const std::vector<APILayer>& allLayers) override {
     auto ret = allLayers;
-    const auto it
-      = std::ranges::find(ret, mManifestPath, &APILayer::mManifestPath);
+    const auto it = std::ranges::find(ret, mLayer);
     if (it == ret.end()) {
       return ret;
     }
@@ -30,7 +29,7 @@ class MustBeLastLayerLintError final : public FixableLintError {
   }
 
  private:
-  std::filesystem::path mManifestPath;
+  APILayer::Key mLayer;
 };
 
 }// namespace
@@ -64,7 +63,7 @@ class UltraleapLastLinter final : public Linter {
     return {std::make_shared<MustBeLastLayerLintError>(
       "The Ultraleap hand tracking layer has bugs that break other API layers "
       "unless it is the very last API layer",
-      layer.mManifestPath)};
+      layer)};
   }
 };
 

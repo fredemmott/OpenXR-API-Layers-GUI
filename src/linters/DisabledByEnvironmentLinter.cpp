@@ -30,7 +30,7 @@ class DisabledByEnvironmentLinter final : public Linter {
               "`{}` is not set",
               layer.mManifestPath.string(),
               enableEnv),
-            PathSet {layer.mManifestPath}));
+            LayerKeySet {layer}));
       }
 
       const auto& disableEnv = details.mDisableEnvironment;
@@ -40,7 +40,7 @@ class DisabledByEnvironmentLinter final : public Linter {
             fmt::format(
               "Layer `{}` does not define a `disable_environment` key",
               layer.mManifestPath.string()),
-            PathSet {layer.mManifestPath}));
+            LayerKeySet {layer}));
         continue;
       }
 
@@ -52,7 +52,7 @@ class DisabledByEnvironmentLinter final : public Linter {
               "Layer `{}` is disabled by environment variable `{}`",
               layer.mManifestPath.string(),
               disableEnv),
-            PathSet {layer.mManifestPath}));
+            LayerKeySet {layer}));
       }
     }
     return errors;

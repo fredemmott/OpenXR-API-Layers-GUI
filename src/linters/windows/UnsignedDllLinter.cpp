@@ -41,7 +41,7 @@ class UnsignedDllLinter final : public Linter {
                 "{} does not have a trusted signature; this is very likely to "
                 "cause issues with games that use anti-cheat software.",
                 details.mLibraryPath.string()),
-              PathSet {layer.mManifestPath}));
+              LayerKeySet {layer}));
           continue;
         case UntrustedSignature:
           errors.push_back(
@@ -51,7 +51,7 @@ class UnsignedDllLinter final : public Linter {
                 "very likely to cause issues with games that use anti-cheat "
                 "software.",
                 details.mLibraryPath.string()),
-              PathSet {layer.mManifestPath}));
+              LayerKeySet {layer}));
           continue;
         case Expired:
           // Not seen reports of this so far; don't know if anti-cheats are
@@ -64,7 +64,7 @@ class UnsignedDllLinter final : public Linter {
                 "certificate; This may cause issues with games that use "
                 "anti-cheat software.",
                 details.mLibraryPath.string()),
-              PathSet {layer.mManifestPath}));
+              LayerKeySet {layer}));
           continue;
       }
     }

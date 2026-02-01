@@ -170,7 +170,7 @@ static auto MakeOrderingLintError(
   }
 
   return std::make_shared<OrderingLintError>(
-    msg, toMovePath, position, relativeToPath);
+    msg, get<0>(layerToMove), position, get<0>(relativeTo));
 }
 
 // Detect dependencies
@@ -262,7 +262,7 @@ class OrderingLinter final : public Linter {
               layer.mManifestPath.string(),
               otherDetails.mName,
               other.mManifestPath.string()),
-            PathSet {layer.mManifestPath, other.mManifestPath}));
+            LayerKeySet {layer, other}));
       }
 
       // LINT RULE: ConflictsPerApp
@@ -288,7 +288,7 @@ class OrderingLinter final : public Linter {
               other.mManifestPath.string(),
               details.mName,
               otherDetails.mName),
-            PathSet {layer.mManifestPath, other.mManifestPath}));
+            LayerKeySet {layer, other}));
       }
     }
 
