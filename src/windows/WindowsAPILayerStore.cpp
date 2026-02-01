@@ -16,6 +16,7 @@
 
 #include "APILayerStore.hpp"
 #include "Config.hpp"
+#include "EnabledExplicitAPILayerStore.hpp"
 #include "windows/GetKnownFolderPath.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -224,8 +225,8 @@ class ReadWriteWindowsAPILayerStore final : public WindowsAPILayerStore,
   }
 };
 
-template <class TInterface, class TConcrete>
-std::span<TInterface*> GetStaticStores() noexcept {
+std::span<APILayerStore*> APILayerStore::Get() noexcept {
+  using TConcrete = ReadWriteWindowsAPILayerStore;
   using RB = WindowsAPILayerStore::RegistryBitness;
   using enum APILayer::Kind;
   static TConcrete sHKLM64 {
@@ -244,11 +245,20 @@ std::span<TInterface*> GetStaticStores() noexcept {
     "Explicit Win32-HKLM", Explicit, RB::Wow64_32, HKEY_LOCAL_MACHINE};
   static TConcrete sExplicitHKCU32 {
     "Explicit Win32-HKCU", Explicit, RB::Wow64_32, HKEY_CURRENT_USER};
-  static TInterface* sStores[] {
+  static EnabledExplicitAPILayerStore sEnabledExplicit {
+    Platform::Get(),
+    {
+      &sExplicitHKLM64,
+      &sExplicitHKCU64,
+      &sExplicitHKLM32,
+      &sExplicitHKCU32,
+    }};
+  static APILayerStore* sStores[] {
     &sHKLM64,
     &sHKCU64,
     &sHKLM32,
     &sHKCU32,
+    &sEnabledExplicit,
     &sExplicitHKLM64,
     &sExplicitHKCU64,
     &sExplicitHKLM32,
@@ -256,15 +266,5 @@ std::span<TInterface*> GetStaticStores() noexcept {
   };
   return sStores;
 }
-
-std::span<APILayerStore*> APILayerStore::Get() noexcept {
-  return GetStaticStores<APILayerStore, ReadOnlyWindowsAPILayerStore>();
-};
-
-std::span<ReadWriteAPILayerStore*> ReadWriteAPILayerStore::Get() noexcept {
-  return GetStaticStores<
-    ReadWriteAPILayerStore,
-    ReadWriteWindowsAPILayerStore>();
-};
 
 }// namespace FredEmmott::OpenXRLayers

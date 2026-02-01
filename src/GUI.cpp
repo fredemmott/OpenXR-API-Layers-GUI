@@ -12,7 +12,6 @@
 #include "APILayer.hpp"
 #include "APILayerStore.hpp"
 #include "Config.hpp"
-#include "EnabledExplicitAPILayerStore.hpp"
 #include "Linter.hpp"
 #include "Platform.hpp"
 #include "SaveReport.hpp"
@@ -61,26 +60,8 @@ void GUI::DrawFrame() {
 
 GUI::GUI() {
   const auto stores = ReadWriteAPILayerStore::Get();
-  auto implicitStores = std::views::filter(stores, [](const auto store) {
-    return store->GetKind() == APILayer::Kind::Implicit;
-  });
-  auto explicitStores = std::views::filter(stores, [](const auto store) {
-    return store->GetKind() == APILayer::Kind::Explicit;
-  });
-
-  mLayerSets.reserve(stores.size() + 1);
-  for (auto&& store: implicitStores) {
-    mLayerSets.emplace_back(store);
-  }
-
-  mEnabledExplicitLayers = std::make_unique<EnabledExplicitAPILayerStore>(
-    Platform::Get(),
-    explicitStores | std::views::transform([](const auto readWrite) {
-      return static_cast<APILayerStore*>(readWrite);
-    }) | std::ranges::to<std::vector>());
-  mLayerSets.emplace_back(mEnabledExplicitLayers.get());
-
-  for (auto&& store: explicitStores) {
+  mLayerSets.reserve(stores.size());
+  for (auto&& store: stores) {
     mLayerSets.emplace_back(store);
   }
 }
@@ -94,7 +75,9 @@ void GUI::Run() {
 
 GUI::LayerSet::~LayerSet() = default;
 
-GUI::LayerSet::LayerSet(APILayerStore* const store) : mStore(store) {
+GUI::LayerSet::LayerSet(APILayerStore* const store)
+  : mStore(store),
+    mReadWriteStore(dynamic_cast<ReadWriteAPILayerStore*>(store)) {
   mOnChangeConnection
     = store->OnChange([this] { this->mLayerDataIsStale = true; });
 }

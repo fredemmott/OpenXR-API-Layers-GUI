@@ -42,8 +42,6 @@ class APILayerStore {
 class ReadWriteAPILayerStore : public virtual APILayerStore {
  public:
   virtual bool SetAPILayers(const std::vector<APILayer>&) const noexcept = 0;
-
-  static std::span<ReadWriteAPILayerStore*> Get() noexcept;
 };
 
 }// namespace FredEmmott::OpenXRLayers

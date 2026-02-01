@@ -89,7 +89,6 @@ class GUI final {
   };
 
   std::vector<LayerSet> mLayerSets;
-  std::unique_ptr<APILayerStore> mEnabledExplicitLayers {nullptr};
 
   void Export();
   void DrawFrame();
