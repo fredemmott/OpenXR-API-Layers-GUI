@@ -1,6 +1,7 @@
 # Copyright 2023 Fred Emmott <fred@fredemmott.com>
 # SPDX-License-Identifier: ISC
 
+find_package(magic_enum CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)

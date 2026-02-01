@@ -15,8 +15,9 @@
       ]
     },
     "boost-signals2",
-    "nlohmann-json",
     "fmt",
+    "magic-enum",
+    "nlohmann-json",
     "openxr-loader"
   ]
 }

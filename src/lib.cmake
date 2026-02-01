@@ -31,9 +31,10 @@ add_library(
   Linter.cpp
   LayerRules.cpp
   linters/BadInstallationLinter.cpp
-  linters/DuplicatesLinter.cpp
-  linters/OrderingLinter.cpp
   linters/DisabledByEnvironmentLinter.cpp
+  linters/DuplicatesLinter.cpp
+  linters/ExplicitLayerArchitecturesLinter.cpp
+  linters/OrderingLinter.cpp
   linters/SkippedByLoaderLinter.cpp
 )
 target_link_libraries(linters PUBLIC lib)
@@ -52,6 +53,7 @@ target_link_libraries(
   WIL::WIL
   config-hpp
   imgui::imgui
+  magic_enum::magic_enum
 )
 
 if (WIN32)

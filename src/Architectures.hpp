@@ -29,15 +29,26 @@ class Architectures {
   }
 
   [[nodiscard]]
-  bool contains(const Architecture value) const noexcept {
-    const auto bit = std::to_underlying(value);
-    return (std::to_underlying(mValue) & bit) == bit;
+  constexpr bool contains(const Architecture value) const noexcept {
+    const auto bits = std::to_underlying(value);
+    return (std::to_underlying(mValue) & bits) == bits;
+  }
+
+  [[nodiscard]]
+  constexpr bool contains(const Architectures other) const noexcept {
+    return contains(other.mValue);
+  }
+
+  auto underlying() const noexcept {
+    return std::to_underlying(mValue);
   }
 
   constexpr auto operator<=>(const Architectures&) const = default;
 };
 
-inline Architectures operator|(const Architecture lhs, const Architecture rhs) {
+constexpr Architectures operator|(
+  const Architecture lhs,
+  const Architecture rhs) {
   return Architectures {lhs} |= rhs;
 }
 
