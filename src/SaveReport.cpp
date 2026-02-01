@@ -45,73 +45,75 @@ static std::string GenerateReportText(const APILayerStore* store) {
         value = Config::GLYPH_ERROR;
         break;
     }
-    ret += std::format("\n{} {}", value, layer.mManifestPath.string());
+    ret += std::format("\n{} {}", value, layer.GetKey().mValue);
 
-    const APILayerDetails details {layer.mManifestPath};
-    if (details.mState != APILayerDetails::State::Loaded) {
-      ret += fmt::format(
-        "\n\t- {} {}", Config::GLYPH_ERROR, details.StateAsString());
-    } else {
-      ret += fmt::format(
-        "\n\tManifest JSON last modified at: {}",
-        std::chrono::clock_cast<std::chrono::system_clock>(
-          std::chrono::time_point_cast<std::chrono::seconds>(
-            details.mManifestFilesystemChangeTime)));
-
-      if (!details.mName.empty()) {
-        ret += fmt::format("\n\tName: {}", details.mName);
-      }
-
-      if (details.mLibraryPath.empty()) {
+    if (!layer.mManifestPath.empty()) {
+      const APILayerDetails details {layer.mManifestPath};
+      if (details.mState != APILayerDetails::State::Loaded) {
         ret += fmt::format(
-          "\n\tLibrary path: {} No library path in JSON file",
-          Config::GLYPH_ERROR);
+          "\n\t- {} {}", Config::GLYPH_ERROR, details.StateAsString());
       } else {
-        ret
-          += fmt::format("\n\tLibrary path: {}", details.mLibraryPath.string());
-
         ret += fmt::format(
-          "\n\tLibrary last modified at: {}",
-          details.mLibraryPath.extension().string(),
+          "\n\tManifest JSON last modified at: {}",
           std::chrono::clock_cast<std::chrono::system_clock>(
             std::chrono::time_point_cast<std::chrono::seconds>(
-              details.mLibraryFilesystemChangeTime)));
+              details.mManifestFilesystemChangeTime)));
 
-        if (details.mSignature) {
-          ret += fmt::format(
-            "\n\tSigned by: {}"
-            "\n\tSigned at: {}",
-            details.mSignature->mSignedBy,
-            std::chrono::time_point_cast<std::chrono::seconds>(
-              details.mSignature->mSignedAt));
-          // No need for an 'else' - linters already report warnings when
-          // appropriate
+        if (!details.mName.empty()) {
+          ret += fmt::format("\n\tName: {}", details.mName);
         }
-      }
 
-      if (!details.mImplementationVersion.empty()) {
-        ret += fmt::format(
-          "\n\tImplementation version: {}", details.mImplementationVersion);
-      }
+        if (details.mLibraryPath.empty()) {
+          ret += fmt::format(
+            "\n\tLibrary path: {} No library path in JSON file",
+            Config::GLYPH_ERROR);
+        } else {
+          ret += fmt::format(
+            "\n\tLibrary path: {}", details.mLibraryPath.string());
 
-      if (!details.mAPIVersion.empty()) {
-        ret += fmt::format("\n\tOpenXR API version: {}", details.mAPIVersion);
-      }
+          ret += fmt::format(
+            "\n\tLibrary last modified at: {}",
+            details.mLibraryPath.extension().string(),
+            std::chrono::clock_cast<std::chrono::system_clock>(
+              std::chrono::time_point_cast<std::chrono::seconds>(
+                details.mLibraryFilesystemChangeTime)));
 
-      if (!details.mDescription.empty()) {
-        ret += fmt::format("\n\tDescription: {}", details.mDescription);
-      }
+          if (details.mSignature) {
+            ret += fmt::format(
+              "\n\tSigned by: {}"
+              "\n\tSigned at: {}",
+              details.mSignature->mSignedBy,
+              std::chrono::time_point_cast<std::chrono::seconds>(
+                details.mSignature->mSignedAt));
+            // No need for an 'else' - linters already report warnings when
+            // appropriate
+          }
+        }
 
-      if (!details.mFileFormatVersion.empty()) {
-        ret += fmt::format(
-          "\n\tFile format version: {}", details.mFileFormatVersion);
-      }
+        if (!details.mImplementationVersion.empty()) {
+          ret += fmt::format(
+            "\n\tImplementation version: {}", details.mImplementationVersion);
+        }
 
-      if (!details.mExtensions.empty()) {
-        ret += "\n\tExtensions:";
-        for (const auto& ext: details.mExtensions) {
-          ret
-            += fmt::format("\n\t\t- {} (version {})", ext.mName, ext.mVersion);
+        if (!details.mAPIVersion.empty()) {
+          ret += fmt::format("\n\tOpenXR API version: {}", details.mAPIVersion);
+        }
+
+        if (!details.mDescription.empty()) {
+          ret += fmt::format("\n\tDescription: {}", details.mDescription);
+        }
+
+        if (!details.mFileFormatVersion.empty()) {
+          ret += fmt::format(
+            "\n\tFile format version: {}", details.mFileFormatVersion);
+        }
+
+        if (!details.mExtensions.empty()) {
+          ret += "\n\tExtensions:";
+          for (const auto& ext: details.mExtensions) {
+            ret += fmt::format(
+              "\n\t\t- {} (version {})", ext.mName, ext.mVersion);
+          }
         }
       }
     }
