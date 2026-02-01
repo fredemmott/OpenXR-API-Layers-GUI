@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include "APILayerSignature.hpp"
+#include "Architectures.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -41,11 +42,7 @@ struct APILayer {
   APILayer(
     const APILayerStore* source,
     const std::filesystem::path& manifestPath,
-    const Value value)
-    : mSource(source),
-      mManifestPath(manifestPath),
-      mValue(value),
-      mKey(manifestPath.string()) {}
+    Value value);
 
   static APILayer MakeForEnvVar(
     const APILayerStore* source,
@@ -53,6 +50,7 @@ struct APILayer {
     const Value value) {
     APILayer ret {source, {}, value};
     ret.mKey.mValue = name;
+    ret.mArchitectures = {Architecture::Invalid};
     return ret;
   }
 
@@ -67,6 +65,7 @@ struct APILayer {
   const APILayerStore* mSource {nullptr};
   std::filesystem::path mManifestPath;
   Value mValue;
+  Architectures mArchitectures;
 
   [[nodiscard]]
   constexpr bool IsEnabled() const noexcept {

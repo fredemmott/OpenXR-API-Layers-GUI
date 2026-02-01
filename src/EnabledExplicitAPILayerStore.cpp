@@ -22,10 +22,6 @@ std::string EnabledExplicitAPILayerStore::GetDisplayName() const noexcept {
   return "Enabled Explicit";
 }
 
-bool EnabledExplicitAPILayerStore::IsForCurrentArchitecture() const noexcept {
-  return true;
-}
-
 std::vector<APILayer> EnabledExplicitAPILayerStore::GetAPILayers()
   const noexcept {
   std::vector<APILayer> ret;
@@ -44,14 +40,26 @@ std::vector<APILayer> EnabledExplicitAPILayerStore::GetAPILayers()
           installedLayers,
           [&](const auto& pair) { return get<1>(pair).mName == name; })
       | std::ranges::to<std::vector>();
+    ret.push_back(
+      APILayer::MakeForEnvVar(this, name, APILayer::Value::EnabledButAbsent));
     if (matching.empty()) {
-      ret.push_back(
-        APILayer::MakeForEnvVar(this, name, APILayer::Value::EnabledButAbsent));
       continue;
     }
-    // TODO: handle multiple architectures (#43)
-    // For now, we just just consider it a match if it's in any of them
-    ret.push_back(get<0>(matching.front()));
+    auto& entry = ret.back();
+    for (auto&& match: std::views::elements<0>(matching)) {
+      if (match.mValue == APILayer::Value::Enabled) {
+        entry.mValue = APILayer::Value::Enabled;
+        entry.mArchitectures |= match.mArchitectures;
+      }
+    }
+  }
+  return ret;
+}
+
+Architectures EnabledExplicitAPILayerStore::GetArchitectures() const noexcept {
+  Architectures ret {Architecture::Invalid};
+  for (auto&& store: mBackingStores) {
+    ret |= store->GetArchitectures();
   }
   return ret;
 }

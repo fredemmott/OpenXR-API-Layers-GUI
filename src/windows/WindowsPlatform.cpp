@@ -453,6 +453,13 @@ std::vector<std::string> WindowsPlatform::GetEnabledExplicitAPILayers() {
   }
   return ret;
 }
+Architectures WindowsPlatform::GetArchitectures() const {
+  constexpr auto Current = GetBuildArchitecture();
+  static_assert(
+    Current == Architecture::x64 || Current == Architecture::x86,
+    "Unsupported architecture");
+  return Architecture::x64 | Architecture::x86;
+}
 
 HWND WindowsPlatform::CreateAppWindow() {
   static const auto WindowTitle

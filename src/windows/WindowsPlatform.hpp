@@ -40,6 +40,8 @@ class WindowsPlatform final : public Platform {
 
   std::vector<std::string> GetEnabledExplicitAPILayers() override;
 
+  Architectures GetArchitectures() const override;
+
  protected:
   std::filesystem::path Get32BitRuntimePath() override;
   std::filesystem::path Get64BitRuntimePath() override;

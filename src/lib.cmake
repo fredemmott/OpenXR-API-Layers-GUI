@@ -4,8 +4,12 @@ add_library(
   lib
   STATIC
   EXCLUDE_FROM_ALL
+  APILayer.cpp
+  APILayer.hpp
   APILayerDetails.cpp
   APILayerSignature.hpp
+  APILayerStore.hpp
+  Architectures.hpp
   ConstexprString.hpp
   EnabledExplicitAPILayerStore.cpp
   EnabledExplicitAPILayerStore.hpp

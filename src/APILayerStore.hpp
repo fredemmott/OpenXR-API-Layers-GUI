@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "APILayer.hpp"
+#include "Architectures.hpp"
+#include "Platform.hpp"
 
 namespace FredEmmott::OpenXRLayers {
 
@@ -20,8 +22,12 @@ class APILayerStore {
   // e.g. "Win64-HKLM"
   virtual std::string GetDisplayName() const noexcept = 0;
   virtual std::vector<APILayer> GetAPILayers() const noexcept = 0;
+  virtual Architectures GetArchitectures() const noexcept = 0;
   // e.g. if we're a 64-bit build, we won't see 32-bit layers
-  virtual bool IsForCurrentArchitecture() const noexcept = 0;
+  [[nodiscard]]
+  bool IsForCurrentArchitecture() const noexcept {
+    return GetArchitectures().contains(Platform::GetBuildArchitecture());
+  }
 
   virtual boost::signals2::scoped_connection OnChange(
     std::function<void()> callback) noexcept {

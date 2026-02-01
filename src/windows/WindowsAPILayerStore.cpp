@@ -139,6 +139,18 @@ std::vector<APILayer> WindowsAPILayerStore::GetAPILayers() const noexcept {
   }
   return layers;
 }
+Architectures WindowsAPILayerStore::GetArchitectures() const noexcept {
+  constexpr auto BuiltFor = Platform::GetBuildArchitecture();
+  using enum Architecture;
+  static_assert(BuiltFor == x86 || BuiltFor == x64);
+  switch (GetRegistryBitness()) {
+    case RegistryBitness::Wow64_32:
+      return x86;
+    case RegistryBitness::Wow64_64:
+      return x64;
+  }
+  __assume(false);
+}
 
 class ReadOnlyWindowsAPILayerStore final : public WindowsAPILayerStore {
  public:

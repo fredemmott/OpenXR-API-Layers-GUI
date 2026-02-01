@@ -27,10 +27,9 @@ class WindowsAPILayerStore : public virtual APILayerStore {
 
   std::vector<APILayer> GetAPILayers() const noexcept override;
 
-  bool IsForCurrentArchitecture() const noexcept override {
-    return std::to_underlying(mRegistryBitness) == sizeof(void*);
-  }
+  Architectures GetArchitectures() const noexcept override;
 
+  [[nodiscard]]
   RegistryBitness GetRegistryBitness() const noexcept {
     return mRegistryBitness;
   }

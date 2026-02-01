@@ -18,7 +18,7 @@ class EnabledExplicitAPILayerStore : public virtual APILayerStore {
   APILayer::Kind GetKind() const noexcept override;
   std::string GetDisplayName() const noexcept override;
   std::vector<APILayer> GetAPILayers() const noexcept override;
-  bool IsForCurrentArchitecture() const noexcept override;
+  Architectures GetArchitectures() const noexcept override;
 
  private:
   Platform& mPlatform;

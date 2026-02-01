@@ -10,6 +10,7 @@
 #include <imgui.h>
 
 #include "APILayerSignature.hpp"
+#include "Architectures.hpp"
 #include "LoaderData.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -82,6 +83,10 @@ class Platform {
   // Use OS/environment equivalent to Explorer
   virtual void ShowFolderContainingFile(const std::filesystem::path&) = 0;
 
+  static constexpr Architecture GetBuildArchitecture();
+
+  virtual Architectures GetArchitectures() const = 0;
+
   Platform(const Platform&) = delete;
   Platform(Platform&&) = delete;
   Platform& operator=(const Platform&) = delete;
@@ -92,4 +97,15 @@ class Platform {
   virtual std::filesystem::path Get32BitRuntimePath() = 0;
   virtual std::filesystem::path Get64BitRuntimePath() = 0;
 };
+
+constexpr Architecture Platform::GetBuildArchitecture() {
+#if defined(_M_X64) || defined(__x86_64__)
+  return Architecture::x64;
+#elif defined(_M_IX86) || defined(__i386__)
+  return Architecture::x86;
+#else
+#error "Unsupported architecture"
+#endif
+}
+
 }// namespace FredEmmott::OpenXRLayers
