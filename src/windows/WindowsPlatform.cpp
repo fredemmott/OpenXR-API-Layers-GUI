@@ -748,7 +748,7 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
         nullptr,
         nullptr,
         TRUE,
-        0,
+        CREATE_NO_WINDOW,
         nullptr,
         nullptr,
         &si,
