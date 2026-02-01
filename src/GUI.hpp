@@ -16,7 +16,11 @@ class ReadWriteAPILayerStore;
 // The actual app GUI
 class GUI final {
  public:
-  GUI();
+  enum class ShowExplicit {
+    OnlyIfUsed,
+    Always,
+  };
+  explicit GUI(ShowExplicit);
   ~GUI();
   void Run();
 

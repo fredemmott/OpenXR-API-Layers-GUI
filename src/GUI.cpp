@@ -58,10 +58,21 @@ void GUI::DrawFrame() {
   ImGui::End();
 }
 
-GUI::GUI() {
+GUI::GUI(const ShowExplicit showExplicitMode) {
   const auto stores = ReadWriteAPILayerStore::Get();
-  mLayerSets.reserve(stores.size());
+  const auto showExplicit
+    = showExplicitMode == ShowExplicit::Always
+    || std::ranges::any_of(stores, [](const auto& store) {
+         if (store->GetKind() != APILayer::Kind::Explicit) {
+           return false;
+         }
+         return !store->GetAPILayers().empty();
+       });
+
   for (auto&& store: stores) {
+    if (store->GetKind() == APILayer::Kind::Explicit && !showExplicit) {
+      continue;
+    }
     mLayerSets.emplace_back(store);
   }
 }
