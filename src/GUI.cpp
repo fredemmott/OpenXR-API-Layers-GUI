@@ -257,6 +257,20 @@ void GUI::LayerSet::GUITabs() {
 void GUI::LayerSet::GUIErrorsTab() {
   if (ImGui::BeginTabItem("Warnings")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
+
+    const auto loaderDataPending = std::ranges::any_of(
+      mStore->GetArchitectures().enumerate(), [](const auto arch) {
+        const auto data = Platform::Get().GetLoaderData(arch);
+        if (data) {
+          return false;
+        }
+        return holds_alternative<LoaderData::PendingError>(data.error());
+      });
+    if (loaderDataPending) {
+      ImGui::Text("⌛ Loading...");
+      ImGui::Separator();
+    }
+
     if (mSelectedLayer) {
       ImGui::Text("For %s:", mSelectedLayer->mManifestPath.string().c_str());
     } else {
