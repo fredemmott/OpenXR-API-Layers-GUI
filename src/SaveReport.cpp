@@ -260,14 +260,60 @@ static std::string GenerateLoaderDataText(
         result.error()));
   }
 
-  auto data = *result;
-  std::erase_if(data.mEnvironmentVariablesBeforeLoader, [](const auto& pair) {
-    return !std::string_view {pair.first}.starts_with("XR_");
-  });
-  std::erase_if(data.mEnvironmentVariablesAfterLoader, [](const auto& pair) {
-    return !std::string_view {pair.first}.starts_with("XR_");
-  });
-  const nlohmann::json json = data;
+  const auto& data = *result;
+  nlohmann::json json = data;
+  json.erase("environmentVariables");
+
+  const auto& before = data.mEnvironmentVariablesBeforeLoader;
+  const auto& after = data.mEnvironmentVariablesAfterLoader;
+  std::vector<std::string> allEnvVars;
+  allEnvVars.append_range(std::views::keys(before));
+  allEnvVars.append_range(std::views::keys(after));
+  std::ranges::sort(allEnvVars);
+  {
+    auto [first, last] = std::ranges::unique(allEnvVars);
+    allEnvVars.erase(first, last);
+  }
+
+  auto outEnvVars = nlohmann::json::array();
+
+  for (auto&& key: allEnvVars) {
+    const bool censor = (!key.starts_with("XR_")) && (!key.contains("_XR_"));
+
+    if (!after.contains(key)) {
+      assert(before.contains(key));
+      const auto value = censor ? "[*****]" : before.at(key);
+      outEnvVars.emplace_back(
+        std::format("⚠️➖ unset by runtime: {}={}", key, value));
+      continue;
+    }
+
+    if (!before.contains(key)) {
+      assert(after.contains(key));
+      const auto value = censor ? "[*****]" : after.at(key);
+      outEnvVars.emplace_back(
+        std::format("⚠️➕ added by runtime: {}={}", key, value));
+      continue;
+    }
+
+    const auto beforeValue = censor ? "[*****]" : before.at(key);
+    if (before.at(key) == after.at(key)) {
+      outEnvVars.emplace_back(std::format("{}={}", key, beforeValue));
+      continue;
+    }
+
+    const auto afterValue = censor ? "[*****]" : after.at(key);
+    outEnvVars.emplace_back(
+      std::format(
+        "⚠️🔄 modified by runtime: -{}={} +{}={}",
+        key,
+        beforeValue,
+        key,
+        afterValue));
+  }
+
+  json["environmentVariables"] = outEnvVars;
+
   return ret + json.dump(2);
 }
 
