@@ -74,6 +74,9 @@ class Platform {
   GetAPILayerSignature(const std::filesystem::path&) = 0;
   virtual std::expected<LoaderData, LoaderData::Error> GetLoaderData(
     Architecture) = 0;
+  virtual std::expected<LoaderData, LoaderData::Error> WaitForLoaderData(
+    Architecture,
+    std::chrono::steady_clock::time_point timeout) = 0;
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
   virtual std::unordered_set<std::string> GetEnvironmentVariableNames() = 0;

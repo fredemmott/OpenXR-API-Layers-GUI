@@ -18,7 +18,7 @@ Architecture LoaderData::GetBuildArchitecture() {
 void to_json(nlohmann::json& j, const LoaderData& data) {
   j.update(
     nlohmann::json {
-      {"architecture", std::to_underlying(data.mArchitecture)},
+      {"architecture", magic_enum::enum_name(data.mArchitecture)},
       {"queryExtensionsResult", std::to_underlying(data.mQueryLayersResult)},
       {"queryLayersResult", std::to_underlying(data.mQueryLayersResult)},
       {"enabledLayerNames", data.mEnabledLayerNames},
@@ -31,7 +31,8 @@ void to_json(nlohmann::json& j, const LoaderData& data) {
 }
 
 void from_json(const nlohmann::json& j, LoaderData& data) {
-  data.mArchitecture = static_cast<Architecture>(j["architecture"]);
+  data.mArchitecture = *magic_enum::enum_cast<Architecture>(
+    std::string_view {j["architecture"]});
   data.mQueryLayersResult = static_cast<XrResult>(j["queryLayersResult"]);
   data.mQueryExtensionsResult
     = static_cast<XrResult>(j["queryExtensionsResult"]);

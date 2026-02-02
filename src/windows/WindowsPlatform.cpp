@@ -29,6 +29,7 @@
 #include <imgui_impl_win32.h>
 #include <shellapi.h>
 #include <shtypes.h>
+#include <userenv.h>
 
 #include "APILayerStore.hpp"
 #include "CheckForUpdates.hpp"
@@ -236,7 +237,6 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
     mNewFrameEvent.ResetEvent();
 
     {
-      const std::unique_lock lock(mMutex);
       this->BeforeFrame();
       drawFrame();
       this->AfterFrame();
@@ -710,11 +710,37 @@ static std::unexpected<T> UnexpectedGetLastError() {
 
 std::expected<LoaderData, LoaderData::Error> WindowsPlatform::GetLoaderData(
   const Architecture arch) {
+  assert(GetArchitectures().contains(arch));
   EnsureLoaderDataThread();
   const std::unique_lock lock(mMutex);
   if (!mLoaderData.contains(arch)) {
     return std::unexpected {LoaderData::PendingError {}};
   }
+  return mLoaderData.at(arch);
+}
+std::expected<LoaderData, LoaderData::Error> WindowsPlatform::WaitForLoaderData(
+  const Architecture arch,
+  const std::chrono::steady_clock::time_point timeout) {
+  assert(GetArchitectures().contains(arch));
+  EnsureLoaderDataThread();
+
+  std::unique_lock lock(mMutex);
+  if (mLoaderData.contains(arch)) {
+    const auto& data = mLoaderData.at(arch);
+    if (data) {
+      return data;
+    }
+    if (!holds_alternative<LoaderData::PendingError>(data.error())) {
+      return data;
+    }
+  }
+
+  const auto completed = mLoaderDataCondition.wait_until(
+    lock, timeout, [&] { return mLoaderData.contains(arch); });
+  if (!completed) {
+    return std::unexpected {LoaderData::PendingError {}};
+  }
+
   return mLoaderData.at(arch);
 }
 
@@ -820,6 +846,7 @@ void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
       mLoaderData = std::move(newLoaderData);
     }
 
+    mLoaderDataCondition.notify_all();
     mOnLoaderDataSignal();
     mNewFrameEvent.SetEvent();
   }
@@ -847,7 +874,8 @@ WindowsPlatform::SpawnLoaderData(
   constexpr auto MaxPathExtended = 32768;
   wchar_t modulePath[MaxPathExtended];
   if (!GetModuleFileNameW(nullptr, modulePath, MaxPathExtended)) {
-    return UnexpectedGetLastError<LoaderData::CanNotFindExecutableError>();
+    return UnexpectedGetLastError<
+      LoaderData::CanNotFindCurrentExecutableError>();
   }
 
   STARTUPINFOW si {

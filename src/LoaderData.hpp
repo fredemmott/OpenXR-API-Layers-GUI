@@ -4,6 +4,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <openxr/openxr.h>
 
+#include <filesystem>
 #include <string>
 #include <system_error>
 #include <unordered_set>
@@ -14,13 +15,14 @@
 namespace FredEmmott::OpenXRLayers {
 
 struct LoaderData {
+  struct PendingError {};
   struct PipeCreationError {
     std::error_code mError;
   };
   struct PipeAttributeError {
     std::error_code mError;
   };
-  struct CanNotFindExecutableError {
+  struct CanNotFindCurrentExecutableError {
     std::error_code mError;
   };
   struct CanNotSpawnError {
@@ -32,12 +34,11 @@ struct LoaderData {
   struct InvalidJSONError {
     std::string mExplanation;
   };
-  struct PendingError {};
   using Error = std::variant<
     PendingError,
     PipeCreationError,
     PipeAttributeError,
-    CanNotFindExecutableError,
+    CanNotFindCurrentExecutableError,
     CanNotSpawnError,
     BadExitCodeError,
     InvalidJSONError>;

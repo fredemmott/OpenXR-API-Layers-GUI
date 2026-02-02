@@ -25,6 +25,9 @@ class WindowsPlatform final : public Platform {
   std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override;
   std::expected<LoaderData, LoaderData::Error> GetLoaderData(
     Architecture) override;
+  std::expected<LoaderData, LoaderData::Error> WaitForLoaderData(
+    Architecture,
+    std::chrono::steady_clock::time_point timeout) override;
 
   float GetDPIScaling() override {
     return mDPIScaling;
@@ -71,7 +74,7 @@ class WindowsPlatform final : public Platform {
     Config::MINIMUM_WINDOW_WIDTH,
     Config::MINIMUM_WINDOW_HEIGHT,
   };
-  std::recursive_mutex mMutex;
+  std::mutex mMutex;
   bool mLoaderDataIsStale = true;
   std::condition_variable_any mLoaderDataCondition;
   std::unordered_map<Architecture, std::expected<LoaderData, LoaderData::Error>>

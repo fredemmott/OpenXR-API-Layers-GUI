@@ -72,6 +72,7 @@ if (WIN32)
     Crypt32
     D3d11
     Dxgi
+    UserEnv
     WinTrust
   )
   foreach (NAME IN LISTS WINDOWS_SDK_LIBRARIES)

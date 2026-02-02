@@ -5,6 +5,7 @@
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>
+#include <nlohmann/json.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -16,6 +17,13 @@
 #include "Platform.hpp"
 
 namespace FredEmmott::OpenXRLayers {
+
+namespace {
+template <class... Ts>
+struct overloaded : Ts... {
+  using Ts::operator()...;
+};
+}// namespace
 
 static std::string GenerateReportText(const APILayerStore* store) {
   auto ret = std::format(
@@ -209,6 +217,60 @@ static std::string GenerateAvailableRuntimesText(
   return ret;
 }
 
+static std::string GenerateLoaderDataText(
+  Platform& platform,
+  const Architecture arch,
+  const std::chrono::steady_clock::time_point deadline) {
+  const auto result = platform.WaitForLoaderData(arch, deadline);
+  auto ret = std::format(
+    "\n\n--------------------------------\n"
+    "Loader Data ({})\n"
+    "--------------------------------\n\n",
+    magic_enum::enum_name(arch));
+  if (!result) {
+    return std::format(
+      "{}❌ {}",
+      ret,
+      std::visit(
+        overloaded {
+          [](const LoaderData::PendingError&) -> std::string {
+            return "Still Pending";
+          },
+          [](const LoaderData::PipeCreationError& e) {
+            return std::format("Pipe creation error: {}", e.mError.message());
+          },
+          [](const LoaderData::PipeAttributeError& e) {
+            return std::format("Pipe attribute error: {}", e.mError.message());
+          },
+          [](const LoaderData::CanNotFindCurrentExecutableError& e) {
+            return std::format(
+              "Can not find current executable: {}", e.mError.message());
+          },
+          [](const LoaderData::CanNotSpawnError& e) {
+            return std::format(
+              "Subprocess creation failed: {}", e.mError.message());
+          },
+          [](const LoaderData::BadExitCodeError& e) {
+            return std::format("Bad exit code: {}", e.mExitCode);
+          },
+          [](const LoaderData::InvalidJSONError& e) {
+            return std::format("Invalid JSON: {}", e.mExplanation);
+          },
+        },
+        result.error()));
+  }
+
+  auto data = *result;
+  std::erase_if(
+    data.mEnvironmentVariablesBeforeLoader,
+    [](const std::string_view s) { return !s.starts_with("XR_"); });
+  std::erase_if(
+    data.mEnvironmentVariablesAfterLoader,
+    [](const std::string_view s) { return !s.starts_with("XR_"); });
+  const nlohmann::json json = data;
+  return ret + json.dump(2);
+}
+
 void SaveReport(const std::filesystem::path& path) {
   auto text = std::format(
     "OpenXR API Layers GUI v{}\n"
@@ -228,6 +290,12 @@ void SaveReport(const std::filesystem::path& path) {
 
   for (const auto store: APILayerStore::Get()) {
     text += GenerateReportText(store);
+  }
+
+  const auto deadline
+    = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  for (const auto arch: platform.GetArchitectures().enumerate()) {
+    text += GenerateLoaderDataText(platform, arch, deadline);
   }
 
   std::ofstream(path, std::ios::binary | std::ios::out | std::ios::trunc)
