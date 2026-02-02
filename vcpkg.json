@@ -5,19 +5,27 @@
       "name": "wil",
       "platform": "windows"
     },
-    {
-      "name": "imgui",
-      "features": [
-        "freetype",
-        "wchar32",
-        "dx11-binding",
-        "win32-binding"
-      ]
-    },
     "boost-signals2",
     "fmt",
     "magic-enum",
     "nlohmann-json",
     "openxr-loader"
-  ]
+  ],
+  "features": {
+    "app": {
+      "description": "Build the GUI app",
+      "dependencies": [
+        {
+          "name": "imgui",
+          "features": [
+            "freetype",
+            "wchar32",
+            "dx11-binding",
+            "win32-binding"
+          ]
+        }
+      ]
+    }
+  },
+  "default-features": [ "app" ]
 }
