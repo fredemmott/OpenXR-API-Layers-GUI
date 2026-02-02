@@ -48,6 +48,7 @@ struct LoaderData {
   XrResult mQueryLayersResult {XR_RESULT_MAX_ENUM};
 
   std::vector<std::string> mEnabledLayerNames;
+  std::vector<std::string> mAvailableExtensionNames;
 
   // It's possible for runtimes to modify the environment variables,
   // which can disable API layers

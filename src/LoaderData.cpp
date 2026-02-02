@@ -22,6 +22,7 @@ void to_json(nlohmann::json& j, const LoaderData& data) {
       {"queryExtensionsResult", std::to_underlying(data.mQueryLayersResult)},
       {"queryLayersResult", std::to_underlying(data.mQueryLayersResult)},
       {"enabledLayerNames", data.mEnabledLayerNames},
+      {"availableExtensionNames", data.mAvailableExtensionNames},
       {"environmentVariables",
        {
          {"beforeLoader", data.mEnvironmentVariablesBeforeLoader},
@@ -37,6 +38,7 @@ void from_json(const nlohmann::json& j, LoaderData& data) {
   data.mQueryExtensionsResult
     = static_cast<XrResult>(j["queryExtensionsResult"]);
   j.at("enabledLayerNames").get_to(data.mEnabledLayerNames);
+  j.at("availableExtensionNames").get_to(data.mAvailableExtensionNames);
   j.at("environmentVariables")
     .at("beforeLoader")
     .get_to(data.mEnvironmentVariablesBeforeLoader);

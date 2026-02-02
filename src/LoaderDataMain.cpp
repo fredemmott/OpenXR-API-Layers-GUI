@@ -17,30 +17,42 @@ static LoaderData QueryLoaderDataInCurrentProcess() {
     = Platform::Get().GetEnvironmentVariables(),
   };
 
-  // We don't care about the extensions, but enumerating them can load the
-  // runtime DLL, which can call `setenv()` and change the rest
+  // We (mostly) don't care about the extensions, but enumerating them can load
+  // runtime DLL, which can call `setenv()` and change the rest. However, while
+  // they're currently unused in the linters and UI, we do include them in the
+  // report
   uint32_t propertyCount {};
   ret.mQueryExtensionsResult = xrEnumerateInstanceExtensionProperties(
     nullptr, 0, &propertyCount, nullptr);
+  if (XR_SUCCEEDED(ret.mQueryExtensionsResult)) {
+    std::vector<XrExtensionProperties> extensions(
+      propertyCount, {XR_TYPE_EXTENSION_PROPERTIES});
+    ret.mQueryExtensionsResult = xrEnumerateInstanceExtensionProperties(
+      nullptr, propertyCount, &propertyCount, extensions.data());
+    if (XR_SUCCEEDED(ret.mQueryExtensionsResult)) {
+      for (auto&& ext: extensions) {
+        ret.mAvailableExtensionNames.emplace_back(ext.extensionName);
+      }
+    }
+  }
 
   uint32_t layerCount {};
   ret.mQueryLayersResult
     = xrEnumerateApiLayerProperties(0, &layerCount, nullptr);
+  if (XR_SUCCEEDED(ret.mQueryLayersResult)) {
+    std::vector<XrApiLayerProperties> layers(
+      layerCount, {XR_TYPE_API_LAYER_PROPERTIES});
+    ret.mQueryLayersResult
+      = xrEnumerateApiLayerProperties(layerCount, &layerCount, layers.data());
+    if (XR_SUCCEEDED(ret.mQueryLayersResult)) {
+      for (auto&& layer: layers) {
+        ret.mEnabledLayerNames.emplace_back(layer.layerName);
+      }
+    }
+  }
+
   ret.mEnvironmentVariablesAfterLoader
     = Platform::Get().GetEnvironmentVariables();
-  if (XR_FAILED(ret.mQueryLayersResult)) {
-    return ret;
-  }
-
-  std::vector<XrApiLayerProperties> layers(
-    layerCount, {XR_TYPE_API_LAYER_PROPERTIES});
-  ret.mQueryLayersResult
-    = xrEnumerateApiLayerProperties(layerCount, &layerCount, layers.data());
-
-  for (auto&& layer: layers) {
-    ret.mEnabledLayerNames.emplace_back(layer.layerName);
-  }
-
   return ret;
 }
 
