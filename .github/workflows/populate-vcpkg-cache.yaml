@@ -1,0 +1,23 @@
+name: Populate vcpkg cache
+on:
+  workflow_call:
+    inputs:
+      arch:
+        required: true
+        type: string
+permissions:
+  packages: write
+jobs:
+  populate:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - uses: ./.github/actions/configure-environment
+        with:
+          arch: ${{inputs.arch}}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+      - name: Cache vcpkg artifacts
+        run: third-party/vcpkg/vcpkg install --triplet ${{inputs.arch}}-windows-static

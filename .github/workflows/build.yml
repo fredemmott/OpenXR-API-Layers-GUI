@@ -10,19 +10,17 @@ jobs:
     name: build/${{matrix.arch}}/${{matrix.preset}}
     runs-on: windows-latest
     steps:
-      - name: Set up visual studio environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{matrix.arch}}
       - uses: actions/checkout@v6
         with:
           submodules: true
           fetch-depth: 0
+      - name: Setup environment
+        uses: ./.github/actions/configure-environment
+        with:
+          arch: ${{matrix.arch}}
+          github_token: ${{secrets.GITHUB_TOKEN}}
       - name: Make build directory
         run: cmake -E make_directory build
-      - name: "Initialize vcpkg"
-        working-directory: build
-        run: ../third-party/vcpkg/bootstrap-vcpkg.bat
       - name: Configure
         working-directory: build
         id: configure

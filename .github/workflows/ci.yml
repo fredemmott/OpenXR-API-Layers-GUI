@@ -1,7 +1,19 @@
 name: Continuous Integration
 on: [push, pull_request]
+permissions:
+  packages: write
 jobs:
+  populate-vcpkg-cache:
+    name: Populate vcpkg cache
+    uses: ./.github/workflows/populate-vcpkg-cache.yaml
+    secrets: inherit
+    with:
+      arch: ${{matrix.arch}}
+    strategy:
+      matrix:
+        arch: [x86, x64]
   build:
+    needs: populate-vcpkg-cache
     name: Build
     uses: ./.github/workflows/build.yml
     secrets: inherit
