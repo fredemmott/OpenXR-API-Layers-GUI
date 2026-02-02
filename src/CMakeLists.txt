@@ -3,7 +3,6 @@
 
 find_package(magic_enum CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)
 # Using fmt instead of fmt::format until MacOS/libc++ catch up
 find_package(fmt CONFIG REQUIRED)

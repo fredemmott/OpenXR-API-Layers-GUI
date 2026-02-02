@@ -1,5 +1,7 @@
 include(lib.cmake)
 
+find_package(imgui CONFIG REQUIRED)
+
 add_executable(
   gui
   WIN32
