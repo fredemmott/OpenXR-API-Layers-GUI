@@ -43,6 +43,9 @@ class ViveLayersLinter final : public Linter {
 
     std::vector<std::shared_ptr<LintError>> ret;
     for (const auto& [layer, details]: layers) {
+      if (!layer.IsEnabled()) {
+        continue;
+      }
       if (!LayerNames.contains(details.mName)) {
         continue;
       }
