@@ -28,7 +28,8 @@ void GUI::DrawFrame() {
       | ImGuiWindowFlags_NoScrollWithMouse);
 
   if (ImGui::BeginTabBar("##LayerSetTabs", ImGuiTabBarFlags_None)) {
-    for (auto&& layerSet: mLayerSets) {
+    for (auto&& layerSet: std::views::transform(
+           mLayerSets, [](const auto& up) -> auto& { return *up; })) {
       const auto name = layerSet.GetStore().GetDisplayName();
       const auto label = layerSet.HasErrors()
         ? fmt::format("{} {}", Config::GLYPH_ERROR, name)
@@ -73,7 +74,7 @@ GUI::GUI(const ShowExplicit showExplicitMode) {
     if (store->GetKind() == APILayer::Kind::Explicit && !showExplicit) {
       continue;
     }
-    mLayerSets.emplace_back(store);
+    mLayerSets.emplace_back(std::make_unique<LayerSet>(store));
   }
 }
 
@@ -91,6 +92,8 @@ GUI::LayerSet::LayerSet(APILayerStore* const store)
     mReadWriteStore(dynamic_cast<ReadWriteAPILayerStore*>(store)) {
   mOnChangeConnection
     = store->OnChange([this] { this->mLayerDataIsStale = true; });
+  mOnLoaderDataConnection = Platform::Get().OnLoaderData(
+    [this] { this->mLintErrorsAreStale = true; });
 }
 
 GUI::LayerSet::LayerSet(ReadWriteAPILayerStore* const store)
@@ -98,6 +101,8 @@ GUI::LayerSet::LayerSet(ReadWriteAPILayerStore* const store)
     mReadWriteStore(store) {
   mOnChangeConnection
     = store->OnChange([this] { this->mLayerDataIsStale = true; });
+  mOnLoaderDataConnection = Platform::Get().OnLoaderData(
+    [this] { this->mLintErrorsAreStale = true; });
 }
 
 void GUI::LayerSet::GUILayersList() {

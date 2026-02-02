@@ -2,11 +2,8 @@
 // SPDX-License-Identifier: MIT
 #include "LoaderData.hpp"
 
-#include <Windows.h>
-
 #include <nlohmann/json.hpp>
 
-#include <iostream>
 #include <utility>
 
 #include "LoaderData.hpp"

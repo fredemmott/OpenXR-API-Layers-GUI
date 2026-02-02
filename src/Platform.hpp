@@ -1,6 +1,8 @@
 // Copyright 2025 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: MIT
 #pragma once
+#include <boost/signals2.hpp>
+
 #include <expected>
 #include <filesystem>
 #include <functional>
@@ -97,7 +99,14 @@ class Platform {
   Platform& operator=(const Platform&) = delete;
   Platform& operator=(Platform&&) = delete;
 
+  boost::signals2::scoped_connection OnLoaderData(
+    std::function<void()> callback) noexcept {
+    return mOnLoaderDataSignal.connect(std::move(callback));
+  }
+
  protected:
+  boost::signals2::signal<void()> mOnLoaderDataSignal;
+
   Platform();
   virtual std::filesystem::path Get32BitRuntimePath() = 0;
   virtual std::filesystem::path Get64BitRuntimePath() = 0;

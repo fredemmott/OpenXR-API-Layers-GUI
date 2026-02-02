@@ -5,6 +5,7 @@
 #include <wil/com.h>
 #include <wil/resource.h>
 
+#include <condition_variable>
 #include <mutex>
 
 #include <d3d11.h>
@@ -54,7 +55,7 @@ class WindowsPlatform final : public Platform {
   wil::unique_hwnd mWindowHandle {};
   float mDPIScaling {};
   std::optional<DPIChangeInfo> mDPIChangeInfo;
-  AutoUpdateProcess mUpdater {CheckForUpdates()};
+  std::optional<AutoUpdateProcess> mUpdater;
 
   wil::com_ptr<ID3D11Device> mD3DDevice;
   wil::com_ptr<ID3D11DeviceContext> mD3DContext;
@@ -62,14 +63,22 @@ class WindowsPlatform final : public Platform {
   wil::com_ptr<ID3D11Texture2D> mBackBuffer;
   wil::com_ptr<ID3D11RenderTargetView> mRenderTargetView;
   bool mWindowClosed = false;
+  wil::unique_event mNewFrameEvent;
 
   size_t mFrameCounter = 0;
   ImVec2 mWindowSize {
     Config::MINIMUM_WINDOW_WIDTH,
     Config::MINIMUM_WINDOW_HEIGHT,
   };
-  std::mutex mMutex;
-  std::optional<std::expected<LoaderData, LoaderData::Error>> mLoaderData;
+  std::recursive_mutex mMutex;
+  bool mLoaderDataIsStale = true;
+  std::condition_variable_any mLoaderDataCondition;
+  std::expected<LoaderData, LoaderData::Error> mLoaderData {
+    std::unexpect,
+    LoaderData::PendingError {},
+  };
+  std::jthread mLoaderDataThread;
+  wil::unique_handle mLoaderDataJob;
 
   HWND CreateAppWindow();
   void InitializeFonts(ImGuiIO* io);
@@ -82,8 +91,11 @@ class WindowsPlatform final : public Platform {
   void MainLoop(const std::function<void()>& drawFrame);
   void Shutdown();
 
-  static std::expected<LoaderData, LoaderData::Error>
-  GetLoaderDataWithoutCache();
+  static std::expected<LoaderData, LoaderData::Error> GetLoaderDataWithoutCache(
+    HANDLE hJob);
+  void EnsureLoaderDataThread();
+  void LoaderDataThreadMain(std::stop_token);
+
   static LRESULT WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
   LRESULT

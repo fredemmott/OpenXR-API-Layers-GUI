@@ -206,15 +206,15 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
   constexpr auto Interval
     = std::chrono::microseconds(1000000 / Config::MAX_FPS);
 
-  const wil::unique_event changeEvent(
-    CreateEventW(nullptr, FALSE, TRUE, nullptr));
+  mNewFrameEvent.create();
   const auto changeSubscriptions = APILayerStore::Get()
-    | std::views::transform([e = changeEvent.get(), this](const auto store) {
+    | std::views::transform([e = mNewFrameEvent.get(), this](const auto store) {
                                      return store->OnChange([e, this] {
                                        {
                                          const std::unique_lock lock(mMutex);
-                                         mLoaderData.reset();
+                                         mLoaderDataIsStale = true;
                                        }
+                                       mLoaderDataCondition.notify_all();
                                        SetEvent(e);
                                      });
                                    })
@@ -232,7 +232,7 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
       return;
     }
 
-    ResetEvent(changeEvent.get());
+    mNewFrameEvent.ResetEvent();
 
     {
       const std::unique_lock lock(mMutex);
@@ -242,7 +242,7 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
     }
 
     {
-      const auto e = changeEvent.get();
+      const auto e = mNewFrameEvent.get();
       MsgWaitForMultipleObjects(1, &e, FALSE, INFINITE, QS_ALLINPUT);
     }
     const auto sleepFor = earliestNextFrame - std::chrono::steady_clock::now();
@@ -290,7 +290,10 @@ void WindowsPlatform::Shutdown() {
 
 void WindowsPlatform::BeforeFrame() {
   if ((++mFrameCounter % 60) == 0) {
-    mUpdater.ActivateWindowIfVisible();
+    if (!mUpdater) {
+      mUpdater = CheckForUpdates();
+    }
+    mUpdater->ActivateWindowIfVisible();
   }
 
   const auto rtv = mRenderTargetView.get();
@@ -631,6 +634,7 @@ std::optional<std::filesystem::path> WindowsPlatform::GetExportFilePath() {
   CheckHRESULT(shellItem->GetDisplayName(SIGDN_FILESYSPATH, buf.put()));
   return std::filesystem::path {std::wstring_view {buf.get()}};
 }
+
 std::vector<std::filesystem::path> WindowsPlatform::GetNewAPILayerJSONPaths() {
   const auto picker
     = wil::CoCreateInstance<IFileOpenDialog>(CLSID_FileOpenDialog);
@@ -704,14 +708,52 @@ static std::unexpected<T> UnexpectedGetLastError() {
 }
 
 std::expected<LoaderData, LoaderData::Error> WindowsPlatform::GetLoaderData() {
-  if (!mLoaderData) {
-    mLoaderData = GetLoaderDataWithoutCache();
+  EnsureLoaderDataThread();
+  std::unique_lock lock(mMutex);
+  return mLoaderData;
+}
+
+void WindowsPlatform::EnsureLoaderDataThread() {
+  if (mLoaderDataThread.joinable()) {
+    return;
   }
-  return mLoaderData.value();
+  mLoaderDataThread = std::jthread {
+    std::bind_front(&WindowsPlatform::LoaderDataThreadMain, this)};
+}
+void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
+  SetThreadDescription(GetCurrentThread(), L"LoaderData Thread");
+  mLoaderDataJob.reset(CreateJobObjectW(nullptr, nullptr));
+  {
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit {};
+    limit.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    CheckHRESULT(SetInformationJobObject(
+      mLoaderDataJob.get(),
+      JobObjectExtendedLimitInformation,
+      &limit,
+      sizeof(limit)));
+  };
+
+  while (true) {
+    std::unique_lock lock(mMutex);
+    const auto stopped = !mLoaderDataCondition.wait(
+      lock, token, [&] { return mLoaderDataIsStale; });
+    if (stopped)
+      return;
+    mLoaderDataIsStale = false;
+    const auto data = [&] {
+      lock.unlock();
+      const auto relock = wil::scope_exit([&] { lock.lock(); });
+      return GetLoaderDataWithoutCache(mLoaderDataJob.get());
+    }();
+    mLoaderData = std::move(data);
+    lock.unlock();
+    mOnLoaderDataSignal();
+    mNewFrameEvent.SetEvent();
+  }
 }
 
 std::expected<LoaderData, LoaderData::Error>
-WindowsPlatform::GetLoaderDataWithoutCache() {
+WindowsPlatform::GetLoaderDataWithoutCache(HANDLE const hJob) {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
     .bInheritHandle = TRUE,
@@ -755,9 +797,10 @@ WindowsPlatform::GetLoaderDataWithoutCache() {
         &pi)) {
     return UnexpectedGetLastError<LoaderData::CanNotSpawnError>();
   }
+  AssignProcessToJobObject(hJob, pi.hProcess);
 
-  wil::unique_handle process {pi.hProcess};
-  wil::unique_handle thread {pi.hThread};
+  const wil::unique_handle process {pi.hProcess};
+  const wil::unique_handle thread {pi.hThread};
   stdoutWrite.reset();
 
   std::string output;

@@ -5,6 +5,7 @@
 
 #include <boost/signals2/connection.hpp>
 
+#include <deque>
 #include <vector>
 
 #include "APILayer.hpp"
@@ -36,8 +37,9 @@ class GUI final {
 
     LayerSet(const LayerSet&) = delete;
     LayerSet& operator=(const LayerSet&) = delete;
-    LayerSet(LayerSet&&) = default;
-    LayerSet& operator=(LayerSet&&) = default;
+    // We have boost::signal2::scoped_connection with lambdas capturing 'this'
+    LayerSet(LayerSet&&) = delete;
+    LayerSet& operator=(LayerSet&&) = delete;
 
     [[nodiscard]]
     const APILayerStore& GetStore() const {
@@ -87,12 +89,13 @@ class GUI final {
 
    private:
     boost::signals2::scoped_connection mOnChangeConnection;
+    boost::signals2::scoped_connection mOnLoaderDataConnection;
 
     const APILayerStore* mStore {nullptr};
     ReadWriteAPILayerStore* mReadWriteStore {nullptr};
   };
 
-  std::vector<LayerSet> mLayerSets;
+  std::vector<std::unique_ptr<LayerSet>> mLayerSets;
 
   void Export();
   void DrawFrame();

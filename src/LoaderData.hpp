@@ -30,7 +30,9 @@ struct LoaderData {
   struct InvalidJSONError {
     std::string mExplanation;
   };
+  struct PendingError {};
   using Error = std::variant<
+    PendingError,
     PipeCreationError,
     PipeAttributeError,
     CanNotFindExecutableError,

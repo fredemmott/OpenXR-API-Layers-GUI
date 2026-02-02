@@ -29,7 +29,7 @@ class APILayerStore {
     return GetArchitectures().contains(Platform::GetBuildArchitecture());
   }
 
-  virtual boost::signals2::scoped_connection OnChange(
+  boost::signals2::scoped_connection OnChange(
     std::function<void()> callback) noexcept {
     return mOnChangeSignal.connect(std::move(callback));
   }
