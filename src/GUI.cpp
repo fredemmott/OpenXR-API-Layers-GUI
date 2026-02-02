@@ -108,9 +108,11 @@ GUI::LayerSet::LayerSet(ReadWriteAPILayerStore* const store)
 void GUI::LayerSet::GUILayersList() {
   auto viewport = ImGui::GetMainViewport();
   const auto dpiScale = Platform::Get().GetDPIScaling();
-  ImGui::BeginListBox(
-    "##Layers",
-    {viewport->WorkSize.x - (256 * dpiScale), viewport->WorkSize.y / 2});
+  if (!ImGui::BeginListBox(
+        "##Layers",
+        {viewport->WorkSize.x - (256 * dpiScale), viewport->WorkSize.y / 2})) {
+    return;
+  }
   ImGuiListClipper clipper {};
   clipper.Begin(static_cast<int>(mLayers.size()));
 
