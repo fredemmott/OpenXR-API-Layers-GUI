@@ -59,20 +59,8 @@ AvailableRuntime::AvailableRuntime(
 Platform::Platform() = default;
 Platform::~Platform() = default;
 
-std::optional<Runtime> Platform::Get32BitRuntime() {
-  return GetRuntimeFromPath(Get32BitRuntimePath());
-}
-
-std::optional<Runtime> Platform::Get64BitRuntime() {
-  return GetRuntimeFromPath(Get64BitRuntimePath());
-}
-std::optional<Runtime> Platform::GetActiveRuntime() {
-  if constexpr (sizeof(void*) == 8) {
-    return Get64BitRuntime();
-  } else if constexpr (sizeof(void*) == 4) {
-    return Get32BitRuntime();
-  }
-  std::unreachable();
+std::optional<Runtime> Platform::GetActiveRuntime(const Architecture arch) {
+  return GetRuntimeFromPath(GetActiveRuntimePath(arch));
 }
 
 }// namespace FredEmmott::OpenXRLayers

@@ -35,8 +35,7 @@ class WindowsPlatform final : public Platform {
   void ShowFolderContainingFile(const std::filesystem::path& path) override;
   std::map<std::string, std::string> GetEnvironmentVariables() override;
 
-  std::vector<AvailableRuntime> GetAvailable32BitRuntimes() override;
-  std::vector<AvailableRuntime> GetAvailable64BitRuntimes() override;
+  std::vector<AvailableRuntime> GetAvailableRuntimes(Architecture) override;
   std::filesystem::file_time_type GetFileChangeTime(
     const std::filesystem::path& path) override;
 
@@ -52,8 +51,7 @@ class WindowsPlatform final : public Platform {
     const std::filesystem::path&) const override;
 
  protected:
-  std::filesystem::path Get32BitRuntimePath() override;
-  std::filesystem::path Get64BitRuntimePath() override;
+  std::filesystem::path GetActiveRuntimePath(Architecture) override;
 
  private:
   wil::unique_hwnd mWindowHandle {};

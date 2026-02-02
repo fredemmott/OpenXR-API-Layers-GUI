@@ -58,10 +58,6 @@ class Platform {
   static Platform& Get();
   virtual ~Platform();
 
-  std::optional<Runtime> Get32BitRuntime();
-  std::optional<Runtime> Get64BitRuntime();
-  std::optional<Runtime> GetActiveRuntime();
-
   virtual void GUIMain(std::function<void()> drawFrame) = 0;
 
   /// Unlike `std::filesystem::last_write_time()`, this should
@@ -83,8 +79,9 @@ class Platform {
   virtual std::vector<std::string> GetEnabledExplicitAPILayers() = 0;
   virtual float GetDPIScaling() = 0;
 
-  virtual std::vector<AvailableRuntime> GetAvailable32BitRuntimes() = 0;
-  virtual std::vector<AvailableRuntime> GetAvailable64BitRuntimes() = 0;
+  virtual std::vector<AvailableRuntime> GetAvailableRuntimes(Architecture) = 0;
+  std::optional<Runtime> GetActiveRuntime(
+    Architecture = GetBuildArchitecture());
 
   // Use OS/environment equivalent to Explorer
   virtual void ShowFolderContainingFile(const std::filesystem::path&) = 0;
@@ -112,8 +109,7 @@ class Platform {
   boost::signals2::signal<void()> mOnLoaderDataSignal;
 
   Platform();
-  virtual std::filesystem::path Get32BitRuntimePath() = 0;
-  virtual std::filesystem::path Get64BitRuntimePath() = 0;
+  virtual std::filesystem::path GetActiveRuntimePath(Architecture) = 0;
 };
 
 constexpr Architecture Platform::GetBuildArchitecture() {

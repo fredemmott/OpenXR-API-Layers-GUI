@@ -48,7 +48,8 @@ namespace FredEmmott::OpenXRLayers {
 
 namespace {
 
-std::vector<AvailableRuntime> GetAvailableRuntimes(const REGSAM bitness) {
+std::vector<AvailableRuntime> GetAvailableRuntimesByWowFlag(
+  const REGSAM bitness) {
   const REGSAM desiredAccess = bitness | KEY_READ;
   wil::unique_hkey hkey;
   RegOpenKeyExW(
@@ -104,7 +105,7 @@ GetActiveRuntimePath(const REGSAM desiredAccess, void* data, DWORD* dataSize) {
     dataSize);
 }
 
-std::filesystem::path GetActiveRuntimePath(const REGSAM wowFlag) {
+std::filesystem::path GetActiveRuntimePathByWowFlag(const REGSAM wowFlag) {
   const REGSAM desiredAccess = wowFlag | KEY_QUERY_VALUE;
 
   DWORD dataSize {0};
@@ -351,12 +352,16 @@ std::map<std::string, std::string> WindowsPlatform::GetEnvironmentVariables() {
   return ret;
 }
 
-std::vector<AvailableRuntime> WindowsPlatform::GetAvailable32BitRuntimes() {
-  return GetAvailableRuntimes(KEY_WOW64_32KEY);
-}
-
-std::vector<AvailableRuntime> WindowsPlatform::GetAvailable64BitRuntimes() {
-  return GetAvailableRuntimes(KEY_WOW64_64KEY);
+std::vector<AvailableRuntime> WindowsPlatform::GetAvailableRuntimes(
+  const Architecture arch) {
+  switch (arch) {
+    case Architecture::x64:
+      return GetAvailableRuntimesByWowFlag(KEY_WOW64_64KEY);
+    case Architecture::x86:
+      return GetAvailableRuntimesByWowFlag(KEY_WOW64_32KEY);
+    default:
+      throw std::logic_error("Unsupported architecture");
+  }
 }
 std::filesystem::file_time_type WindowsPlatform::GetFileChangeTime(
   const std::filesystem::path& path) {
@@ -1059,12 +1064,16 @@ Platform& Platform::Get() {
   return sInstance;
 }
 
-std::filesystem::path WindowsPlatform::Get32BitRuntimePath() {
-  return GetActiveRuntimePath(KEY_WOW64_32KEY);
-}
-
-std::filesystem::path WindowsPlatform::Get64BitRuntimePath() {
-  return GetActiveRuntimePath(KEY_WOW64_64KEY);
+std::filesystem::path WindowsPlatform::GetActiveRuntimePath(
+  const Architecture arch) {
+  switch (arch) {
+    case Architecture::x86:
+      return GetActiveRuntimePathByWowFlag(KEY_WOW64_32KEY);
+    case Architecture::x64:
+      return GetActiveRuntimePathByWowFlag(KEY_WOW64_64KEY);
+    default:
+      throw std::logic_error("Unsupported architecture");
+  }
 }
 
 }// namespace FredEmmott::OpenXRLayers

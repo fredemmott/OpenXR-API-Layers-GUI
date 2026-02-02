@@ -148,34 +148,36 @@ static std::string GenerateReportText(const APILayerStore* store) {
 }
 
 static std::string GenerateActiveRuntimeText(
-  const uint8_t bitness,
+  const Architecture arch,
   const std::optional<Runtime>& runtime) {
+  const auto archName = magic_enum::enum_name(arch);
   if (!runtime) {
-    return std::format("❌ Active {}-bit runtime: NONE\n", bitness);
+    return std::format("❌ Active {} runtime: NONE\n", archName);
   }
 
   if (!runtime->mName) {
     if (runtime->mName.error() != Runtime::ManifestError::FieldNotPresent) {
       return std::format(
-        "🚨 Active {}-bit runtime: CORRUPTED - {}\n",
-        bitness,
+        "🚨 Active {} runtime: CORRUPTED - {}\n",
+        archName,
         runtime->mPath.string());
     }
     return std::format(
-      "✅ Active {}-bit runtime: {}\n", bitness, runtime->mPath.string());
+      "✅ Active {} runtime: {}\n", archName, runtime->mPath.string());
   }
 
   return std::format(
-    "✅ Active {}-bit runtime: \"{}\" - {}\n",
-    bitness,
+    "✅ Active {} runtime: \"{}\" - {}\n",
+    archName,
     runtime->mName.value(),
     runtime->mPath.string());
 }
 
 static std::string GenerateAvailableRuntimesText(
-  const uint8_t bitness,
+  const Architecture arch,
   const std::vector<AvailableRuntime>& runtimes) {
-  auto ret = std::format("\nAvailable {}-bit runtimes:\n", bitness);
+  const auto archName = magic_enum::enum_name(arch);
+  auto ret = std::format("\nAvailable {} runtimes:\n", archName);
   if (runtimes.empty()) {
     return ret + "  NONE\n";
   }
@@ -336,13 +338,13 @@ std::string GenerateReport() {
       std::chrono::current_zone(), std::chrono::system_clock::now()));
 
   auto& platform = Platform::Get();
-  text += GenerateActiveRuntimeText(64, platform.Get64BitRuntime());
-  text += GenerateActiveRuntimeText(32, platform.Get32BitRuntime());
-
-  text
-    += GenerateAvailableRuntimesText(64, platform.GetAvailable64BitRuntimes());
-  text
-    += GenerateAvailableRuntimesText(32, platform.GetAvailable32BitRuntimes());
+  for (const auto arch: platform.GetArchitectures().enumerate()) {
+    text += GenerateActiveRuntimeText(arch, platform.GetActiveRuntime(arch));
+  }
+  for (const auto arch: platform.GetArchitectures().enumerate()) {
+    text += GenerateAvailableRuntimesText(
+      arch, platform.GetAvailableRuntimes(arch));
+  }
 
   for (const auto store: APILayerStore::Get()) {
     text += GenerateReportText(store);
