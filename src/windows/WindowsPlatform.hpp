@@ -92,7 +92,8 @@ class WindowsPlatform final : public Platform {
   void Shutdown();
 
   static std::expected<LoaderData, LoaderData::Error> GetLoaderDataWithoutCache(
-    HANDLE hJob);
+    HANDLE hJob,
+    HANDLE hToken);
   void EnsureLoaderDataThread();
   void LoaderDataThreadMain(std::stop_token);
 

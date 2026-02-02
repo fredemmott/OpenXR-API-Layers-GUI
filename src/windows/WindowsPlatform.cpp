@@ -722,6 +722,42 @@ void WindowsPlatform::EnsureLoaderDataThread() {
 }
 void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
   SetThreadDescription(GetCurrentThread(), L"LoaderData Thread");
+
+  // Get the shell token to de-elevate
+  {
+    wil::unique_handle processToken;
+    // Gain SE_DEBUG_NAME so we can attach to explorer; we need this because
+    // the loader will ignore XR_API_LAYER_PATHS if elevated
+    OpenProcessToken(
+      GetCurrentProcess(),
+      TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+      processToken.put());
+    LUID luid {};
+    LookupPrivilegeValueW(NULL, SE_DEBUG_NAME, &luid);
+    TOKEN_PRIVILEGES tp {};
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    AdjustTokenPrivileges(
+      processToken.get(), FALSE, &tp, sizeof(tp), nullptr, nullptr);
+  }
+  wil::unique_handle subprocessToken;
+  {
+    DWORD processId;
+    GetWindowThreadProcessId(GetShellWindow(), &processId);
+    wil::unique_handle shell {
+      OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId)};
+    wil::unique_handle token;
+    OpenProcessToken(shell.get(), TOKEN_DUPLICATE, token.put());
+    DuplicateTokenEx(
+      token.get(),
+      TOKEN_ALL_ACCESS,
+      nullptr,
+      SecurityImpersonation,
+      TokenPrimary,
+      subprocessToken.put());
+  }
+
   mLoaderDataJob.reset(CreateJobObjectW(nullptr, nullptr));
   {
     JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit {};
@@ -743,7 +779,8 @@ void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
     const auto data = [&] {
       lock.unlock();
       const auto relock = wil::scope_exit([&] { lock.lock(); });
-      return GetLoaderDataWithoutCache(mLoaderDataJob.get());
+      return GetLoaderDataWithoutCache(
+        mLoaderDataJob.get(), subprocessToken.get());
     }();
     mLoaderData = std::move(data);
     lock.unlock();
@@ -753,7 +790,9 @@ void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
 }
 
 std::expected<LoaderData, LoaderData::Error>
-WindowsPlatform::GetLoaderDataWithoutCache(HANDLE const hJob) {
+WindowsPlatform::GetLoaderDataWithoutCache(
+  HANDLE const hJob,
+  HANDLE const token) {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
     .bInheritHandle = TRUE,
@@ -784,12 +823,11 @@ WindowsPlatform::GetLoaderDataWithoutCache(HANDLE const hJob) {
   const auto commandLine = (std::filesystem::path {modulePath}.parent_path()
                             / "openxr-loader-data-64.dll")
                              .wstring();
-  if (!CreateProcessW(
+  if (!CreateProcessWithTokenW(
+        token,
+        LOGON_WITH_PROFILE,
         commandLine.c_str(),
         nullptr,
-        nullptr,
-        nullptr,
-        TRUE,
         CREATE_NO_WINDOW,
         nullptr,
         nullptr,
