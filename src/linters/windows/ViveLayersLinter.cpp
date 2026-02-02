@@ -26,12 +26,19 @@ class ViveLayersLinter final : public Linter {
     if (runtime->mName == "SteamVR") {
       return {};
     }
+    if (runtime->mName == "VIVE_OpenXR") {
+      // Included with ViveConsole from Steam, but not registered by default.
+      // Just used for the Vive Focus and Cosmos
+      return {};
+    }
     const auto runtimeName = runtime->mName.value_or(runtime->mPath.string());
 
     static const std::unordered_set<std::string_view> LayerNames {
       "XR_APILAYER_VIVE_hand_tracking",
       "XR_APILAYER_VIVE_facial_tracking",
+      "XR_APILAYER_VIVE_mr",
       "XR_APILAYER_VIVE_srworks",
+      "XR_APILAYER_VIVE_xr_tracker",
     };
 
     std::vector<std::shared_ptr<LintError>> ret;
@@ -42,8 +49,9 @@ class ViveLayersLinter final : public Linter {
       ret.push_back(
         std::make_shared<InvalidLayerStateLintError>(
           fmt::format(
-            "{} requires the SteamVR runtime, but you are currently using "
-            "'{}'; this can cause game crashes or other issues.",
+            "{} requires the SteamVR or HTC enterprise runtime, but you are "
+            "currently using '{}'; this can cause game crashes or other "
+            "issues.",
             details.mName,
             runtimeName),
           layer));
