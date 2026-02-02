@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <variant>
 
+#include "Architectures.hpp"
+
 namespace FredEmmott::OpenXRLayers {
 
 struct LoaderData {
@@ -40,6 +42,7 @@ struct LoaderData {
     BadExitCodeError,
     InvalidJSONError>;
 
+  Architecture mArchitecture {GetBuildArchitecture()};
   XrResult mQueryExtensionsResult {XR_RESULT_MAX_ENUM};
   XrResult mQueryLayersResult {XR_RESULT_MAX_ENUM};
 
@@ -49,6 +52,9 @@ struct LoaderData {
   // which can disable API layers
   std::unordered_set<std::string> mEnvironmentVariablesBeforeLoader;
   std::unordered_set<std::string> mEnvironmentVariablesAfterLoader;
+
+ private:
+  static Architecture GetBuildArchitecture();
 };
 
 void from_json(const nlohmann::json&, LoaderData&);

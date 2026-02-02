@@ -11,9 +11,14 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+Architecture LoaderData::GetBuildArchitecture() {
+  return Platform::Get().GetBuildArchitecture();
+}
+
 void to_json(nlohmann::json& j, const LoaderData& data) {
   j.update(
     nlohmann::json {
+      {"architecture", std::to_underlying(data.mArchitecture)},
       {"queryExtensionsResult", std::to_underlying(data.mQueryLayersResult)},
       {"queryLayersResult", std::to_underlying(data.mQueryLayersResult)},
       {"enabledLayerNames", data.mEnabledLayerNames},
@@ -26,6 +31,7 @@ void to_json(nlohmann::json& j, const LoaderData& data) {
 }
 
 void from_json(const nlohmann::json& j, LoaderData& data) {
+  data.mArchitecture = static_cast<Architecture>(j["architecture"]);
   data.mQueryLayersResult = static_cast<XrResult>(j["queryLayersResult"]);
   data.mQueryExtensionsResult
     = static_cast<XrResult>(j["queryExtensionsResult"]);

@@ -23,7 +23,8 @@ class WindowsPlatform final : public Platform {
 
   std::optional<std::filesystem::path> GetExportFilePath() override;
   std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() override;
-  std::expected<LoaderData, LoaderData::Error> GetLoaderData() override;
+  std::expected<LoaderData, LoaderData::Error> GetLoaderData(
+    Architecture) override;
 
   float GetDPIScaling() override {
     return mDPIScaling;
@@ -73,10 +74,8 @@ class WindowsPlatform final : public Platform {
   std::recursive_mutex mMutex;
   bool mLoaderDataIsStale = true;
   std::condition_variable_any mLoaderDataCondition;
-  std::expected<LoaderData, LoaderData::Error> mLoaderData {
-    std::unexpect,
-    LoaderData::PendingError {},
-  };
+  std::unordered_map<Architecture, std::expected<LoaderData, LoaderData::Error>>
+    mLoaderData;
   std::jthread mLoaderDataThread;
   wil::unique_handle mLoaderDataJob;
 
@@ -100,9 +99,8 @@ class WindowsPlatform final : public Platform {
   };
 
   [[nodiscard]]
-  static std::expected<LoaderDataProcess, LoaderData::Error> SpawnLoaderData(
-    HANDLE hJob,
-    HANDLE hToken);
+  static std::expected<LoaderDataProcess, LoaderData::Error>
+  SpawnLoaderData(HANDLE hJob, HANDLE hToken, Architecture);
   void EnsureLoaderDataThread();
   void LoaderDataThreadMain(std::stop_token);
 

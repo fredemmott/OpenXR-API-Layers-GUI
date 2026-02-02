@@ -12,6 +12,7 @@
 #include <wil/registry.h>
 #include <wil/resource.h>
 
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 
 #include <bit>
@@ -707,10 +708,14 @@ static std::unexpected<T> UnexpectedGetLastError() {
   return UnexpectedHRESULT<T>(HRESULT_FROM_WIN32(GetLastError()));
 }
 
-std::expected<LoaderData, LoaderData::Error> WindowsPlatform::GetLoaderData() {
+std::expected<LoaderData, LoaderData::Error> WindowsPlatform::GetLoaderData(
+  const Architecture arch) {
   EnsureLoaderDataThread();
-  std::unique_lock lock(mMutex);
-  return mLoaderData;
+  const std::unique_lock lock(mMutex);
+  if (!mLoaderData.contains(arch)) {
+    return std::unexpected {LoaderData::PendingError {}};
+  }
+  return mLoaderData.at(arch);
 }
 
 void WindowsPlatform::EnsureLoaderDataThread() {
@@ -770,30 +775,61 @@ void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
   };
 
   while (true) {
-    std::unique_lock lock(mMutex);
-    const auto stopped = !mLoaderDataCondition.wait(
-      lock, token, [&] { return mLoaderDataIsStale; });
-    if (stopped)
-      return;
-    mLoaderDataIsStale = false;
-    auto data = [&] {
-      lock.unlock();
-      const auto relock = wil::scope_exit([&] { lock.lock(); });
-      return SpawnLoaderData(mLoaderDataJob.get(), subprocessToken.get());
-    }();
-    if (!data) {
-      mLoaderData = std::unexpected {std::move(data).error()};
-      continue;
+    {
+      std::unique_lock lock(mMutex);
+      const auto stopped = !mLoaderDataCondition.wait(
+        lock, token, [&] { return mLoaderDataIsStale; });
+      if (stopped)
+        return;
+
+      mLoaderDataIsStale = false;
     }
-    mLoaderData = std::move(*data).Wait();
-    lock.unlock();
+
+    std::unordered_map<Architecture, LoaderDataProcess> pending;
+    decltype(mLoaderData) newLoaderData;
+    for (const auto arch: GetArchitectures().enumerate()) {
+      auto subprocess = [&] {
+        return SpawnLoaderData(
+          mLoaderDataJob.get(), subprocessToken.get(), arch);
+      }();
+      if (!subprocess) {
+        newLoaderData.emplace(
+          arch, std::unexpected {std::move(subprocess).error()});
+        continue;
+      }
+      pending.emplace(arch, std::move(*subprocess));
+    }
+
+    for (auto&& [arch, process]: pending) {
+      newLoaderData.emplace(arch, std::move(process).Wait());
+#ifndef NDEBUG
+      if (
+        newLoaderData.at(arch) && newLoaderData.at(arch)->mArchitecture != arch)
+        [[unlikely]] {
+        throw std::runtime_error(
+          fmt::format(
+            "Architecture mismatch on loader data - got {}, expected {}",
+            magic_enum::enum_name(newLoaderData.at(arch)->mArchitecture),
+            magic_enum::enum_name(arch)));
+      }
+#endif
+    }
+
+    {
+      std::unique_lock lock(mMutex);
+      mLoaderData = std::move(newLoaderData);
+    }
+
     mOnLoaderDataSignal();
     mNewFrameEvent.SetEvent();
   }
 }
 
 std::expected<WindowsPlatform::LoaderDataProcess, LoaderData::Error>
-WindowsPlatform::SpawnLoaderData(HANDLE const hJob, HANDLE const token) {
+WindowsPlatform::SpawnLoaderData(
+  HANDLE const hJob,
+  HANDLE const token,
+  Architecture const arch) {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
     .bInheritHandle = TRUE,
@@ -821,9 +857,10 @@ WindowsPlatform::SpawnLoaderData(HANDLE const hJob, HANDLE const token) {
   };
   PROCESS_INFORMATION pi {};
 
-  const auto commandLine = (std::filesystem::path {modulePath}.parent_path()
-                            / "openxr-loader-data-64.dll")
-                             .wstring();
+  const auto commandLine
+    = (std::filesystem::path {modulePath}.parent_path()
+       / std::format("openxr-loader-data-{}.dll", magic_enum::enum_name(arch)))
+        .wstring();
   if (!CreateProcessWithTokenW(
         token,
         LOGON_WITH_PROFILE,

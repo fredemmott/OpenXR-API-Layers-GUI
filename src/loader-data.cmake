@@ -16,7 +16,22 @@ target_link_libraries(
 target_include_directories(loader-data PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 math(EXPR VOID_P_BITS "${CMAKE_SIZEOF_VOID_P} * 8")
-set(OUTPUT_NAME "openxr-loader-data-${VOID_P_BITS}")
+if (CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+  string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" TARGET_ARCH_DEFAULT)
+else ()
+  # ... sigh
+  if (VOID_P_BITS EQUAL 64)
+    set(TARGET_ARCH_DEFAULT x64)
+  else ()
+    set(TARGET_ARCH_DEFAULT x86)
+  endif ()
+  if (NOT TARGET_ARCH)
+    cmake(WARNING "CMAKE_CXX_COMPILER_ARCHITECTURE_ID is not set; assuming ${TARGET_ARCH_DEFAULT}")
+  endif ()
+endif ()
+set(TARGET_ARCH "${TARGET_ARCH_DEFAULT}" CACHE STRING "Target architecture")
+
+set(OUTPUT_NAME "openxr-loader-data-${TARGET_ARCH}")
 set_target_properties(
   loader-data
   PROPERTIES

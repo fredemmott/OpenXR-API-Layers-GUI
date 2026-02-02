@@ -10,19 +10,31 @@
 
 namespace FredEmmott::OpenXRLayers {
 class SkippedByLoaderLinter final : public Linter {
+ public:
   virtual std::vector<std::shared_ptr<LintError>> Lint(
-    const APILayerStore*,
+    const APILayerStore* store,
     const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
-    const auto loaderData = Platform::Get().GetLoaderData();
+    std::vector<std::shared_ptr<LintError>> errors;
+
+    for (const auto arch: store->GetArchitectures().enumerate()) {
+      Lint(std::back_inserter(errors), arch, layers);
+    }
+    return errors;
+  }
+
+ private:
+  static void Lint(
+    std::back_insert_iterator<std::vector<std::shared_ptr<LintError>>> out,
+    const Architecture arch,
+    const std::vector<std::tuple<APILayer, APILayerDetails>>& layers) {
+    const auto loaderData = Platform::Get().GetLoaderData(arch);
     if (!loaderData) {
-      return {};
+      return;
     }
 
     const auto runtime = Platform::Get().GetActiveRuntime();
     const auto runtimeString
       = runtime ? runtime->mName.value_or(runtime->mPath.string()) : "NONE";
-
-    std::vector<std::shared_ptr<LintError>> errors;
 
     for (const auto& [layer, details]: layers) {
       if (details.mState != APILayerDetails::State::Loaded) {
@@ -36,7 +48,7 @@ class SkippedByLoaderLinter final : public Linter {
         continue;
       }
 
-      if (!layer.mSource->IsForCurrentArchitecture()) {
+      if (!layer.mSource->GetArchitectures().contains(arch)) {
         continue;
       }
 
@@ -58,27 +70,24 @@ class SkippedByLoaderLinter final : public Linter {
           loaderData->mEnvironmentVariablesAfterLoader.contains(disableEnv)
           && !loaderData->mEnvironmentVariablesBeforeLoader.contains(
             disableEnv)) {
-          errors.push_back(
-            std::make_shared<LintError>(
-              fmt::format(
-                "Layer `{}` is blocked by your current OpenXR runtime ('{}')",
-                layer.mManifestPath.string(),
-                runtimeString),
-              LayerKeySet {layer}));
+          *out = std::make_shared<LintError>(
+            fmt::format(
+              "Layer `{}` is blocked by your current OpenXR runtime ('{}')",
+              layer.mManifestPath.string(),
+              runtimeString),
+            LayerKeySet {layer});
           continue;
         }
       }
 
-      errors.push_back(
-        std::make_shared<LintError>(
-          fmt::format(
-            "Layer `{}` appears enabled, but is not loaded by OpenXR; it may "
-            "be blocked by your OpenXR runtime ('{}')",
-            layer.mManifestPath.string(),
-            runtimeString),
-          LayerKeySet {layer}));
+      *out = std::make_shared<LintError>(
+        fmt::format(
+          "Layer `{}` appears enabled, but is not loaded by OpenXR; it may "
+          "be blocked by your OpenXR runtime ('{}')",
+          layer.mManifestPath.string(),
+          runtimeString),
+        LayerKeySet {layer});
     }
-    return errors;
   }
 };
 

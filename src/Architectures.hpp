@@ -1,6 +1,10 @@
 // Copyright 2026 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: MIT
 #pragma once
+
+#include <magic_enum/magic_enum.hpp>
+
+#include <generator>
 #include <utility>
 
 namespace FredEmmott::OpenXRLayers {
@@ -41,6 +45,17 @@ class Architectures {
 
   auto underlying() const noexcept {
     return std::to_underlying(mValue);
+  }
+
+  std::generator<Architecture> enumerate() const {
+    for (auto arch: magic_enum::enum_values<Architecture>()) {
+      if (arch == Architecture::Invalid) {
+        continue;
+      }
+      if (contains(arch)) {
+        co_yield arch;
+      }
+    }
   }
 
   constexpr auto operator<=>(const Architectures&) const = default;
