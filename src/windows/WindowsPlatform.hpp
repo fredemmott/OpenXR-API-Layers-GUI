@@ -97,7 +97,8 @@ class WindowsPlatform final : public Platform {
   void EnsureLoaderDataThread();
   void LoaderDataThreadMain(std::stop_token);
 
-  static LRESULT WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+  static LRESULT CALLBACK
+  WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
   LRESULT
   InstanceWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
