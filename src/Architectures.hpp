@@ -47,6 +47,13 @@ class Architectures {
     return std::to_underlying(mValue);
   }
 
+  constexpr Architecture get_only() const {
+    if (std::popcount(underlying()) != 1) {
+      return Architecture::Invalid;
+    }
+    return mValue;
+  }
+
   std::generator<Architecture> enumerate() const {
     for (auto arch: magic_enum::enum_values<Architecture>()) {
       if (arch == Architecture::Invalid) {

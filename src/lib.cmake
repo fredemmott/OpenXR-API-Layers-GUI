@@ -93,6 +93,7 @@ if (WIN32)
     linters/windows/ProgramFilesLinter.cpp
     linters/windows/UltraleapLastLinter.cpp
     linters/windows/UnsignedDllLinter.cpp
+    linters/windows/ViveLayersLinter.cpp
     linters/windows/XRNeckSaferLinter.cpp
   )
 
