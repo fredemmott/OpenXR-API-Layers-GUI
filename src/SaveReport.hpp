@@ -7,6 +7,7 @@
 
 namespace FredEmmott::OpenXRLayers {
 
+std::string GenerateReport();
 void SaveReport(const std::filesystem::path&);
 
-}
+}// namespace FredEmmott::OpenXRLayers

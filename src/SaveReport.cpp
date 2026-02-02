@@ -318,6 +318,12 @@ static std::string GenerateLoaderDataText(
 }
 
 void SaveReport(const std::filesystem::path& path) {
+  const auto text = GenerateReport();
+  std::ofstream(path, std::ios::binary | std::ios::out | std::ios::trunc)
+    .write(text.data(), text.size());
+}
+
+std::string GenerateReport() {
   auto text = std::format(
     "OpenXR API Layers GUI v{}\n"
     "Reported generated at {:%Y-%m-%d %H:%M:%S}\n\n",
@@ -344,8 +350,7 @@ void SaveReport(const std::filesystem::path& path) {
     text += GenerateLoaderDataText(platform, arch, deadline);
   }
 
-  std::ofstream(path, std::ios::binary | std::ios::out | std::ios::trunc)
-    .write(text.data(), text.size());
+  return text;
 }
 
 }// namespace FredEmmott::OpenXRLayers
