@@ -51,8 +51,8 @@ struct LoaderData {
 
   // It's possible for runtimes to modify the environment variables,
   // which can disable API layers
-  std::unordered_set<std::string> mEnvironmentVariablesBeforeLoader;
-  std::unordered_set<std::string> mEnvironmentVariablesAfterLoader;
+  std::map<std::string, std::string> mEnvironmentVariablesBeforeLoader;
+  std::map<std::string, std::string> mEnvironmentVariablesAfterLoader;
 
  private:
   static Architecture GetBuildArchitecture();

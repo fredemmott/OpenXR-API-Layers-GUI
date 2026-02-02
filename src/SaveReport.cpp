@@ -261,12 +261,12 @@ static std::string GenerateLoaderDataText(
   }
 
   auto data = *result;
-  std::erase_if(
-    data.mEnvironmentVariablesBeforeLoader,
-    [](const std::string_view s) { return !s.starts_with("XR_"); });
-  std::erase_if(
-    data.mEnvironmentVariablesAfterLoader,
-    [](const std::string_view s) { return !s.starts_with("XR_"); });
+  std::erase_if(data.mEnvironmentVariablesBeforeLoader, [](const auto& pair) {
+    return !std::string_view {pair.first}.starts_with("XR_");
+  });
+  std::erase_if(data.mEnvironmentVariablesAfterLoader, [](const auto& pair) {
+    return !std::string_view {pair.first}.starts_with("XR_");
+  });
   const nlohmann::json json = data;
   return ret + json.dump(2);
 }

@@ -333,8 +333,8 @@ void WindowsPlatform::ShowFolderContainingFile(
   SHOpenFolderAndSelectItems(pidl.get(), 0, nullptr, 0);
 }
 
-std::unordered_set<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
-  std::unordered_set<std::string> ret;
+std::map<std::string, std::string> WindowsPlatform::GetEnvironmentVariables() {
+  std::map<std::string, std::string> ret;
 
   wil::unique_environstrings_ptr env {GetEnvironmentStringsW()};
   std::string buf;
@@ -345,7 +345,8 @@ std::unordered_set<std::string> WindowsPlatform::GetEnvironmentVariableNames() {
       continue;
     }
 
-    ret.emplace(WideCharToUTF8({it, nameEnd}));
+    ret.emplace(
+      WideCharToUTF8({it, nameEnd}), WideCharToUTF8({it + nameEnd + 1}));
   }
   return ret;
 }

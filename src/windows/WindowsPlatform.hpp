@@ -33,7 +33,7 @@ class WindowsPlatform final : public Platform {
     return mDPIScaling;
   }
   void ShowFolderContainingFile(const std::filesystem::path& path) override;
-  std::unordered_set<std::string> GetEnvironmentVariableNames() override;
+  std::map<std::string, std::string> GetEnvironmentVariables() override;
 
   std::vector<AvailableRuntime> GetAvailable32BitRuntimes() override;
   std::vector<AvailableRuntime> GetAvailable64BitRuntimes() override;

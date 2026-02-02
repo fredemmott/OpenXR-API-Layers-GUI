@@ -14,7 +14,7 @@ namespace FredEmmott::OpenXRLayers {
 static LoaderData QueryLoaderDataInCurrentProcess() {
   LoaderData ret {
     .mEnvironmentVariablesBeforeLoader
-    = Platform::Get().GetEnvironmentVariableNames(),
+    = Platform::Get().GetEnvironmentVariables(),
   };
 
   // We don't care about the extensions, but enumerating them can load the
@@ -27,7 +27,7 @@ static LoaderData QueryLoaderDataInCurrentProcess() {
   ret.mQueryLayersResult
     = xrEnumerateApiLayerProperties(0, &layerCount, nullptr);
   ret.mEnvironmentVariablesAfterLoader
-    = Platform::Get().GetEnvironmentVariableNames();
+    = Platform::Get().GetEnvironmentVariables();
   if (XR_FAILED(ret.mQueryLayersResult)) {
     return ret;
   }

@@ -79,7 +79,7 @@ class Platform {
     std::chrono::steady_clock::time_point timeout) = 0;
   virtual std::vector<std::filesystem::path> GetNewAPILayerJSONPaths() = 0;
   virtual std::optional<std::filesystem::path> GetExportFilePath() = 0;
-  virtual std::unordered_set<std::string> GetEnvironmentVariableNames() = 0;
+  virtual std::map<std::string, std::string> GetEnvironmentVariables() = 0;
   virtual std::vector<std::string> GetEnabledExplicitAPILayers() = 0;
   virtual float GetDPIScaling() = 0;
 
