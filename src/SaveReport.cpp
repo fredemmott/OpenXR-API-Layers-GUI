@@ -286,7 +286,7 @@ void SaveReport(const std::filesystem::path& path) {
   text
     += GenerateAvailableRuntimesText(64, platform.GetAvailable64BitRuntimes());
   text
-    += GenerateAvailableRuntimesText(32, platform.GetAvailable64BitRuntimes());
+    += GenerateAvailableRuntimesText(32, platform.GetAvailable32BitRuntimes());
 
   for (const auto store: APILayerStore::Get()) {
     text += GenerateReportText(store);
