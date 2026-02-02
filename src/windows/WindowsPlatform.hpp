@@ -91,7 +91,16 @@ class WindowsPlatform final : public Platform {
   void MainLoop(const std::function<void()>& drawFrame);
   void Shutdown();
 
-  static std::expected<LoaderData, LoaderData::Error> GetLoaderDataWithoutCache(
+  struct LoaderDataProcess {
+    wil::unique_handle mProcess;
+    wil::unique_handle mThread;
+    wil::unique_handle mStdoutReadPipe;
+    [[nodiscard]]
+    std::expected<LoaderData, LoaderData::Error> Wait() &&;
+  };
+
+  [[nodiscard]]
+  static std::expected<LoaderDataProcess, LoaderData::Error> SpawnLoaderData(
     HANDLE hJob,
     HANDLE hToken);
   void EnsureLoaderDataThread();

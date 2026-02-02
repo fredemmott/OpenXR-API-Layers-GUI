@@ -776,23 +776,24 @@ void WindowsPlatform::LoaderDataThreadMain(const std::stop_token token) {
     if (stopped)
       return;
     mLoaderDataIsStale = false;
-    const auto data = [&] {
+    auto data = [&] {
       lock.unlock();
       const auto relock = wil::scope_exit([&] { lock.lock(); });
-      return GetLoaderDataWithoutCache(
-        mLoaderDataJob.get(), subprocessToken.get());
+      return SpawnLoaderData(mLoaderDataJob.get(), subprocessToken.get());
     }();
-    mLoaderData = std::move(data);
+    if (!data) {
+      mLoaderData = std::unexpected {std::move(data).error()};
+      continue;
+    }
+    mLoaderData = std::move(*data).Wait();
     lock.unlock();
     mOnLoaderDataSignal();
     mNewFrameEvent.SetEvent();
   }
 }
 
-std::expected<LoaderData, LoaderData::Error>
-WindowsPlatform::GetLoaderDataWithoutCache(
-  HANDLE const hJob,
-  HANDLE const token) {
+std::expected<WindowsPlatform::LoaderDataProcess, LoaderData::Error>
+WindowsPlatform::SpawnLoaderData(HANDLE const hJob, HANDLE const token) {
   SECURITY_ATTRIBUTES saAttr {
     .nLength = sizeof(SECURITY_ATTRIBUTES),
     .bInheritHandle = TRUE,
@@ -836,24 +837,37 @@ WindowsPlatform::GetLoaderDataWithoutCache(
     return UnexpectedGetLastError<LoaderData::CanNotSpawnError>();
   }
   AssignProcessToJobObject(hJob, pi.hProcess);
-
-  const wil::unique_handle process {pi.hProcess};
-  const wil::unique_handle thread {pi.hThread};
   stdoutWrite.reset();
 
+  return LoaderDataProcess {
+    .mProcess = wil::unique_handle {pi.hProcess},
+    .mThread = wil::unique_handle {pi.hThread},
+    .mStdoutReadPipe = std::move(stdoutRead),
+  };
+}
+
+std::expected<LoaderData, LoaderData::Error>
+WindowsPlatform::LoaderDataProcess::Wait() && {
+  if (!(mProcess && mStdoutReadPipe)) {
+    throw std::logic_error(
+      "LoaderDataProcess::Wait() called with invalid handles - maybe moved?");
+  }
+  // We take a move-reference to self, so let's clean up when we're done
+  const auto release = wil::scope_exit([this] { *this = {}; });
   std::string output;
   char buffer[4096];
   DWORD bytesRead;
 
-  while (ReadFile(stdoutRead.get(), buffer, sizeof(buffer), &bytesRead, nullptr)
-         && bytesRead > 0) {
+  while (
+    ReadFile(mStdoutReadPipe.get(), buffer, sizeof(buffer), &bytesRead, nullptr)
+    && bytesRead > 0) {
     output.append(buffer, bytesRead);
   }
 
-  WaitForSingleObject(process.get(), INFINITE);
+  WaitForSingleObject(mProcess.get(), INFINITE);
 
   DWORD exitCode;
-  if (!GetExitCodeProcess(process.get(), &exitCode) || exitCode != 0) {
+  if (!GetExitCodeProcess(mProcess.get(), &exitCode) || exitCode != 0) {
     return std::unexpected {LoaderData::BadExitCodeError {exitCode}};
   }
 
