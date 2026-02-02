@@ -861,13 +861,17 @@ WindowsPlatform::SpawnLoaderData(
     = (std::filesystem::path {modulePath}.parent_path()
        / std::format("openxr-loader-data-{}.dll", magic_enum::enum_name(arch)))
         .wstring();
+  void* environment {};
+  CreateEnvironmentBlock(&environment, token, /* INHERIT = */ TRUE);
+  const auto freeEnvironment
+    = wil::scope_exit([environment] { DestroyEnvironmentBlock(environment); });
   if (!CreateProcessWithTokenW(
         token,
         LOGON_WITH_PROFILE,
         commandLine.c_str(),
         nullptr,
-        CREATE_NO_WINDOW,
-        nullptr,
+        CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+        environment,
         nullptr,
         &si,
         &pi)) {
