@@ -34,9 +34,9 @@ class ViveLayersLinter final : public Linter {
     const auto runtimeName = runtime->mName.value_or(runtime->mPath.string());
 
     static const std::unordered_set<std::string_view> LayerNames {
+      "XR_APILAYER_VIVE_MR",
       "XR_APILAYER_VIVE_hand_tracking",
       "XR_APILAYER_VIVE_facial_tracking",
-      "XR_APILAYER_VIVE_mr",
       "XR_APILAYER_VIVE_srworks",
       "XR_APILAYER_VIVE_xr_tracker",
     };
