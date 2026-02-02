@@ -7,21 +7,13 @@ on:
         value: ${{jobs.build.outputs.version}}
 jobs:
   build:
-    name: build/${{matrix.os-arch}}/${{matrix.build-type}}
-    runs-on: ${{matrix.runs-on}}
+    name: build/${{matrix.arch}}/${{matrix.preset}}
+    runs-on: windows-latest
     steps:
       - name: Set up visual studio environment
-        shell: pwsh
-        run: |
-          $VSRoot = $(
-            vswhere `
-              -latest `
-              -products * `
-              -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-              -property installationPath)
-          cmd /c "`"${VSRoot}/VC/Auxiliary/Build/vcvarsall.bat`" x64&set" `
-            | Where-Object { $_ -like '*=*' } `
-            | Out-File -Encoding utf8 -Append $Env:GITHUB_ENV
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
       - uses: actions/checkout@v6
         with:
           submodules: true
@@ -38,7 +30,8 @@ jobs:
           $args = @()
 
           cmake .. `
-            --preset "${{matrix.build-type}}" `
+            --preset "${{matrix.preset}}" `
+            -DVCPKG_TARGET_TRIPLET=${{matrix.arch}}-windows-static `
             "-DSOURCELINK=https://raw.githubusercontent.com/${{github.repository}}/${{github.sha}}" `
             @args
           
@@ -49,27 +42,47 @@ jobs:
         run: cmake --build . --parallel --verbose
       - name: Upload Executable Artifacts
         uses: actions/upload-artifact@v6
-        if: ${{ matrix.build-type == 'Release' && matrix.os-arch == 'Win64' }}
+        if: ${{ matrix.preset == 'Release' }}
         with:
-          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}"
-          path: build/out/bin
-      - name: Upload Debug Symbol Artifacts
-        uses: actions/upload-artifact@v6
-        if: ${{ matrix.build-type == 'Release' && matrix.os-arch == 'Win64' }}
-        with:
-          name: "OpenXR-API-Layers-GUI-v${{steps.configure.outputs.version}}-DebugSymbols"
-          path: build/out/pdb
+          name: "intermediate-${{matrix.arch}}"
+          path: build/out
     outputs:
       version: ${{steps.configure.outputs.version}}
     strategy:
       fail-fast: false
       matrix:
-        os-arch: [Win64]
-        build-type:
+        arch: [x86, x64]
+        preset:
           - Debug - default
           - Debug - clang-cl
           - Release
-        include:
-          - os-arch: Win64
-            runs-on: windows-latest
-            vcpkg-arch: x64-windows-static
+        exclude:
+          - arch: x86
+            preset: Debug - clang-cl
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+          pattern: intermediate-*
+      - name: Stage
+        run: |
+          mkdir staging
+          # Duplicates are expected; x64 takes priority
+          for arch in x86 x64; do
+            dir="artifacts/intermediate-$arch"
+            rsync -av "$dir/" staging/
+          done
+      - name: Upload binaries
+        uses: actions/upload-artifact@v6
+        with:
+          name: "OpenXR-API-Layers-GUI-v${{needs.build.outputs.version}}"
+          path: staging/bin
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@v6
+        with:
+          name: "OpenXR-API-Layers-GUI-DebugSymbols-v${{needs.build.outputs.version}}"
+          path: staging/pdb
