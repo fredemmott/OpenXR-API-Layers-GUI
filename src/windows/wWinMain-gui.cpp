@@ -17,6 +17,9 @@ int WINAPI wWinMain(
   [[maybe_unused]] HINSTANCE hPrevInstance,
   [[maybe_unused]] PWSTR pCmdLine,
   [[maybe_unused]] int nCmdShow) {
+  // Make debuggers shutdown the process faster
+  AttachConsole(ATTACH_PARENT_PROCESS);
+
   using FredEmmott::OpenXRLayers::GUI;
   auto showExplicit {GUI::ShowExplicit::OnlyIfUsed};
 
