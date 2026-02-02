@@ -251,7 +251,11 @@ static std::string GenerateLoaderDataText(
               "Subprocess creation failed: {}", e.mError.message());
           },
           [](const LoaderData::BadExitCodeError& e) {
-            return std::format("Bad exit code: {}", e.mExitCode);
+            return std::format(
+              "Bad exit code: {} ({:#010x})",
+              e.mExitCode,
+              std::bit_cast<uint32_t>(e.mExitCode));
+            ;
           },
           [](const LoaderData::InvalidJSONError& e) {
             return std::format("Invalid JSON: {}", e.mExplanation);
