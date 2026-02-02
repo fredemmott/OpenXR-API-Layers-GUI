@@ -44,7 +44,7 @@ else ()
   set(VERSION_BUILD 0)
 endif ()
 
-set(BUILD_VERSION_STRING "2025.03.08.${VERSION_BUILD}")
+set(BUILD_VERSION_STRING "2026.02.02.${VERSION_BUILD}")
 project(OpenXR-Layers-GUI VERSION ${BUILD_VERSION_STRING} LANGUAGES CXX C)
 
 include(cmake/smol-binaries.cmake)
