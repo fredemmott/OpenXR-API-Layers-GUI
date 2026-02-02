@@ -52,7 +52,8 @@ class SkippedByLoaderLinter final : public Linter {
         continue;
       }
 
-      if (loaderData->mEnabledLayerNames.contains(details.mName)) {
+      if (std::ranges::contains(
+            loaderData->mEnabledLayerNames, details.mName)) {
         continue;
       }
 

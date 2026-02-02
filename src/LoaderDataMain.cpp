@@ -38,7 +38,7 @@ static LoaderData QueryLoaderDataInCurrentProcess() {
     = xrEnumerateApiLayerProperties(layerCount, &layerCount, layers.data());
 
   for (auto&& layer: layers) {
-    ret.mEnabledLayerNames.emplace(layer.layerName);
+    ret.mEnabledLayerNames.emplace_back(layer.layerName);
   }
 
   return ret;
