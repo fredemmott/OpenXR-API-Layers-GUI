@@ -216,6 +216,7 @@ void WindowsPlatform::MainLoop(const std::function<void()>& drawFrame) {
                                        {
                                          const std::unique_lock lock(mMutex);
                                          mLoaderDataIsStale = true;
+                                         mLoaderData.clear();
                                        }
                                        mLoaderDataCondition.notify_all();
                                        SetEvent(e);
@@ -719,7 +720,7 @@ std::expected<LoaderData, LoaderData::Error> WindowsPlatform::GetLoaderData(
   assert(GetArchitectures().contains(arch));
   EnsureLoaderDataThread();
   const std::unique_lock lock(mMutex);
-  if (!mLoaderData.contains(arch)) {
+  if (mLoaderDataIsStale || !mLoaderData.contains(arch)) {
     return std::unexpected {LoaderData::PendingError {}};
   }
   return mLoaderData.at(arch);
