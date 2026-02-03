@@ -93,6 +93,16 @@ AutoUpdateProcess CheckForUpdates() {
       MB_OK | MB_ICONEXCLAMATION);
     return {};
   }
+  const auto configPath = [updater] {
+    auto path = updater;
+    path.replace_extension(".json");
+    return path;
+  }();
+  if (exists(configPath)) {
+    OutputDebugStringW(
+      L"Not invoking updater because config file override exists");
+    return {};
+  }
 
   // - We run elevated as the entire point of this program is to write to HKLM
   // - We don't want to elevate the installer unnecessarily
