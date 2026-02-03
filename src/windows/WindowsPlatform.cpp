@@ -292,10 +292,10 @@ void WindowsPlatform::Shutdown() {
 }
 
 void WindowsPlatform::BeforeFrame() {
-  if ((++mFrameCounter % 60) == 0) {
-    if (!mUpdater) {
-      mUpdater = CheckForUpdates();
-    }
+  if (!mUpdater) {
+    mUpdater = CheckForUpdates();
+  }
+  if (++mFrameCounter % 60 == 0) {
     mUpdater->ActivateWindowIfVisible();
   }
 
