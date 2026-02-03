@@ -248,6 +248,15 @@ static std::string GenerateLoaderDataText(
             return std::format(
               "Can not find current executable: {}", e.mError.message());
           },
+          [](const LoaderData::CanNotFindHelperExecutableError& e) {
+            return std::format(
+              "Helper executable does not exist: {}", e.mPath.string());
+          },
+          [](const LoaderData::UnsignedHelperError& e) {
+            return std::format(
+              "⚠️ Invalid signature on loader data helper: {}",
+              magic_enum::enum_name(e.mError));
+          },
           [](const LoaderData::CanNotSpawnError& e) {
             return std::format(
               "Subprocess creation failed: {}", e.mError.message());

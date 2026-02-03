@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <variant>
 
+#include "APILayerSignature.hpp"
 #include "Architectures.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -25,6 +26,13 @@ struct LoaderData {
   struct CanNotFindCurrentExecutableError {
     std::error_code mError;
   };
+  struct CanNotFindHelperExecutableError {
+    std::filesystem::path mPath;
+  };
+  struct UnsignedHelperError {
+    std::filesystem::path mPath;
+    APILayerSignature::Error mError;
+  };
   struct CanNotSpawnError {
     std::error_code mError;
   };
@@ -39,6 +47,8 @@ struct LoaderData {
     PipeCreationError,
     PipeAttributeError,
     CanNotFindCurrentExecutableError,
+    CanNotFindHelperExecutableError,
+    UnsignedHelperError,
     CanNotSpawnError,
     BadExitCodeError,
     InvalidJSONError>;

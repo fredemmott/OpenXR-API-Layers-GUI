@@ -1,5 +1,9 @@
 include_guard(GLOBAL)
 
+add_compile_definitions(
+  "$<$<CONFIG:Debug>:ALLOW_UNSIGNED_LOADER_DATA_HELPERS>"
+)
+
 add_library(
   lib
   STATIC

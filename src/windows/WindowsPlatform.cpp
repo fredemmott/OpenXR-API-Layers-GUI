@@ -892,10 +892,41 @@ WindowsPlatform::SpawnLoaderData(
   };
   PROCESS_INFORMATION pi {};
 
-  const auto commandLine
-    = (std::filesystem::path {modulePath}.parent_path()
-       / std::format("openxr-loader-data-{}.dll", magic_enum::enum_name(arch)))
-        .wstring();
+  const auto helper
+    = (std::filesystem::path {modulePath}.parent_path() / std::format("openxr-loader-data-{}.dll", magic_enum::enum_name(arch)));
+  if (!exists(helper)) {
+    return std::unexpected {
+      LoaderData::CanNotFindHelperExecutableError {helper}};
+  }
+  if (const auto signature = Get().GetAPILayerSignature(helper); !signature) {
+    constexpr auto AllowUnsigned =
+#ifdef ALLOW_UNSIGNED_LOADER_DATA_HELPERS
+      true;
+#else
+      false;
+#endif
+    if constexpr (AllowUnsigned) {
+      OutputDebugStringW(
+        std::format(L"⚠️ Allowing unsigned helper: {}", helper.wstring())
+          .c_str());
+    } else {
+      static std::once_flag sWarnOnce;
+      std::call_once(sWarnOnce, [helper] {
+        MessageBoxW(
+          nullptr,
+          std::format(
+            L"{} has been tampered with; you should check your system for "
+            L"malware.",
+            helper.filename().wstring())
+            .c_str(),
+          L"OpenXR API Layers GUI",
+          MB_OK | MB_ICONEXCLAMATION);
+      });
+      return std::unexpected {
+        LoaderData::UnsignedHelperError {helper, signature.error()}};
+    }
+  }
+
   void* environment {};
   CreateEnvironmentBlock(&environment, token, /* INHERIT = */ TRUE);
   const auto freeEnvironment
@@ -903,7 +934,7 @@ WindowsPlatform::SpawnLoaderData(
   if (!CreateProcessWithTokenW(
         token,
         LOGON_WITH_PROFILE,
-        commandLine.c_str(),
+        helper.wstring().c_str(),
         nullptr,
         CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
         environment,
