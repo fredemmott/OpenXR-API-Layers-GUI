@@ -244,6 +244,26 @@ void GUI::LayerSet::GUIButtons() {
   }
   ImGui::EndDisabled();
 
+  for (const auto arch: mStore->GetArchitectures().enumerate()) {
+    const auto loaderData = Platform::Get().GetLoaderData(arch);
+    if (loaderData) {
+      continue;
+    }
+
+    const auto archName = magic_enum::enum_name(arch);
+    if (holds_alternative<LoaderData::PendingError>(loaderData.error())) {
+      ImGui::TextWrapped(
+        "%s", std::format("⌛ Fetching {} runtime data...", archName).c_str());
+      continue;
+    }
+
+    ImGui::TextWrapped(
+      "%s",
+      std::format(
+        "⚠ Couldn't load {} runtime data; some checks are missing", archName)
+        .c_str());
+  }
+
   ImGui::EndGroup();
 }
 
@@ -259,33 +279,6 @@ void GUI::LayerSet::GUITabs() {
 void GUI::LayerSet::GUIErrorsTab() {
   if (ImGui::BeginTabItem("Warnings")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
-
-    bool hadLoaderDataInfo = false;
-    for (const auto arch: mStore->GetArchitectures().enumerate()) {
-      const auto loaderData = Platform::Get().GetLoaderData(arch);
-      if (loaderData) {
-        continue;
-      }
-
-      hadLoaderDataInfo = true;
-      const auto archName = magic_enum::enum_name(arch);
-      if (holds_alternative<LoaderData::PendingError>(loaderData.error())) {
-        ImGui::Text(
-          "%s",
-          std::format("⌛ Fetching {} runtime data...", archName).c_str());
-        continue;
-      }
-
-      ImGui::Text(
-        "%s",
-        std::format(
-          "⚠️Couldn't load {} runtime data, some checks are missing", archName)
-          .c_str());
-    }
-
-    if (hadLoaderDataInfo) {
-      ImGui::Separator();
-    }
 
     if (mSelectedLayer) {
       ImGui::Text("For %s:", mSelectedLayer->mManifestPath.string().c_str());
