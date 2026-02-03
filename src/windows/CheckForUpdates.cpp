@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "Config.hpp"
+#include "Platform.hpp"
 #include "windows/check.hpp"
 
 namespace FredEmmott::OpenXRLayers {
@@ -80,6 +81,16 @@ AutoUpdateProcess CheckForUpdates() {
       std::format(
         L"Skipping auto-update because `{}` does not exist", updater.wstring())
         .c_str());
+    return {};
+  }
+
+  if (!Platform::Get().GetAPILayerSignature(updater)) {
+    MessageBoxW(
+      nullptr,
+      L"The auto-updater has been tampered with; you should check your system "
+      L"for malware.",
+      L"OpenXR API Layers GUI",
+      MB_OK | MB_ICONEXCLAMATION);
     return {};
   }
 
