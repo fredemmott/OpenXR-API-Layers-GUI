@@ -260,16 +260,30 @@ void GUI::LayerSet::GUIErrorsTab() {
   if (ImGui::BeginTabItem("Warnings")) {
     ImGui::BeginChild("##ScrollArea", {-FLT_MIN, -FLT_MIN});
 
-    const auto loaderDataPending = std::ranges::any_of(
-      mStore->GetArchitectures().enumerate(), [](const auto arch) {
-        const auto data = Platform::Get().GetLoaderData(arch);
-        if (data) {
-          return false;
-        }
-        return holds_alternative<LoaderData::PendingError>(data.error());
-      });
-    if (loaderDataPending) {
-      ImGui::Text("⌛ Loading...");
+    bool hadLoaderDataInfo = false;
+    for (const auto arch: mStore->GetArchitectures().enumerate()) {
+      const auto loaderData = Platform::Get().GetLoaderData(arch);
+      if (loaderData) {
+        continue;
+      }
+
+      hadLoaderDataInfo = true;
+      const auto archName = magic_enum::enum_name(arch);
+      if (holds_alternative<LoaderData::PendingError>(loaderData.error())) {
+        ImGui::Text(
+          "%s",
+          std::format("⌛ Fetching {} runtime data...", archName).c_str());
+        continue;
+      }
+
+      ImGui::Text(
+        "%s",
+        std::format(
+          "⚠️Couldn't load {} runtime data, some checks are missing", archName)
+          .c_str());
+    }
+
+    if (hadLoaderDataInfo) {
       ImGui::Separator();
     }
 
