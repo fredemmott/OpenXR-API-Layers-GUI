@@ -25,18 +25,25 @@ struct DPIChangeInfo {
 };
 
 struct Runtime {
-  enum class ManifestError {
-    FileNotFound,
-    FileNotReadable,
-    InvalidJson,
-    FieldNotPresent,
+  struct ManifestData {
+    enum class Error {
+      FileNotFound,
+      FileNotReadable,
+      InvalidJson,
+    };
+    // Defaults to mLibrarypath if not set
+    std::string mName;
+    std::filesystem::path mLibraryPath;
+    std::expected<APILayerSignature, APILayerSignature::Error>
+      mLibrarySignature;
   };
 
   Runtime() = delete;
   explicit Runtime(const std::filesystem::path& path);
 
   std::filesystem::path mPath;
-  std::expected<std::string, ManifestError> mName;
+
+  std::expected<ManifestData, ManifestData::Error> mManifestData;
 };
 
 struct AvailableRuntime : Runtime {
@@ -67,7 +74,7 @@ class Platform {
     const std::filesystem::path& path) = 0;
 
   virtual std::expected<APILayerSignature, APILayerSignature::Error>
-  GetAPILayerSignature(const std::filesystem::path&) = 0;
+  GetSharedLibrarySignature(const std::filesystem::path&) = 0;
   virtual std::expected<LoaderData, LoaderData::Error> GetLoaderData(
     Architecture) = 0;
   virtual std::expected<LoaderData, LoaderData::Error> WaitForLoaderData(

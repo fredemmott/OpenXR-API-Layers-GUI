@@ -154,23 +154,32 @@ static std::string GenerateActiveRuntimeText(
   if (!runtime) {
     return std::format("❌ Active {} runtime: NONE\n", archName);
   }
-
-  if (!runtime->mName) {
-    if (runtime->mName.error() != Runtime::ManifestError::FieldNotPresent) {
-      return std::format(
-        "🚨 Active {} runtime: CORRUPTED - {}\n",
-        archName,
-        runtime->mPath.string());
-    }
+  const auto manifest = runtime->mManifestData;
+  if (!manifest) {
     return std::format(
-      "✅ Active {} runtime: {}\n", archName, runtime->mPath.string());
+      "❌ Invalid {} manifest at `{}`: {}\n",
+      archName,
+      runtime->mPath.string(),
+      magic_enum::enum_name(manifest.error()));
   }
 
-  return std::format(
-    "✅ Active {} runtime: \"{}\" - {}\n",
-    archName,
-    runtime->mName.value(),
-    runtime->mPath.string());
+  std::string out = runtime->mPath.string();
+  if (manifest->mName != runtime->mPath) {
+    out += std::format(" ()", manifest->mName);
+  }
+
+  bool ok = true;
+  if (manifest->mLibrarySignature) {
+    out += fmt::format(
+      " (signed by '{}')", manifest->mLibrarySignature->mSignedBy);
+  } else {
+    ok = false;
+    out += fmt::format(
+      " - 🚨 bad signature: {}",
+      magic_enum::enum_name(manifest->mLibrarySignature.error()));
+  }
+
+  return std::format("{} {}\n", ok ? "✅" : "🚨", out);
 }
 
 static std::string GenerateAvailableRuntimesText(
@@ -183,25 +192,16 @@ static std::string GenerateAvailableRuntimesText(
   }
 
   for (auto&& runtime: runtimes) {
-    if (runtime.mName) {
+    if (!runtime.mManifestData) {
       ret += fmt::format(
-        "  - \"{}\" - {}", runtime.mName.value(), runtime.mPath.string());
-    } else {
-      using enum Runtime::ManifestError;
-      switch (runtime.mName.error()) {
-        case FieldNotPresent:
-          ret += fmt::format("  - {}", runtime.mPath.string());
-          break;
-        case FileNotFound:
-          ret += fmt::format("  - ❌ FILE MISSING: {}", runtime.mPath.string());
-          break;
-        case FileNotReadable:
-        case InvalidJson:
-          ret += fmt::format(
-            "  - ❌ FILE NOT READABLE: {}", runtime.mPath.string());
-          break;
-      }
+        "  - ❌ {}: 🚨 {}\n",
+        runtime.mPath.string(),
+        magic_enum::enum_name(runtime.mManifestData.error()));
+      continue;
     }
+
+    ret += fmt::format(
+      "  - \"{}\" - {}", runtime.mManifestData->mName, runtime.mPath.string());
 
     switch (runtime.mDiscoverability) {
       case AvailableRuntime::Discoverability::Discoverable:

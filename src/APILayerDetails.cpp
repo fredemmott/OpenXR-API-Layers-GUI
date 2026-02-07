@@ -121,7 +121,7 @@ APILayerDetails::APILayerDetails(const std::filesystem::path& jsonPath) {
   } catch (const std::filesystem::filesystem_error&) {
   }
 
-  mSignature = platform.GetAPILayerSignature(mLibraryPath);
+  mSignature = platform.GetSharedLibrarySignature(mLibraryPath);
 
   mState = State::Loaded;
 }

@@ -84,7 +84,7 @@ AutoUpdateProcess CheckForUpdates() {
     return {};
   }
 
-  if (!Platform::Get().GetAPILayerSignature(updater)) {
+  if (!Platform::Get().GetSharedLibrarySignature(updater)) {
     MessageBoxW(
       nullptr,
       L"The auto-updater has been tampered with; you should check your system "

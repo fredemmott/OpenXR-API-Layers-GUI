@@ -33,8 +33,13 @@ class SkippedByLoaderLinter final : public Linter {
     }
 
     const auto runtime = Platform::Get().GetActiveRuntime();
-    const auto runtimeString
-      = runtime ? runtime->mName.value_or(runtime->mPath.string()) : "NONE";
+    if (!runtime) {
+      return;
+    }
+    const auto runtimeManifest = runtime->mManifestData;
+    if (!runtimeManifest) {
+      return;
+    }
 
     for (const auto& [layer, details]: layers) {
       if (details.mState != APILayerDetails::State::Loaded) {
@@ -75,7 +80,7 @@ class SkippedByLoaderLinter final : public Linter {
             fmt::format(
               "Layer `{}` is blocked by your current OpenXR runtime ('{}')",
               layer.mManifestPath.string(),
-              runtimeString),
+              runtimeManifest->mName),
             LayerKeySet {layer});
           continue;
         }
@@ -86,7 +91,7 @@ class SkippedByLoaderLinter final : public Linter {
           "Layer `{}` appears enabled, but is not loaded by OpenXR; it may "
           "be blocked by your OpenXR runtime ('{}')",
           layer.mManifestPath.string(),
-          runtimeString),
+          runtimeManifest->mName),
         LayerKeySet {layer});
     }
   }

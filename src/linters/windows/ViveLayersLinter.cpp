@@ -23,15 +23,18 @@ class ViveLayersLinter final : public Linter {
     if (!runtime) {
       return {};
     }
-    if (runtime->mName == "SteamVR") {
+    const auto runtimeManifest = runtime->mManifestData;
+    if (!runtimeManifest) {
       return {};
     }
-    if (runtime->mName == "VIVE_OpenXR") {
+    if (runtimeManifest->mName == "SteamVR") {
+      return {};
+    }
+    if (runtimeManifest->mName == "VIVE_OpenXR") {
       // Included with ViveConsole from Steam, but not registered by default.
       // Just used for the Vive Focus and Cosmos
       return {};
     }
-    const auto runtimeName = runtime->mName.value_or(runtime->mPath.string());
 
     static const std::unordered_set<std::string_view> LayerNames {
       "XR_APILAYER_VIVE_MR",
@@ -56,7 +59,7 @@ class ViveLayersLinter final : public Linter {
             "currently using '{}'; this can cause game crashes or other "
             "issues.",
             details.mName,
-            runtimeName),
+            runtimeManifest->mName),
           layer));
     }
     return ret;

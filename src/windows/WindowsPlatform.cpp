@@ -381,7 +381,8 @@ std::filesystem::file_time_type WindowsPlatform::GetFileChangeTime(
 }
 
 std::expected<APILayerSignature, APILayerSignature::Error>
-WindowsPlatform::GetAPILayerSignature(const std::filesystem::path& dllPath) {
+WindowsPlatform::GetSharedLibrarySignature(
+  const std::filesystem::path& dllPath) {
   using enum APILayerSignature::Error;
   if (!std::filesystem::exists(dllPath)) {
     return std::unexpected {FilesystemError};
@@ -898,7 +899,8 @@ WindowsPlatform::SpawnLoaderData(
     return std::unexpected {
       LoaderData::CanNotFindHelperExecutableError {helper}};
   }
-  if (const auto signature = Get().GetAPILayerSignature(helper); !signature) {
+  if (const auto signature = Get().GetSharedLibrarySignature(helper);
+      !signature) {
     constexpr auto AllowUnsigned =
 #ifdef ALLOW_UNSIGNED_LOADER_DATA_HELPERS
       true;

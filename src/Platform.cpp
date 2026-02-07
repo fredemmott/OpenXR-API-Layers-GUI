@@ -18,9 +18,9 @@ std::optional<Runtime> GetRuntimeFromPath(const std::filesystem::path& path) {
   return Runtime(path);
 }
 
-std::expected<std::string, Runtime::ManifestError> GetRuntimeName(
-  const std::filesystem::path& path) {
-  using enum Runtime::ManifestError;
+std::expected<Runtime::ManifestData, Runtime::ManifestData::Error>
+GetRuntimeManifestData(const std::filesystem::path& path) {
+  using enum Runtime::ManifestData::Error;
   try {
     if (!std::filesystem::exists(path)) {
       return std::unexpected {FileNotFound};
@@ -32,11 +32,31 @@ std::expected<std::string, Runtime::ManifestError> GetRuntimeName(
     }
 
     const auto json = nlohmann::json::parse(f);
-    if (json.contains("runtime") && json.at("runtime").contains("name")) {
-      return json.at("runtime").at("name");
+    if (!json.contains("runtime")) {
+      return std::unexpected {InvalidJson};
+    }
+    const auto& data = json.at("runtime");
+
+    Runtime::ManifestData ret {};
+    if (data.contains("name")) {
+      ret.mName = data.at("name");
+    }
+    if (data.contains("library_path")) {
+      const std::filesystem::path libraryPath {
+        data.at("library_path").get<std::string>()};
+      if (libraryPath.is_absolute()) {
+        ret.mLibraryPath = libraryPath;
+      } else {
+        ret.mLibraryPath = weakly_canonical(path.parent_path() / libraryPath);
+      }
     }
 
-    return std::unexpected {FieldNotPresent};
+    if ((!ret.mLibraryPath.empty()) && exists(ret.mLibraryPath)) {
+      ret.mLibrarySignature
+        = Platform::Get().GetSharedLibrarySignature(ret.mLibraryPath);
+    }
+
+    return ret;
   } catch (const std::filesystem::filesystem_error&) {
     return std::unexpected {FileNotReadable};
   } catch (const nlohmann::json::exception&) {
@@ -48,7 +68,7 @@ std::expected<std::string, Runtime::ManifestError> GetRuntimeName(
 
 Runtime::Runtime(const std::filesystem::path& path)
   : mPath(path),
-    mName(GetRuntimeName(path)) {}
+    mManifestData(GetRuntimeManifestData(path)) {}
 
 AvailableRuntime::AvailableRuntime(
   const std::filesystem::path& path,
