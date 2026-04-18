@@ -39,7 +39,7 @@ jobs:
         working-directory: build
         run: cmake --build . --parallel --verbose
       - name: Upload Executable Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ matrix.preset == 'Release' }}
         with:
           name: "intermediate-${{matrix.arch}}"
@@ -75,12 +75,12 @@ jobs:
             rsync -av "$dir/" staging/
           done
       - name: Upload binaries
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: "OpenXR-API-Layers-GUI-v${{needs.build.outputs.version}}"
           path: staging/bin
       - name: Upload debug symbols
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: "OpenXR-API-Layers-GUI-DebugSymbols-v${{needs.build.outputs.version}}"
           path: staging/pdb
