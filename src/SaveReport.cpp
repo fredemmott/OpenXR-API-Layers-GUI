@@ -339,12 +339,20 @@ void SaveReport(const std::filesystem::path& path) {
 }
 
 std::string GenerateReport() {
+  const auto current_zone = [] {
+    try {
+      return std::chrono::current_zone();
+    } catch (const std::exception&) {
+      // https://github.com/microsoft/STL/issues/6490
+      return std::chrono::get_tzdb().locate_zone("Etc/UTC");
+    }
+  }();
+
   auto text = std::format(
     "OpenXR API Layers GUI v{}\n"
     "Reported generated at {:%Y-%m-%d %H:%M:%S}\n\n",
     Config::BUILD_VERSION,
-    std::chrono::zoned_time(
-      std::chrono::current_zone(), std::chrono::system_clock::now()));
+    std::chrono::zoned_time(current_zone, std::chrono::system_clock::now()));
 
   auto& platform = Platform::Get();
   for (const auto arch: platform.GetArchitectures().enumerate()) {

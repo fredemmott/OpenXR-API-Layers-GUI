@@ -622,10 +622,19 @@ std::optional<std::filesystem::path> WindowsPlatform::GetExportFilePath() {
   };
   picker->SetFileTypes(1, &filter);
 
+  const auto current_zone = [] {
+    try {
+      return std::chrono::current_zone();
+    } catch (const std::exception&) {
+      // https://github.com/microsoft/STL/issues/6490
+      return std::chrono::get_tzdb().locate_zone("Etc/UTC");
+    }
+  }();
+
   const auto filename = std::format(
     L"OpenXR-API-Layers-{:%Y-%m-%d-%H-%M-%S}.txt",
     std::chrono::zoned_time(
-      std::chrono::current_zone(),
+      current_zone,
       std::chrono::time_point_cast<std::chrono::seconds>(
         std::chrono::system_clock::now())));
   picker->SetFileName(filename.c_str());
